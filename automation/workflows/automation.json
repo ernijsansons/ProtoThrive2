@@ -1,0 +1,405 @@
+{
+  "_comment": "Ref: CLAUDE.md Terminal 4 Phase 4 - n8n Automation Workflow",
+  "_mermaid": "graph LR; A[Webhook Trigger] --> B[Mock Planner]; B --> C[Loop Tasks]; C --> D[Mock Coder]; D --> E[Mock Auditor]; E --> F[Calc Thrive]; F --> G[Update DB Mock]; G --> H[Deploy Trigger Mock]; H --> I[HITL Check]; I --> J{Escalate?}; J -->|Yes| K[HITL Escalate]; J -->|No| L[Success]",
+  "name": "ProtoThrive Thermonuclear Automation",
+  "nodes": [
+    {
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "1",
+      "name": "Trigger",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "roadmap-update",
+        "responseMode": "onReceived",
+        "responseCode": 200,
+        "responseData": "lastNodeOutput",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "webhookId": "roadmap-update-webhook"
+    },
+    {
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "id": "2",
+      "name": "Mock Planner",
+      "parameters": {
+        "functionCode": "// Ref: CLAUDE.md Terminal 4 - Mock Planner decomposition\nconst roadmapId = items[0].json.roadmap_id || 'uuid-thermo-1';\nconsole.log('Thermonuclear Planning for roadmap:', roadmapId);\n\n// Return mock tasks matching spec\nreturn [\n  {\n    json: {\n      roadmap_id: roadmapId,\n      tasks: [\n        { id: 'task1', type: 'ui', complexity: 'low', desc: 'task1_ui_low' },\n        { id: 'task2', type: 'code', complexity: 'med', desc: 'task2_code_med' },\n        { id: 'task3', type: 'deploy', complexity: 'high', desc: 'task3_deploy_high' }\n      ]\n    }\n  }\n];"
+      }
+    },
+    {
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "id": "3",
+      "name": "Loop Tasks",
+      "parameters": {
+        "mode": "iterate",
+        "outputCount": 3
+      }
+    },
+    {
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "id": "4",
+      "name": "Mock Coder",
+      "parameters": {
+        "functionCode": "// Ref: CLAUDE.md Terminal 4 - Mock Coder generation\nconst task = items[0].json.tasks[items[0].pairedItem.index];\nconsole.log('Thermonuclear Coding for task:', task.desc);\n\nreturn [\n  {\n    json: {\n      task: task,\n      code: `// Thermo Code for ${task.desc}\\n// Type: ${task.type}\\n// Complexity: ${task.complexity}\\nconsole.log('Thermonuclear ${task.type} implementation');`,\n      generated_at: new Date().toISOString()\n    }\n  }\n];"
+      }
+    },
+    {
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1050, 300],
+      "id": "5",
+      "name": "Mock Auditor",
+      "parameters": {
+        "functionCode": "// Ref: CLAUDE.md Terminal 4 - Mock Auditor validation\nconst code = items[0].json.code;\nconst task = items[0].json.task;\nconsole.log('Thermonuclear Auditing for task:', task.desc);\n\n// Check if code contains 'Thermo' per spec\nconst valid = code.includes('Thermo');\nconst score = valid ? 0.95 : 0.6;\n\nreturn [\n  {\n    json: {\n      task: task,\n      code: code,\n      valid: valid,\n      score: score,\n      audit_message: valid ? 'Code passes thermonuclear validation' : 'Code needs improvement',\n      audited_at: new Date().toISOString()\n    }\n  }\n];"
+      }
+    },
+    {
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "id": "6",
+      "name": "Calc Thrive",
+      "parameters": {
+        "functionCode": "// Ref: CLAUDE.md Terminal 4 - Calculate Thrive Score\n// Using exact formula from spec\nconst logs = [\n  {status: 'success', type: 'ui'},\n  {status: 'success', type: 'code'},\n  {status: 'fail', type: 'deploy'}\n];\n\nconsole.log('Thermonuclear Thrive Score Calculation');\n\nconst completion = logs.filter(l => l.status === 'success').length / logs.length * 0.6;\nconst ui_polish = logs.filter(l => l.type === 'ui').length / logs.length * 0.3;\nconst risk = 1 - (logs.filter(l => l.status === 'fail').length / logs.length) * 0.1;\nconst score = completion + ui_polish + risk;\n\nconsole.log(`Completion: ${completion}, UI Polish: ${ui_polish}, Risk: ${risk}`);\nconsole.log(`Thermonuclear Thrive Score: ${score.toFixed(2)}`);\n\nreturn [\n  {\n    json: {\n      score: score,\n      status: score > 0.5 ? 'neon' : 'gray',\n      components: {\n        completion: completion,\n        ui_polish: ui_polish,\n        risk: risk\n      },\n      logs: logs,\n      calculated_at: new Date().toISOString()\n    }\n  }\n];"
+      }
+    },
+    {
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1450, 300],
+      "id": "7",
+      "name": "Update DB Mock",
+      "parameters": {
+        "method": "POST",
+        "url": "mock_dashboard/update",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "={{$node[\"Calc Thrive\"].json[\"status\"]}}"
+            },
+            {
+              "name": "score",
+              "value": "={{$node[\"Calc Thrive\"].json[\"score\"]}}"
+            },
+            {
+              "name": "roadmap_id",
+              "value": "={{$node[\"Trigger\"].json[\"roadmap_id\"]}}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1650, 300],
+      "id": "8",
+      "name": "Deploy Trigger Mock",
+      "parameters": {
+        "method": "POST",
+        "url": "mock_vercel/deploy",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer mock_vercel_token"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "code",
+              "value": "={{$node[\"Mock Coder\"].json[\"code\"]}}"
+            },
+            {
+              "name": "project_name",
+              "value": "proto-thermo-{{$node[\"Trigger\"].json[\"roadmap_id\"]}}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1850, 300],
+      "id": "9",
+      "name": "HITL Check",
+      "parameters": {
+        "functionCode": "// Ref: CLAUDE.md Terminal 4 - HITL Check logic\nconst auditResult = $items(\"Mock Auditor\")[0].json;\nconst shouldEscalate = !auditResult.valid;\n\nconsole.log('Thermonuclear HITL Check:', shouldEscalate ? 'ESCALATION REQUIRED' : 'All systems go');\n\nreturn [\n  {\n    json: {\n      escalate: shouldEscalate,\n      reason: shouldEscalate ? 'Audit Fail - Score below threshold' : 'Validation passed',\n      audit_score: auditResult.score,\n      timestamp: new Date().toISOString()\n    }\n  }\n];"
+      }
+    },
+    {
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2050, 300],
+      "id": "10",
+      "name": "Escalate If Fail",
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$node[\"HITL Check\"].json[\"escalate\"]}}",
+              "value2": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2250, 200],
+      "id": "11",
+      "name": "HITL Escalate",
+      "parameters": {
+        "method": "POST",
+        "url": "mock_slack/hitl",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "#hitl-thermo"
+            },
+            {
+              "name": "reason",
+              "value": "={{$node[\"HITL Check\"].json[\"reason\"]}}"
+            },
+            {
+              "name": "roadmap_id",
+              "value": "={{$node[\"Trigger\"].json[\"roadmap_id\"]}}"
+            },
+            {
+              "name": "severity",
+              "value": "high"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [2250, 400],
+      "id": "12",
+      "name": "Success",
+      "parameters": {
+        "values": {
+          "boolean": [
+            {
+              "name": "success",
+              "value": true
+            }
+          ],
+          "string": [
+            {
+              "name": "message",
+              "value": "Thermonuclear automation completed successfully"
+            },
+            {
+              "name": "status",
+              "value": "={{$node[\"Calc Thrive\"].json[\"status\"]}}"
+            }
+          ],
+          "number": [
+            {
+              "name": "thrive_score",
+              "value": "={{$node[\"Calc Thrive\"].json[\"score\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Trigger": {
+      "main": [
+        [
+          {
+            "node": "Mock Planner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock Planner": {
+      "main": [
+        [
+          {
+            "node": "Loop Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Tasks": {
+      "main": [
+        [
+          {
+            "node": "Mock Coder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock Coder": {
+      "main": [
+        [
+          {
+            "node": "Mock Auditor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock Auditor": {
+      "main": [
+        [
+          {
+            "node": "Calc Thrive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calc Thrive": {
+      "main": [
+        [
+          {
+            "node": "Update DB Mock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update DB Mock": {
+      "main": [
+        [
+          {
+            "node": "Deploy Trigger Mock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deploy Trigger Mock": {
+      "main": [
+        [
+          {
+            "node": "HITL Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HITL Check": {
+      "main": [
+        [
+          {
+            "node": "Escalate If Fail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalate If Fail": {
+      "main": [
+        [
+          {
+            "node": "HITL Escalate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "saveExecutionProgress": true,
+    "executionTimeout": 300
+  },
+  "staticData": null,
+  "pinData": {},
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-08-23T00:00:00.000Z",
+  "versionId": "thermonuclear-1.0.0"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "automation",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tests/test-automation.js",
+    "lint": "echo 'Thermonuclear Lint: No linter configured for automation scripts'",
+    "validate:workflow": "node tests/validate-workflow.js",
+    "validate:scripts": "node tests/validate-scripts.js",
+    "validate:all": "npm run validate:workflow && npm run validate:scripts && npm test"
+  },
+  "keywords": ["protothrive", "automation", "thermonuclear", "n8n", "ci-cd"],
+  "author": "ProtoThrive Team",
+  "license": "ISC",
+  "description": "Thermonuclear automation workflows and CI/CD for ProtoThrive"
+}

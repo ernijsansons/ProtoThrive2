@@ -1,0 +1,72 @@
+name = "devcommand-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Account and deployment settings
+account_id = "" # Set via environment or .dev.vars
+workers_dev = true
+
+# KV Namespaces
+[[kv_namespaces]]
+binding = "CACHE"
+id = "" # Set via environment
+preview_id = "" # Set for preview
+
+[[kv_namespaces]]
+binding = "SNIPPETS"
+id = "" # Set via environment
+preview_id = "" # Set for preview
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "devcommand"
+database_id = "" # Set via environment
+
+# Durable Objects
+[[durable_objects.bindings]]
+name = "ROADMAP_ROOMS"
+class_name = "RoadmapRoom"
+
+[[durable_objects.bindings]]
+name = "WEBSOCKET_MANAGER"
+class_name = "WebSocketManager"
+
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+
+# Service bindings (for microservices)
+[[services]]
+binding = "AI_SERVICE"
+service = "devcommand-ai"
+
+[[services]]
+binding = "AUTOMATION_SERVICE"
+service = "devcommand-automation"
+
+# Environment variables (use .dev.vars for local)
+[vars]
+ENVIRONMENT = "development"
+APP_URL = "http://localhost:3000"
+
+# Routes
+[[routes]]
+pattern = "devcommand.com/*"
+zone_name = "devcommand.com"
+
+# Build configuration
+[build]
+command = "npm run build"
+
+# Limits
+[limits]
+cpu_ms = 50
+
+# Logpush (for production)
+[logpush]
+enabled = false
+
+# Tail Workers (for debugging)
+[tail_consumers]
+enabled = false

@@ -1,0 +1,127 @@
+# Ref: CLAUDE.md Phase 6 - Integration Docker Compose
+# Thermonuclear ProtoThrive MVP - Full Stack Orchestration
+version: '3.8'
+
+services:
+  # Backend API Service
+  protothrive-backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - D1_DB_ID=mock_d1_thermo
+      - KV_ID=mock_kv_thermo
+      - CLAUDE_API_KEY=mock_claude_thermo
+    volumes:
+      - ../backend:/app
+      - /app/node_modules
+    networks:
+      - protothrive-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Dashboard Service  
+  protothrive-frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://protothrive-backend:3001
+      - NEXT_PUBLIC_SPLINE_SCENE=mock_neon_cube
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - protothrive-backend
+    networks:
+      - protothrive-network
+
+  # AI Core Service (Python)
+  protothrive-ai:
+    build:
+      context: ../ai-core
+      dockerfile: Dockerfile
+    environment:
+      - PYTHONPATH=/app
+      - LANGCHAIN_API_KEY=mock_langchain
+      - PINECONE_KEY=mock_pinecone
+    volumes:
+      - ../ai-core:/app
+    networks:
+      - protothrive-network
+    command: python run_orchestrator.py
+
+  # Security Vault Service
+  protothrive-security:
+    build:
+      context: ../security
+      dockerfile: Dockerfile
+    environment:
+      - VAULT_MODE=development
+      - CLERK_SECRET=mock_clerk_thermo
+    volumes:
+      - ../security:/app
+    networks:
+      - protothrive-network
+
+  # n8n Automation Service
+  protothrive-automation:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=thermonuclear
+      - WEBHOOK_URL=http://localhost:5678
+    volumes:
+      - ../automation/workflows:/home/node/.n8n
+      - n8n_data:/home/node/.n8n
+    networks:
+      - protothrive-network
+
+  # Redis Cache (for KV store mock)
+  protothrive-cache:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - protothrive-network
+
+  # Monitoring & Health Dashboard
+  protothrive-monitor:
+    image: grafana/grafana:latest
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=thermonuclear
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - protothrive-network
+
+networks:
+  protothrive-network:
+    driver: bridge
+
+volumes:
+  n8n_data:
+  redis_data:
+  grafana_data:
+
+# Thermonuclear Docker Commands:
+# docker-compose up -d                 # Start all services
+# docker-compose logs -f               # View logs
+# docker-compose down                  # Stop all services  
+# docker-compose ps                    # Check service status

@@ -1,0 +1,55 @@
+# Ref: CLAUDE.md Terminal 1 Phase 1 - Workers Configuration
+# Thermonuclear Cloudflare Workers Configuration for ProtoThrive
+
+name = "backend-thermo"
+main = "src/index.ts"
+compatibility_date = "2024-08-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Account and route configuration
+account_id = "d2897bdebfa128919bd89b265e6a712e"
+workers_dev = true
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+SERVICE_NAME = "protothrive-backend"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "protothrive-db"
+database_id = "0b6970f4-c6ca-4245-aabf-98fa2d4f28a8"
+
+# KV Namespace binding
+[[kv_namespaces]]
+binding = "KV"
+id = "ec3183e7b4e94442b3f99b4d2f4b083e"
+preview_id = "ec3183e7b4e94442b3f99b4d2f4b083e"
+
+# Build configuration
+[build]
+command = "npm run build"
+
+# Development environment
+[env.development]
+name = "backend-thermo-dev"
+vars = { ENVIRONMENT = "development" }
+
+# Staging environment
+[env.staging]
+name = "backend-thermo-staging"
+vars = { ENVIRONMENT = "staging" }
+
+# Production environment
+[env.production]
+name = "backend-thermo-prod"
+vars = { ENVIRONMENT = "production" }
+route = "api.protothrive.com/*"
+
+# Limits commented out for free plan
+# [limits]
+# cpu_ms = 50
+
+# [usage_model]
+# default = "bundled"

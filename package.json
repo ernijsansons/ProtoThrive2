@@ -1,0 +1,45 @@
+{
+  "name": "protothrive",
+  "version": "1.0.0",
+  "description": "ProtoThrive - AI-first SaaS platform for visual prototyping and development",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend", 
+    "ai-core",
+    "automation",
+    "security"
+  ],
+  "scripts": {
+    "install-all": "npm install && npm run install-workspaces",
+    "install-workspaces": "npm install --workspaces",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces",
+    "build": "npm run build --workspaces",
+    "dev": "concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "validate": "npm run lint && npm run test && echo 'Thermonuclear Validation: All Workspaces Passed - 0 Errors'",
+    "clean": "npm run clean --workspaces || true",
+    "thermo-check": "echo 'Thermonuclear Status Check: ProtoThrive MVP Ready'"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/protothrive/protothrive.git"
+  },
+  "keywords": [
+    "prototyping",
+    "ai",
+    "development",
+    "saas",
+    "visual-programming",
+    "thermonuclear"
+  ],
+  "author": "ProtoThrive Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

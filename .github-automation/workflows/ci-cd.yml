@@ -1,0 +1,139 @@
+# Ref: CLAUDE.md Terminal 4 Phase 4 - CI/CD GitHub Actions Workflow
+# Thermonuclear CI/CD for ProtoThrive Automation
+
+name: Thermonuclear CI/CD
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint Code
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run lint
+        run: npm run lint
+        
+      - name: Thermonuclear Checkpoint
+        run: echo "✅ Thermonuclear Lint: Passed"
+
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Thermonuclear Checkpoint
+        run: echo "✅ Thermonuclear Tests: All passed"
+
+  build:
+    runs-on: ubuntu-latest
+    name: Build Project
+    needs: [lint, test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run build
+        run: npm run build
+        
+      - name: Thermonuclear Checkpoint
+        run: echo "✅ Thermonuclear Build: Successful"
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    name: Deploy to Staging
+    needs: [build]
+    if: github.ref == 'refs/heads/dev'
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install Wrangler
+        run: npm install -g wrangler
+        
+      - name: Deploy to Staging
+        run: wrangler deploy --env staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          
+      - name: Thermonuclear Checkpoint
+        run: echo "🚀 Thermonuclear Deploy Staging: Complete"
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    needs: [build]
+    if: startsWith(github.ref, 'refs/tags/')
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install Wrangler
+        run: npm install -g wrangler
+        
+      - name: Deploy to Production
+        run: wrangler publish --env prod
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          
+      - name: Thermonuclear Checkpoint
+        run: echo "🚀 Thermonuclear Deploy Production: Complete"
+        
+      - name: Notify Success
+        run: |
+          echo "Thermonuclear Production Deployment Successful"
+          echo "Tag: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
