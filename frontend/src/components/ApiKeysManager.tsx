@@ -61,6 +61,10 @@ const ApiKeysManager = () => {
         }
       ]);
     }
+    } catch (error) {
+      console.error('Thermonuclear Error: Failed to load keys', error);
+      alert('Failed to load API keys');
+    }
   };
 
   const handleAddKey = async () => {
