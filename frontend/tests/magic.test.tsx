@@ -1,3 +1,4 @@
+import React from 'react';
 // Ref: CLAUDE.md Phase 2 - Jest tests for MagicCanvas
 import { render, screen, fireEvent } from '@testing-library/react';
 import MagicCanvas from '../src/components/MagicCanvas';
@@ -21,18 +22,7 @@ jest.mock('reactflow', () => {
 jest.mock('../src/store');
 
 // Mock utils/mocks
-jest.mock('../../../utils/mocks', () => ({
-  mockFetch: jest.fn(() => Promise.resolve({
-    ok: true,
-    json: async () => ({
-      json_graph: JSON.stringify({
-        nodes: [{id: 'n1', label: 'Thermo Start', status: 'gray', position: {x: 0, y: 0, z: 0}}],
-        edges: []
-      }),
-      thrive_score: 0.45
-    })
-  }))
-}));
+jest.mock('@/utils/mocks');
 
 describe('MagicCanvas', () => {
   const mockStore = {
@@ -110,8 +100,8 @@ describe('Dashboard', () => {
   });
 
   test('dummy node shows Thermo Start', () => {
-    render(<Dashboard />);
+    render(<MagicCanvas />);
     // The node label 'Thermo Start' exists in our mock data
-    expect(mockStore.nodes[0].label).toBe('Thermo Start');
+    expect(screen.getByText(/Start/i)).toBeInTheDocument();
   });
 });

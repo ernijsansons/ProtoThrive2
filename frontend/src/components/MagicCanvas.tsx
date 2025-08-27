@@ -1,3 +1,4 @@
+import React from 'react';
 // Ref: CLAUDE.md Phase 2 - MagicCanvas with exact specs
 import ReactFlow from 'reactflow';
 import Spline from '@splinetool/react-spline';
@@ -35,7 +36,7 @@ const MagicCanvas = () => {
         />
       ) : (
         <Spline
-          scene={process.env.NEXT_PUBLIC_SPLINE_SCENE || 'https://prod.spline.design/neon-cube/scene.splinecode'}
+          scene={process.env.SPLINE_SCENE || 'https://prod.spline.design/neon-cube/scene.splinecode'}
           onLoad={handleSplineLoad}
         />
       )}
@@ -43,4 +44,4 @@ const MagicCanvas = () => {
   );
 };
 
-export default MagicCanvas;
+export default React.memo(MagicCanvas);
