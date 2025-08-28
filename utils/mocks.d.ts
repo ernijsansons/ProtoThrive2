@@ -6,7 +6,7 @@ export interface MockFetchResponse {
     text?: () => Promise<string>;
 }
 export interface MockDbResult {
-    results: any[];
+    results: unknown[];
     success: boolean;
     meta?: {
         rows_affected?: number;
@@ -15,7 +15,7 @@ export interface MockDbResult {
 }
 export interface MockApiResponse {
     success: boolean;
-    data: any;
+    data: unknown;
     id?: string;
     message?: string;
 }
@@ -34,12 +34,12 @@ export declare const mockFetch: (url: string, opts?: RequestInit) => Promise<Moc
  * Mock database query function for D1 operations
  * Ref: CLAUDE.md Global Configs & Mocks - Backend Phase
  */
-export declare const mockDbQuery: (query: string, binds?: any[]) => MockDbResult;
+export declare const mockDbQuery: (query: string, binds?: unknown[]) => MockDbResult;
 /**
  * Check kill-switch status from KV
  * Ref: CLAUDE.md Usage Guidelines - Kill-Switch
  */
-export declare const checkKillSwitch: (_kv: any) => Promise<boolean>;
+export declare const checkKillSwitch: (_kv: unknown) => Promise<boolean>;
 /**
  * Generate mock UUID
  */
@@ -101,7 +101,7 @@ export declare const mockLocalStorage: {
  * Mock n8n workflow execution
  * Ref: CLAUDE.md Phase 4 - Automation Mocks
  */
-export declare const mockWorkflowExecution: (workflowId: string, data: any) => Promise<MockApiResponse>;
+export declare const mockWorkflowExecution: (workflowId: string, data: unknown) => Promise<MockApiResponse>;
 /**
  * Mock CI/CD pipeline execution
  * Ref: CLAUDE.md Phase 4 - Automation Mocks
@@ -111,7 +111,7 @@ export declare const mockPipelineExecution: (pipeline: string) => Promise<MockAp
  * Calculate Thrive Score
  * Ref: CLAUDE.md Global Dummy Data & Thrive Score Formula
  */
-export declare const calculateThriveScore: (logs: any[]) => {
+export declare const calculateThriveScore: (logs: unknown[]) => {
     score: number;
     status: "gray" | "neon";
 };
@@ -152,7 +152,7 @@ export declare const createDummyData: () => {
 export declare const validateMocks: () => Promise<boolean>;
 declare const _default: {
     mockFetch: (url: string, opts?: RequestInit) => Promise<MockFetchResponse>;
-    mockDbQuery: (query: string, binds?: any[]) => MockDbResult;
+    mockDbQuery: (query: string, binds?: unknown[]) => MockDbResult;
     mockSplineLoader: (sceneUrl: string) => Promise<boolean>;
     mockWebSocket: (url: string) => {
         send: (data: string) => void;
@@ -163,7 +163,7 @@ declare const _default: {
         onerror: null;
         onclose: null;
     };
-    mockWorkflowExecution: (workflowId: string, data: any) => Promise<MockApiResponse>;
+    mockWorkflowExecution: (workflowId: string, data: unknown) => Promise<MockApiResponse>;
     mockPipelineExecution: (pipeline: string) => Promise<MockApiResponse>;
     mockJwtValidation: (token: string) => {
         valid: boolean;
@@ -175,10 +175,10 @@ declare const _default: {
         put: (key: string, value: string) => boolean;
         rotate: () => boolean;
     };
-    checkKillSwitch: (_kv: any) => Promise<boolean>;
+    checkKillSwitch: (_kv: unknown) => Promise<boolean>;
     checkBudget: (currentBudget: number, additionalCost: number) => number;
     generateMockUUID: () => string;
-    calculateThriveScore: (logs: any[]) => {
+    calculateThriveScore: (logs: unknown[]) => {
         score: number;
         status: "gray" | "neon";
     };

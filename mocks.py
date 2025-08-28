@@ -1,514 +1,585 @@
+#!/usr/bin/env python3
 """
-Ref: CLAUDE.md Thermonuclear Unified Mocks - All Phases Consolidated
-ProtoThrive Root mocks.py - Complete Python Mock Library
-Generated: 2025-08-24 by Thermonuclear Integration Terminal
+ProtoThrive Enhanced Mocks
+Thermonuclear Master Control Document Implementation
+Ref: CLAUDE.md Section 1 - Global Mocks & Configs
+
+Provides mock implementations for all external dependencies:
+- API calls (Claude, Kimi, uxpilot, Cloudflare, Vercel, etc.)
+- Database queries (D1, KV, Pinecone)
+- Authentication (Clerk, JWT)
+- Monitoring (Datadog, logging)
+- Cost tracking
+- Compliance checks
 """
 
-import json
 import time
+import json
 import uuid
-import numpy as np
-from typing import Dict, List, Any, Optional, Union
-from datetime import datetime, timezone
+from typing import Dict, Any, List, Optional
+from datetime import datetime, timedelta
 
-# ======================
-# AI CORE MOCKS (From ai-core/src/*)
-# ======================
+# Global mock store
+MOCK_STORE = {
+    "kv": {},
+    "d1": {},
+    "pinecone": {},
+    "api_calls": [],
+    "cost_tracker": {"total": 0.0, "session": time.time()},
+    "kill_switch": False
+}
 
-def mock_api_call(endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+# Mock API responses
+MOCK_API_RESPONSES = {
+    "claude": {
+        "success": True,
+        "data": "Thermonuclear Claude Response",
+        "id": "claude-thermo-mock",
+        "tokens_used": 150,
+        "cost": 0.015
+    },
+    "kimi": {
+        "success": True,
+        "data": "Thermonuclear Kimi Response",
+        "id": "kimi-thermo-mock",
+        "tokens_used": 100,
+        "cost": 0.001
+    },
+    "uxpilot": {
+        "success": True,
+        "data": {
+            "ui_code": "console.log('Thermo UI Generated');",
+            "preview_url": "https://mock-uxpilot.com/preview/thermo-neon",
+            "components": ["Button", "Card", "Modal"]
+        },
+        "id": "uxpilot-thermo-mock",
+        "cost": 0.02
+    },
+    "cloudflare": {
+        "success": True,
+        "data": {
+            "deployment_id": "cf-thermo-deploy",
+            "url": "https://proto-thermo.pages.dev",
+            "status": "deployed"
+        },
+        "id": "cf-thermo-mock"
+    },
+    "vercel": {
+        "success": True,
+        "data": {
+            "deployment_id": "vercel-thermo-deploy",
+            "url": "https://proto-thermo.vercel.app",
+            "status": "deployed"
+        },
+        "id": "vercel-thermo-mock"
+    },
+    "stripe": {
+        "success": True,
+        "data": {
+            "payment_intent": "pi_thermo_mock",
+            "status": "succeeded",
+            "amount": 1000
+        },
+        "id": "stripe-thermo-mock"
+    },
+    "slack": {
+        "success": True,
+        "data": {
+            "message_id": "slack-thermo-msg",
+            "channel": "#hitl-thermo",
+            "status": "sent"
+        },
+        "id": "slack-thermo-mock"
+    },
+    "uptime": {
+        "success": True,
+        "data": {
+            "status": "healthy",
+            "response_time": 150,
+            "uptime_percentage": 99.9
+        },
+        "id": "uptime-thermo-mock"
+    }
+}
+
+def mock_api_call(endpoint: str, payload: Dict[str, Any] = None) -> Dict[str, Any]:
     """
-    Mock external API calls for AI services
-    Ref: CLAUDE.md Global Configs & Mocks - AI Phase
-    """
-    print(f"THERMONUCLEAR MOCK CALL: {endpoint} - Payload: {payload}")
+    Mock API call function (Ref: CLAUDE.md Section 1)
     
-    # Simulate different responses based on endpoint
-    if 'claude' in endpoint.lower():
-        return {
-            'success': True,
-            'data': '// Thermonuclear Claude Response\nconsole.log("AI generated with Claude");',
-            'model': 'claude-3-sonnet',
-            'tokens': 150,
-            'cost': 0.002
-        }
-    elif 'kimi' in endpoint.lower():
-        return {
-            'success': True,
-            'data': '// Thermonuclear Kimi Response\nfunction thermoFunction() { return "kimi"; }',
-            'model': 'kimi-chat',
-            'tokens': 75,
-            'cost': 0.001
-        }
-    elif 'uxpilot' in endpoint.lower():
-        return {
-            'success': True,
-            'data': {
-                'ui_preview': 'neon_ui_thermo.png',
-                'css': 'background: linear-gradient(45deg, #00ffff, #ff00ff);',
-                'html': '<div class="thermo-neon">Thermonuclear UI</div>'
-            },
-            'model': 'uxpilot-ai',
-            'cost': 0.02
-        }
+    Args:
+        endpoint: API endpoint (e.g., 'claude/chat', 'kimi/generate', 'cloudflare/deploy')
+        payload: Request payload
+    
+    Returns:
+        Mock API response
+    """
+    print(f"🔥 THERMONUCLEAR MOCK CALL: {endpoint} - Payload: {payload}")
+    
+    # Track API call
+    MOCK_STORE["api_calls"].append({
+        "endpoint": endpoint,
+        "payload": payload,
+        "timestamp": time.time(),
+        "id": str(uuid.uuid4())
+    })
+    
+    # Determine response based on endpoint
+    if "claude" in endpoint.lower():
+        response = MOCK_API_RESPONSES["claude"].copy()
+    elif "kimi" in endpoint.lower():
+        response = MOCK_API_RESPONSES["kimi"].copy()
+    elif "uxpilot" in endpoint.lower():
+        response = MOCK_API_RESPONSES["uxpilot"].copy()
+    elif "cloudflare" in endpoint.lower():
+        response = MOCK_API_RESPONSES["cloudflare"].copy()
+    elif "vercel" in endpoint.lower():
+        response = MOCK_API_RESPONSES["vercel"].copy()
+    elif "stripe" in endpoint.lower():
+        response = MOCK_API_RESPONSES["stripe"].copy()
+    elif "slack" in endpoint.lower():
+        response = MOCK_API_RESPONSES["slack"].copy()
+    elif "uptime" in endpoint.lower():
+        response = MOCK_API_RESPONSES["uptime"].copy()
     else:
-        return {
-            'success': True,
-            'data': 'thermo_mock_response',
-            'id': f'uuid-thermo-mock-{uuid.uuid4().hex[:8]}'
+        # Generic response
+        response = {
+            "success": True,
+            "data": f"Thermonuclear Mock Response for {endpoint}",
+            "id": f"mock-{endpoint.replace('/', '-')}",
+            "timestamp": time.time()
         }
-
-def mock_db_query(query: str, binds: Optional[List[Any]] = None) -> List[Dict[str, Any]]:
-    """
-    Mock database queries for AI operations
-    Ref: CLAUDE.md Global Configs & Mocks - AI Phase
-    """
-    print(f"THERMONUCLEAR MOCK DB: {query} - Binds: {binds}")
     
-    if 'roadmap' in query.lower():
+    # Add cost tracking
+    if "cost" in response:
+        MOCK_STORE["cost_tracker"]["total"] += response["cost"]
+        print(f"💰 Thermonuclear Cost: ${MOCK_STORE['cost_tracker']['total']:.3f}")
+    
+    return response
+
+def mock_db_query(query: str, binds: List[Any] = None) -> List[Dict[str, Any]]:
+    """
+    Mock database query function (Ref: CLAUDE.md Section 1)
+    
+    Args:
+        query: SQL query string
+        binds: Query parameters
+    
+    Returns:
+        Mock query results
+    """
+    print(f"🔥 THERMONUCLEAR MOCK DB: {query} - Binds: {binds}")
+    
+    # Parse query to determine response
+    query_lower = query.lower()
+    
+    if "select" in query_lower and "roadmaps" in query_lower:
+        # Roadmap query
         return [{
-            'id': 'uuid-thermo',
-            'user_id': 'uuid-thermo-1',
-            'json_graph': '{"nodes":[{"id":"n1","label":"Thermo Start","status":"gray","position":{"x":0,"y":0,"z":0}},{"id":"n2","label":"Middle","status":"gray","position":{"x":100,"y":100,"z":0}},{"id":"n3","label":"End","status":"gray","position":{"x":200,"y":200,"z":0}}],"edges":[{"from":"n1","to":"n2"},{"from":"n2","to":"n3"}]}',
-            'vibe_mode': True,
-            'thrive_score': 0.45,
-            'status': 'draft'
+            "id": "uuid-thermo-1",
+            "user_id": "uuid-thermo-user",
+            "json_graph": '{"nodes":[{"id":"n1","label":"Thermo Start","status":"gray","position":{"x":0,"y":0,"z":0}},{"id":"n2","label":"Middle","status":"gray","position":{"x":100,"y":100,"z":0}},{"id":"n3","label":"End","status":"gray","position":{"x":200,"y":200,"z":0}}],"edges":[{"from":"n1","to":"n2"},{"from":"n2","to":"n3"}]}',
+            "status": "active",
+            "vibe_mode": True,
+            "thrive_score": 0.45,
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat()
         }]
-    elif 'snippet' in query.lower():
-        return [
-            {
-                'id': f'sn-thermo-{i}',
-                'category': ['ui', 'auth', 'deploy', 'api'][i % 4],
-                'code': f'console.log("Thermo Snippet {i}");',
-                'ui_preview_url': 'mock_neon.png',
-                'version': 1
-            }
-            for i in range(50)
-        ]
+    
+    elif "select" in query_lower and "users" in query_lower:
+        # User query
+        return [{
+            "id": "uuid-thermo-1",
+            "email": "test@proto.com",
+            "role": "vibe_coder",
+            "created_at": datetime.now().isoformat()
+        }]
+    
+    elif "select" in query_lower and "snippets" in query_lower:
+        # Snippet query
+        return [{
+            "id": "sn-thermo-1",
+            "category": "ui",
+            "code": 'console.log("Thermo UI Dummy");',
+            "ui_preview_url": "mock_neon.png",
+            "version": 1
+        }]
+    
+    elif "select" in query_lower and "agent_logs" in query_lower:
+        # Agent logs query
+        return [{
+            "id": "log-thermo-1",
+            "roadmap_id": "rm-thermo-1",
+            "task_type": "ui",
+            "output": "// Thermo Code Generated",
+            "status": "success",
+            "model_used": "kimi",
+            "token_count": 50,
+            "timestamp": datetime.now().isoformat()
+        }]
+    
+    elif "select" in query_lower and "kv" in query_lower:
+        # KV query
+        key = binds[0] if binds else "default_key"
+        return [{"key": key, "value": MOCK_STORE["kv"].get(key, "false")}]
+    
+    elif "insert" in query_lower:
+        # Insert query
+        return [{"id": f"uuid-{uuid.uuid4()}", "affected_rows": 1}]
+    
+    elif "update" in query_lower:
+        # Update query
+        return [{"affected_rows": 1}]
+    
+    elif "delete" in query_lower:
+        # Delete query
+        return [{"affected_rows": 1}]
+    
     else:
-        return [{'id': 'mock-result', 'data': 'thermo_mock'}]
+        # Generic query response
+        return [{
+            "id": "uuid-thermo-mock",
+            "json_graph": '{"nodes":[{"id":"n1","label":"Thermo Start","status":"gray"}],"edges":[{"from":"n1","to":"n2"}]}',
+            "thrive_score": 0.45
+        }]
 
-class MockPinecone:
+def mock_pinecone_upsert(id: str, vector: List[float], metadata: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Mock implementation of Pinecone vector database
-    From ai-core/src/rag.py - Ref: CLAUDE.md Terminal 3: Phase 3 - MockPinecone RAG
+    Mock Pinecone upsert function
+    
+    Args:
+        id: Vector ID
+        vector: Embedding vector
+        metadata: Vector metadata
+    
+    Returns:
+        Mock upsert response
     """
+    print(f"🔥 THERMONUCLEAR MOCK PINECONE UPSERT: {id}")
+    
+    MOCK_STORE["pinecone"][id] = {
+        "vector": vector,
+        "metadata": metadata,
+        "timestamp": time.time()
+    }
+    
+    return {
+        "success": True,
+        "id": id,
+        "upserted_count": 1
+    }
 
-    def __init__(self):
-        """Initialize with 50 dummy snippets as specified"""
-        self.index = {}
-
-        # Generate 50 dummy snippets with alternating categories
-        self.dummy_snippets = []
-        for i in range(50):
-            snippet = {
-                'id': f'sn-{i}',
-                'vector': [0.1 * i] * 768,  # 768-dimensional vector (standard embedding size)
-                'meta': {
-                    'category': 'ui' if i % 2 else 'code',
-                    'snippet': f'console.log("Thermo Snippet {i}");'
-                }
+def mock_pinecone_query(query_vector: List[float], top_k: int = 3, threshold: float = 0.8) -> List[Dict[str, Any]]:
+    """
+    Mock Pinecone query function
+    
+    Args:
+        query_vector: Query embedding vector
+        top_k: Number of results to return
+        threshold: Similarity threshold
+    
+    Returns:
+        Mock query results
+    """
+    print(f"🔥 THERMONUCLEAR MOCK PINECONE QUERY: top_k={top_k}, threshold={threshold}")
+    
+    # Generate mock results
+    results = []
+    for i in range(min(top_k, 3)):
+        results.append({
+            "id": f"sn-thermo-{i+1}",
+            "score": 0.9 - (i * 0.1),
+            "metadata": {
+                "category": "ui" if i % 2 == 0 else "code",
+                "snippet": f'console.log("Thermo Snippet {i+1}");'
             }
-            self.dummy_snippets.append(snippet)
-
-        # Upsert all dummy snippets
-        for snippet in self.dummy_snippets:
-            self.upsert(snippet['id'], snippet['vector'], snippet['meta'])
-
-    def upsert(self, snippet_id, vector, metadata):
-        """
-        Insert or update a vector in the index
-
-        Args:
-            snippet_id: Unique identifier for the vector
-            vector: 768-dimensional numpy array
-            metadata: Dictionary with snippet information
-        """
-        print(f"Thermonuclear Upsert {snippet_id}")
-        self.index[snippet_id] = {
-            'vector': vector,
-            'meta': metadata
-        }
-
-    def query(self, query_vec, top_k=3, threshold=0.8):
-        """
-        Query for similar vectors using cosine similarity
-
-        Args:
-            query_vec: Query vector (768-dimensional)
-            top_k: Number of top results to return
-            threshold: Minimum similarity score threshold
-
-        Returns:
-            list: Top matching snippets sorted by score
-        """
-        matches = []
-
-        for k, v in self.index.items():
-            # Calculate cosine similarity
-            dot_product = np.dot(query_vec, v['vector'])
-            norm_query = np.linalg.norm(query_vec)
-            norm_vector = np.linalg.norm(v['vector'])
-
-            # Avoid division by zero
-            if norm_query > 0 and norm_vector > 0:
-                score = dot_product / (norm_query * norm_vector)
-            else:
-                score = 0
-
-            if score > threshold:
-                matches.append({
-                    'id': k,
-                    'score': score,
-                    'snippet': v['meta']['snippet']
-                })
-
-        # Sort by score descending and return top K
-        sorted_matches = sorted(matches, key=lambda x: x['score'], reverse=True)
-        return sorted_matches[:top_k]
-
-
-class MockKV:
-    """
-    Mock Key-Value cache with TTL (Time To Live) support
-    From ai-core/src/cache.py - Ref: CLAUDE.md Terminal 3: Phase 3 - MockKV Cache
-    """
-
-    def __init__(self):
-        """Initialize empty cache store"""
-        self.store = {}
-
-    def get(self, key):
-        """
-        Get value from cache if not expired
-        
-        Args:
-            key: Cache key to retrieve
-            
-        Returns:
-            Any: Cached data if valid, None if expired or not found
-        """
-        print(f"Thermonuclear Get {key}")
-
-        val = self.store.get(key)
-
-        if val and val['expire'] > time.time():
-            return val['data']
-
-        return None
-
-    def put(self, key, data, ttl=3600):
-        """
-        Put value in cache with TTL
-        
-        Args:
-            key: Cache key
-            data: Data to cache
-            ttl: Time to live in seconds (default 1 hour)
-        """
-        print(f"Thermonuclear Put {key} TTL {ttl}")
-
-        self.store[key] = {
-            'data': data,
-            'expire': time.time() + ttl
-        }
-
-
-class MockPromptRouter:
-    """
-    Mock prompt router for model selection
-    From ai-core/src/router.py - Routes tasks to appropriate models based on type, complexity, and cost
-    """
-
-    def __init__(self):
-        self.models = {
-            'kimi': 0.001,      # Cost per 1K tokens
-            'claude': 0.015,
-            'uxpilot': 0.02
-        }
-        print(f"Thermonuclear PromptRouter initialized with models: {list(self.models.keys())}")
-
-    def estimate_cost(self, prompt_length: int, model: str) -> float:
-        """Estimate cost for prompt with given model"""
-        return prompt_length * self.models[model] / 1000
-
-    def route_task(self, task_type: str, complexity: str, prompt_length: int) -> str:
-        """Route task to appropriate model based on type and complexity with cost checking"""
-        print(f"Thermonuclear AI Router: Evaluating task {task_type}/{complexity} with prompt length {prompt_length}")
-        
-        # Calculate costs for all models
-        cost_kimi = self.estimate_cost(prompt_length, 'kimi')
-        cost_claude = self.estimate_cost(prompt_length, 'claude')
-        cost_uxpilot = self.estimate_cost(prompt_length, 'uxpilot')
-        
-        print(f"Thermonuclear Routing: Task {task_type}/{complexity} - Costs: kimi=${cost_kimi:.4f}, claude=${cost_claude:.4f}, uxpilot=${cost_uxpilot:.4f}")
-        
-        # Cost check integration - ensure task doesn't exceed budget
-        try:
-            current_session_cost = 0.02  # Mock session tracking
-            selected_cost = cost_kimi if task_type == 'code' and complexity == 'low' else (cost_uxpilot if task_type == 'ui' else cost_claude)
-            
-            # Use the checkBudget function from this same file
-            total = current_session_cost + selected_cost
-            if total > 0.10:
-                raise Exception(f"BUDGET-429: Task cost ${total:.4f} exceeds limit $0.10")
-            
-            print(f"Thermonuclear Cost Check: Task cost ${selected_cost:.4f} within budget")
-        except Exception as e:
-            print(f"Thermonuclear Cost Check: Budget exceeded - {e}")
-            # Fallback to cheapest option
-            return 'kimi'
-
-        # Route based on task type and cost efficiency
-        if task_type == 'code' and complexity == 'low' and cost_kimi < 0.05:
-            selected_model = 'kimi'
-        elif task_type == 'ui':
-            selected_model = 'uxpilot'
-        else:
-            selected_model = 'claude'
-            
-        print(f"Thermonuclear Router: Selected model '{selected_model}' for {task_type} task")
-        return selected_model
-
-    def fallback(self, primary: str) -> str:
-        """Get fallback model for primary choice"""
-        if primary == 'kimi':
-            return 'claude'
-        return 'claude'
-
-
-# Legacy aliases for backward compatibility
-MockPineconeIndex = MockPinecone
-MockKVStore = MockKV
-
-# ======================
-# AUTOMATION MOCKS
-# ======================
-
-def mock_workflow_execution(workflow_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Mock n8n workflow execution"""
-    print(f"THERMONUCLEAR MOCK WORKFLOW: {workflow_id} - Payload: {payload}")
+        })
     
-    return {
-        'success': True,
-        'execution_id': f'exec-thermo-{uuid.uuid4().hex[:8]}',
-        'status': 'completed',
-        'outputs': ['task_completed', 'notification_sent', 'metrics_updated'],
-        'duration_ms': 2500
+    return results
+
+def mock_kv_get(key: str) -> Optional[Any]:
+    """
+    Mock KV get function
+    
+    Args:
+        key: KV key
+    
+    Returns:
+        KV value or None
+    """
+    print(f"🔥 THERMONUCLEAR MOCK KV GET: {key}")
+    return MOCK_STORE["kv"].get(key)
+
+def mock_kv_put(key: str, value: Any, ttl: int = 3600) -> bool:
+    """
+    Mock KV put function
+    
+    Args:
+        key: KV key
+        value: KV value
+        ttl: Time to live in seconds
+    
+    Returns:
+        Success status
+    """
+    print(f"🔥 THERMONUCLEAR MOCK KV PUT: {key} TTL {ttl}")
+    
+    MOCK_STORE["kv"][key] = {
+        "value": value,
+        "expire": time.time() + ttl
     }
-
-def mock_deploy_trigger(code: str, target: str = 'vercel') -> Dict[str, Any]:
-    """Mock deployment trigger"""
-    print(f"THERMONUCLEAR MOCK DEPLOY: {target} - Code length: {len(code)}")
-    
-    return {
-        'success': True,
-        'deployment_id': f'deploy-thermo-{uuid.uuid4().hex[:8]}',
-        'url': f'https://proto-thermo-{uuid.uuid4().hex[:6]}.vercel.app',
-        'status': 'ready'
-    }
-
-# ======================
-# SECURITY MOCKS
-# ======================
-
-def mock_jwt_validation(token: str) -> Dict[str, Any]:
-    """Mock JWT token validation"""
-    print(f"THERMONUCLEAR MOCK JWT: Validating token")
-    
-    if token and 'mock' in token:
-        return {
-            'valid': True,
-            'payload': {
-                'id': 'uuid-thermo-1',
-                'role': 'vibe_coder',
-                'email': 'test@proto.com',
-                'exp': int(time.time()) + 3600  # 1 hour from now
-            }
-        }
-    return {'valid': False}
-
-class MockVault:
-    """Mock vault for secret management"""
-    
-    def __init__(self):
-        self.store = {
-            'claude_key': 'sk-ant-mock_claude_thermo',
-            'kimi_key': 'mock_kimi_nuclear',
-            'uxpilot_key': 'mock_ux_thermo',
-            'jwt_secret': 'mock_jwt_secret_thermonuclear'
-        }
-        self.rotated = time.time()
-    
-    def get(self, key: str) -> Optional[str]:
-        """Get secret from mock vault"""
-        print(f"Thermonuclear Get {key}")
-        return self.store.get(key)
-    
-    def put(self, key: str, value: str):
-        """Put secret into mock vault"""
-        print(f"Thermonuclear Put {key}")
-        self.store[key] = value
-        self.rotated = time.time()
-    
-    def rotate(self):
-        """Rotate all keys in mock vault"""
-        print("Thermonuclear Rotate Keys")
-        for key in self.store:
-            self.store[key] = f"rotated_{self.store[key]}_{int(time.time())}"
-        self.rotated = time.time()
-
-# ======================
-# UTILITY FUNCTIONS
-# ======================
-
-def calculate_thrive_score(logs: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Calculate Thrive Score from agent logs
-    Ref: CLAUDE.md Global Dummy Data & Thrive Score Formula
-    """
-    if not logs:
-        return {'score': 0.0, 'status': 'gray'}
-    
-    total = len(logs)
-    success_count = len([l for l in logs if l.get('status') == 'success'])
-    ui_count = len([l for l in logs if l.get('type') == 'ui'])
-    fail_count = len([l for l in logs if l.get('status') == 'fail'])
-    
-    completion = success_count / total * 0.6
-    ui_polish = ui_count / total * 0.3
-    risk = 1 - (fail_count / total) * 0.1
-    
-    score = completion + ui_polish + risk
-    status = 'neon' if score > 0.5 else 'gray'
-    
-    print(f"Thermonuclear Thrive Score: {score:.2f} - Status: {status}")
-    
-    return {
-        'score': round(score, 2),
-        'status': status,
-        'breakdown': {
-            'completion': completion,
-            'ui_polish': ui_polish,
-            'risk': risk
-        }
-    }
-
-def check_budget(current_cost: float, additional_cost: float, limit: float = 0.10) -> bool:
-    """Check if task cost is within budget"""
-    total = current_cost + additional_cost
-    print(f"Thermonuclear Budget: {total:.4f}")
-    
-    if total > limit:
-        raise Exception(f'BUDGET-429: Task cost ${total:.4f} exceeds limit ${limit}')
     
     return True
 
-def mock_compliance_delete(user_id: str, soft: bool = True) -> Dict[str, Any]:
-    """Mock GDPR compliant user deletion"""
+def mock_validate_jwt(token: str) -> Optional[Dict[str, Any]]:
+    """
+    Mock JWT validation function
+    
+    Args:
+        token: JWT token
+    
+    Returns:
+        Decoded payload or None
+    """
+    print(f"🔥 THERMONUCLEAR MOCK JWT VALIDATE: {token[:20]}...")
+    
+    if token and "mock" in token.lower():
+        return {
+            "id": "uuid-thermo-1",
+            "role": "vibe_coder",
+            "email": "test@proto.com",
+            "exp": time.time() + 3600
+        }
+    
+    return None
+
+def mock_check_budget(current: float, additional: float) -> float:
+    """
+    Mock budget check function
+    
+    Args:
+        current: Current cost
+        additional: Additional cost to add
+    
+    Returns:
+        Total cost
+    
+    Raises:
+        ValueError: If budget exceeded
+    """
+    total = current + additional
+    budget_limit = 0.10  # $0.10 per task
+    
+    print(f"💰 THERMONUCLEAR BUDGET CHECK: ${total:.3f} / ${budget_limit:.2f}")
+    
+    if total > budget_limit:
+        raise ValueError(f"BUDGET-429: Task exceeded budget limit ${budget_limit:.2f}")
+    
+    return total
+
+def mock_log_metric(name: str, value: float, tags: Dict[str, str] = None) -> None:
+    """
+    Mock metric logging function
+    
+    Args:
+        name: Metric name
+        value: Metric value
+        tags: Metric tags
+    """
+    print(f"📊 THERMONUCLEAR METRIC: {name}={value} {tags or ''}")
+
+def mock_log_error(error: Exception, context: Dict[str, Any] = None) -> None:
+    """
+    Mock error logging function
+    
+    Args:
+        error: Exception to log
+        context: Error context
+    """
+    print(f"❌ THERMONUCLEAR ERROR: {type(error).__name__}: {str(error)} {context or ''}")
+
+def mock_delete_user(user_id: str, soft: bool = True) -> Dict[str, Any]:
+    """
+    Mock user deletion function
+    
+    Args:
+        user_id: User ID to delete
+        soft: Whether to soft delete
+    
+    Returns:
+        Deletion result
+    """
+    print(f"🗑️ THERMONUCLEAR DELETE USER: {user_id} (soft={soft})")
+    
     if soft:
-        print(f"Thermonuclear Soft Delete {user_id} - Set deleted_at")
-        action = 'soft_delete'
+        print(f"🔥 Thermonuclear Soft Delete {user_id} - Set deleted_at")
     else:
-        print(f"Thermonuclear Hard Purge {user_id}")
-        action = 'hard_purge'
+        print(f"🔥 Thermonuclear Hard Purge {user_id}")
     
     return {
-        'success': True,
-        'user_id': user_id,
-        'action': action,
-        'timestamp': datetime.now(timezone.utc).isoformat()
+        "success": True,
+        "user_id": user_id,
+        "deletion_type": "soft" if soft else "hard",
+        "timestamp": time.time()
     }
 
-def scan_pii(data: str) -> str:
-    """Scan text for PII data"""
-    if 'email' in data.lower() or '@' in data:
-        return 'PII Detected - Redact'
-    return 'Safe'
+def mock_scan_pii(data: str) -> str:
+    """
+    Mock PII scanning function
+    
+    Args:
+        data: Data to scan for PII
+    
+    Returns:
+        Scan result message
+    """
+    print(f"🔍 THERMONUCLEAR PII SCAN: {data[:50]}...")
+    
+    if "email" in data.lower() or "@" in data:
+        return "PII Detected - Redact"
+    elif "password" in data.lower():
+        return "PII Detected - Encrypt"
+    else:
+        return "Safe"
 
-# ======================
-# DUMMY DATA CONSTANTS (From ai-core/mocks.py)
-# ======================
+def mock_slack_notification(channel: str, message: str, severity: str = "info") -> bool:
+    """
+    Mock Slack notification function
+    
+    Args:
+        channel: Slack channel
+        message: Message to send
+        severity: Message severity
+    
+    Returns:
+        Success status
+    """
+    print(f"💬 THERMONUCLEAR SLACK: #{channel} [{severity.upper()}] {message}")
+    
+    # Track notification
+    MOCK_STORE["api_calls"].append({
+        "endpoint": "slack/notify",
+        "payload": {"channel": channel, "message": message, "severity": severity},
+        "timestamp": time.time(),
+        "id": str(uuid.uuid4())
+    })
+    
+    return True
 
-DUMMY_USER = {
-    'id': 'uuid-thermo-1',
-    'role': 'vibe_coder',
-    'email': 'test@proto.com'
-}
+def mock_escalate_hitl(task: str, uncertainty: float, section: str) -> bool:
+    """
+    Mock HITL escalation function
+    
+    Args:
+        task: Task description
+        uncertainty: Uncertainty score (0-1)
+        section: CLAUDE.md section reference
+    
+    Returns:
+        Escalation success status
+    """
+    message = f"Agent ESCALATE: {task} - Uncertainty {uncertainty:.2f} - Ref: CLAUDE.md {section}"
+    
+    print(f"🚨 THERMONUCLEAR HITL ESCALATE: {message}")
+    
+    return mock_slack_notification(
+        channel="hitl-thermo",
+        message=message,
+        severity="critical"
+    )
 
-DUMMY_ROADMAP = {
-    'id': 'rm-thermo-1',
-    'json_graph': '{"nodes":[{"id":"n1","label":"Start","status":"gray","position":{"x":0,"y":0,"z":0}},{"id":"n2","label":"Middle","status":"gray","position":{"x":100,"y":100,"z":0}},{"id":"n3","label":"End","status":"gray","position":{"x":200,"y":200,"z":0}}],"edges":[{"from":"n1","to":"n2"},{"from":"n2","to":"n3"}]}',
-    'vibe_mode': True,
-    'thrive_score': 0.45
-}
+def mock_validate_thrive_score(logs: List[Dict[str, Any]]) -> float:
+    """
+    Mock thrive score validation function
+    
+    Args:
+        logs: Log entries to calculate score from
+    
+    Returns:
+        Thrive score (0-1)
+    """
+    if not logs:
+        return 0.0
+    
+    total = len(logs)
+    success_logs = len([log for log in logs if log.get('status') == 'success'])
+    ui_tasks = len([log for log in logs if log.get('type') == 'ui'])
+    fails = len([log for log in logs if log.get('status') == 'fail'])
+    
+    completion = (success_logs / total) * 0.6
+    ui_polish = (ui_tasks / total) * 0.3
+    risk = (1 - (fails / total)) * 0.1
+    
+    score = completion + ui_polish + risk
+    return min(1.0, max(0.0, score))
 
-DUMMY_SNIPPET = {
-    'id': 'sn-thermo-1',
-    'category': 'ui',
-    'code': 'console.log("Thermo UI Dummy");',
-    'ui_preview_url': 'mock_neon.png'
-}
+def mock_check_kill_switch() -> bool:
+    """
+    Mock kill switch check function
+    
+    Returns:
+        True if kill switch is activated
+    """
+    return MOCK_STORE["kill_switch"]
 
-DUMMY_AGENT_LOG = {
-    'roadmap_id': 'rm-thermo-1',
-    'task_type': 'ui',
-    'output': '// Thermo Code',
-    'status': 'success',
-    'model_used': 'kimi',
-    'token_count': 50
-}
+def mock_set_kill_switch(activated: bool) -> None:
+    """
+    Mock kill switch set function
+    
+    Args:
+        activated: Whether to activate kill switch
+    """
+    MOCK_STORE["kill_switch"] = activated
+    print(f"🔒 THERMONUCLEAR KILL SWITCH: {'ACTIVATED' if activated else 'DEACTIVATED'}")
 
-# ======================
-# VALIDATION & TESTING
-# ======================
+def mock_get_cost_summary() -> Dict[str, Any]:
+    """
+    Mock cost summary function
+    
+    Returns:
+        Cost summary
+    """
+    return {
+        "total_cost": MOCK_STORE["cost_tracker"]["total"],
+        "session_duration": time.time() - MOCK_STORE["cost_tracker"]["session"],
+        "api_calls": len(MOCK_STORE["api_calls"]),
+        "budget_limit": 0.10,
+        "budget_remaining": max(0, 0.10 - MOCK_STORE["cost_tracker"]["total"])
+    }
 
-def validate_python_mocks() -> bool:
-    """Validate all Python mocks are working correctly"""
-    try:
-        print("THERMONUCLEAR: Validating unified Python mocks...")
-        
-        # Test API call mock
-        api_result = mock_api_call('https://api.claude.ai/test', {'prompt': 'test'})
-        if not api_result['success']:
-            raise Exception('API mock failed')
-        
-        # Test DB query mock
-        db_result = mock_db_query('SELECT * FROM roadmaps')
-        if not db_result:
-            raise Exception('DB mock failed')
-        
-        # Test Pinecone mock
-        pinecone = MockPinecone()
-        matches = pinecone.query([0.5] * 768)
-        if not isinstance(matches, list):
-            raise Exception('Pinecone mock failed')
-        
-        # Test KV store mock
-        kv = MockKV()
-        kv.put('test', 'value')
-        if kv.get('test') != 'value':
-            raise Exception('KV mock failed')
-        
-        # Test Thrive Score
-        thrive_result = calculate_thrive_score([
-            {'status': 'success', 'type': 'ui'},
-            {'status': 'success', 'type': 'api'}
-        ])
-        if thrive_result['score'] <= 0:
-            raise Exception('Thrive Score mock failed')
-        
-        print("✅ THERMONUCLEAR: All unified Python mocks validated successfully")
-        return True
-        
-    except Exception as error:
-        print(f"❌ THERMONUCLEAR PYTHON MOCK VALIDATION FAILED: {error}")
-        return False
+def mock_reset_mocks() -> None:
+    """
+    Reset all mock data
+    """
+    global MOCK_STORE
+    MOCK_STORE = {
+        "kv": {},
+        "d1": {},
+        "pinecone": {},
+        "api_calls": [],
+        "cost_tracker": {"total": 0.0, "session": time.time()},
+        "kill_switch": False
+    }
+    print("🔄 THERMONUCLEAR MOCKS RESET")
 
-# Initialize on import
-print("🚀 THERMONUCLEAR UNIFIED MOCKS: Python complete mock library loaded - All phases consolidated")
-
-# Export commonly used instances
-mock_pinecone = MockPinecone()
-mock_kv = MockKV()
-mock_router = MockPromptRouter()
-mock_vault = MockVault()
+# Export all mock functions
+__all__ = [
+    "mock_api_call",
+    "mock_db_query", 
+    "mock_pinecone_upsert",
+    "mock_pinecone_query",
+    "mock_kv_get",
+    "mock_kv_put",
+    "mock_validate_jwt",
+    "mock_check_budget",
+    "mock_log_metric",
+    "mock_log_error",
+    "mock_delete_user",
+    "mock_scan_pii",
+    "mock_slack_notification",
+    "mock_escalate_hitl",
+    "mock_validate_thrive_score",
+    "mock_check_kill_switch",
+    "mock_set_kill_switch",
+    "mock_get_cost_summary",
+    "mock_reset_mocks"
+]

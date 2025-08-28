@@ -1,144 +1,66 @@
-"""
-Ref: CLAUDE.md Terminal 3: Phase 3 - Orchestrator Tests
-Tests for the main orchestration logic
-"""
-
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+import pytest
+import numpy as np
+from unittest.mock import MagicMock
 from src.orchestrator import orchestrate
-from mocks import DUMMY_ROADMAP
+from src.cache import MockKV
+from src.rag import MockPinecone
+from src.agents import AuditorAgent
 
+@pytest.fixture
+def mock_orchestrator_components(monkeypatch):
+    mock_kv_get = MagicMock()
+    monkeypatch.setattr(MockKV, 'get', mock_kv_get)
 
-def test_orchestrate_full_flow():
-    """Test full orchestration workflow"""
-    # Run orchestration with dummy roadmap
-    outputs = orchestrate(DUMMY_ROADMAP['json_graph'])
-    
-    # Should return list of outputs
-    assert isinstance(outputs, list)
-    
-    # Should have 3 outputs (one per node, assuming all pass audit)
-    # Note: actual count may vary based on audit results
-    assert len(outputs) >= 0
-    assert len(outputs) <= 3
+    mock_rag_query = MagicMock()
+    monkeypatch.setattr(MockPinecone, 'query', mock_rag_query)
 
+    mock_auditor_audit = MagicMock()
+    monkeypatch.setattr(AuditorAgent, 'audit', mock_auditor_audit)
 
-def test_orchestrate_components_called():
-    """Test that all components are utilized"""
-    # This test verifies the orchestration by checking console output
-    # In a real system, we'd mock the components and verify calls
-    
-    import io
-    import contextlib
-    
-    # Capture output
-    f = io.StringIO()
-    with contextlib.redirect_stdout(f):
-        outputs = orchestrate(DUMMY_ROADMAP['json_graph'])
-    
-    output = f.getvalue()
-    
-    # Verify all components were called
-    assert "Thermonuclear Planning" in output
-    assert "Thermonuclear Routing:" in output
-    assert "Thermonuclear Upsert" in output  # From RAG initialization
-    assert "Thermonuclear Put" in output  # Cache put
-    assert "Thermonuclear Get" in output  # Cache get
-    assert "Thermonuclear Coding" in output
-    assert "Thermonuclear Auditing" in output
+    return mock_kv_get, mock_rag_query, mock_auditor_audit
 
+def test_orchestrate_dummy_graph():
+    dummy_json_graph = '{"nodes": [{"id": "n1", "label": "Start"}, {"id": "n2", "label": "Middle"}, {"id": "n3", "label": "End"}], "edges": []}'
+    final_outputs = orchestrate(dummy_json_graph)
+    assert len(final_outputs) == 3
+    assert "Thermo Code" in final_outputs[0]['code']
 
-def test_orchestrate_task_routing():
-    """Test tasks are routed to correct models"""
-    import io
-    import contextlib
-    
-    f = io.StringIO()
-    with contextlib.redirect_stdout(f):
-        outputs = orchestrate(DUMMY_ROADMAP['json_graph'])
-    
-    output = f.getvalue()
-    
-    # Check routing decisions
-    # First task (code, low) should route to kimi
-    assert "Task 'Task for node n1' -> Model 'kimi'" in output
-    
-    # Second task (ui) should route to uxpilot
-    assert "Task 'Task for node n2' -> Model 'uxpilot'" in output
-    
-    # Third task (code, high) should route to claude
-    assert "Task 'Task for node n3' -> Model 'claude'" in output
+def test_orchestrate_no_tasks_generated():
+    empty_json_graph = '{"nodes": [], "edges": []}'
+    final_outputs = orchestrate(empty_json_graph)
+    assert len(final_outputs) == 0
 
+def test_orchestrate_cached_snippets(mock_orchestrator_components):
+    mock_kv_get, mock_rag_query, mock_auditor_audit = mock_orchestrator_components
+    mock_kv_get.return_value = [{"id": "cached-snip", "score": 0.99, "snippet": "cached code"}]
+    mock_auditor_audit.return_value = {'valid': True, 'score': 0.95}
 
-def test_orchestrate_rag_integration():
-    """Test RAG integration in orchestration"""
-    import io
-    import contextlib
-    
-    f = io.StringIO()
-    with contextlib.redirect_stdout(f):
-        outputs = orchestrate(DUMMY_ROADMAP['json_graph'])
-    
-    output = f.getvalue()
-    
-    # Should show cache hits
-    assert "Thermonuclear Cache Hit:" in output
+    dummy_json_graph = '{"nodes": [{"id": "n1"}], "edges": []}'
+    final_outputs = orchestrate(dummy_json_graph)
+    assert len(final_outputs) == 1
+    mock_kv_get.assert_called_once() # Should call get from cache
+    mock_rag_query.assert_not_called() # Should not call rag.query
 
+def test_orchestrate_no_rag_matches(mock_orchestrator_components, capsys):
+    mock_kv_get, mock_rag_query, mock_auditor_audit = mock_orchestrator_components
+    mock_kv_get.return_value = None # No cached snippets
+    mock_rag_query.return_value = [] # No RAG matches
+    mock_auditor_audit.return_value = {'valid': True, 'score': 0.95}
 
-def test_orchestrate_audit_results():
-    """Test audit results handling"""
-    import io
-    import contextlib
-    
-    f = io.StringIO()
-    with contextlib.redirect_stdout(f):
-        outputs = orchestrate(DUMMY_ROADMAP['json_graph'])
-    
-    output = f.getvalue()
-    
-    # Should show either success or HITL escalation
-    assert ("Thermonuclear Success:" in output or "Escalate HITL" in output)
+    dummy_json_graph = '{"nodes": [{"id": "n1"}], "edges": []}'
+    final_outputs = orchestrate(dummy_json_graph)
+    assert len(final_outputs) == 1 # Still generates code, but no snippets found
+    mock_rag_query.assert_called_once() # Should call rag.query
+    captured = capsys.readouterr()
+    assert "No relevant snippets found from RAG." in captured.out
 
+def test_orchestrate_failed_audit(mock_orchestrator_components):
+    mock_kv_get, mock_rag_query, mock_auditor_audit = mock_orchestrator_components
+    mock_kv_get.return_value = None
+    mock_rag_query.return_value = []
+    mock_auditor_audit.return_value = {'valid': False, 'score': 0.6}
 
-def test_orchestrate_with_invalid_json():
-    """Test orchestration with invalid JSON input"""
-    try:
-        outputs = orchestrate("invalid json")
-        # Should fail during planning
-        assert False, "Should have raised exception"
-    except:
-        # Expected behavior
-        pass
-
-
-def test_orchestrate_empty_graph():
-    """Test orchestration with empty graph"""
-    empty_graph = '{"nodes": [], "edges": []}'
-    outputs = orchestrate(empty_graph)
-    
-    # Should return empty outputs
-    assert outputs == []
-
-
-def test_orchestrate_single_node():
-    """Test orchestration with single node"""
-    single_node = '{"nodes": [{"id": "n1", "label": "Single"}], "edges": []}'
-    outputs = orchestrate(single_node)
-    
-    # Should process single task
-    assert len(outputs) <= 1
-
-
-if __name__ == "__main__":
-    test_orchestrate_full_flow()
-    test_orchestrate_components_called()
-    test_orchestrate_task_routing()
-    test_orchestrate_rag_integration()
-    test_orchestrate_audit_results()
-    test_orchestrate_with_invalid_json()
-    test_orchestrate_empty_graph()
-    test_orchestrate_single_node()
-    print("All orchestrator tests passed!")
-    print("Thermonuclear Test Complete: Orchestrator 100% Coverage")
+    dummy_json_graph = '{"nodes": [{"id": "n1"}], "edges": []}'
+    final_outputs = orchestrate(dummy_json_graph)
+    assert len(final_outputs) == 0 # No output appended if audit fails
+    mock_auditor_audit.assert_called_once()

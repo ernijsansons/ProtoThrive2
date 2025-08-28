@@ -11,7 +11,7 @@ export interface MockFetchResponse {
 }
 
 export interface MockDbResult {
-  results: any[];
+  results: unknown[];
   success: boolean;
   meta?: {
     rows_affected?: number;
@@ -21,7 +21,7 @@ export interface MockDbResult {
 
 export interface MockApiResponse {
   success: boolean;
-  data: any;
+  data: unknown;
   id?: string;
   message?: string;
 }
@@ -45,7 +45,7 @@ export const mockFetch = (url: string, opts: RequestInit = {}): Promise<MockFetc
   console.log(`THERMONUCLEAR MOCK FETCH: ${url} - Opts: ${JSON.stringify(opts)}`);
   
   // Simulate different responses based on URL patterns
-  let mockData: any = { success: true, data: 'thermo_mock', id: 'uuid-thermo-mock' };
+  let mockData: unknown = { success: true, data: 'thermo_mock', id: 'uuid-thermo-mock' };
   
   if (url.includes('claude')) {
     mockData = { model: 'claude', response: '// Thermonuclear Claude Response', tokens: 150 };
@@ -72,7 +72,7 @@ export const mockFetch = (url: string, opts: RequestInit = {}): Promise<MockFetc
  * Mock database query function for D1 operations
  * Ref: CLAUDE.md Global Configs & Mocks - Backend Phase
  */
-export const mockDbQuery = (query: string, binds?: any[]): MockDbResult => {
+export const mockDbQuery = (query: string, binds?: unknown[]): MockDbResult => {
   console.log(`THERMONUCLEAR MOCK DB: ${query} - Binds: ${JSON.stringify(binds)}`);
   
   // Return different results based on query type
@@ -156,7 +156,7 @@ export const mockDbQuery = (query: string, binds?: any[]): MockDbResult => {
  * Check kill-switch status from KV
  * Ref: CLAUDE.md Usage Guidelines - Kill-Switch
  */
-export const checkKillSwitch = async (_kv: any): Promise<boolean> => {
+export const checkKillSwitch = async (_kv: unknown): Promise<boolean> => {
   console.log('THERMONUCLEAR: Checking kill-switch - proto_paused = false');
   return false; // Always operational in mock mode
 };
@@ -312,7 +312,7 @@ export const mockLocalStorage = {
  * Mock n8n workflow execution
  * Ref: CLAUDE.md Phase 4 - Automation Mocks
  */
-export const mockWorkflowExecution = (workflowId: string, data: any): Promise<MockApiResponse> => {
+export const mockWorkflowExecution = (workflowId: string, data: unknown): Promise<MockApiResponse> => {
   console.log(`THERMONUCLEAR MOCK WORKFLOW: ${workflowId} - Data: ${JSON.stringify(data)}`);
   
   return Promise.resolve({
@@ -352,7 +352,7 @@ export const mockPipelineExecution = (pipeline: string): Promise<MockApiResponse
  * Calculate Thrive Score
  * Ref: CLAUDE.md Global Dummy Data & Thrive Score Formula
  */
-export const calculateThriveScore = (logs: any[]): { score: number; status: 'gray' | 'neon' } => {
+export const calculateThriveScore = (logs: unknown[]): { score: number; status: 'gray' | 'neon' } => {
   if (!logs || logs.length === 0) return { score: 0, status: 'gray' };
   
   const completion = logs.filter(l => l.status === 'success').length / logs.length * 0.6;
@@ -423,7 +423,7 @@ export const validateMocks = async (): Promise<boolean> => {
     console.log('✅ THERMONUCLEAR: All unified mocks validated successfully');
     return true;
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ THERMONUCLEAR MOCK VALIDATION FAILED:', error.message);
     return false;
   }

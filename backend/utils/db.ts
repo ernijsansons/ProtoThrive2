@@ -90,7 +90,7 @@ export async function queryUserRoadmaps(userId: string, status: string | undefin
     
     query += ' ORDER BY updated_at DESC';
     
-    const stmt = env.DB.prepare(query).bind(...binds);
+    const stmt = binds.length > 0 ? env.DB.prepare(query).bind(...binds) : env.DB.prepare(query);
     const { results } = await stmt.all<Roadmap>();
     
     return results.map(row => ({
@@ -178,7 +178,7 @@ export async function updateRoadmapScore(
 export async function querySnippets(category: string | undefined, env: { DB: D1Database }): Promise<Snippet[]> {
   try {
     let query = 'SELECT * FROM snippets';
-    const binds: any[] = [];
+    const binds: unknown[] = [];
     
     if (category) {
       query += ' WHERE category = ?';

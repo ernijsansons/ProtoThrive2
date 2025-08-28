@@ -1,5 +1,5 @@
 // Ref: CLAUDE.md - Real API Fetch for Production
-export const mockFetch = async (url: string, opts: any = {}) => {
+export const mockFetch = async (url: string, opts: unknown = {}) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://backend-thermo.ernijs-ansons.workers.dev';
   const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
   
@@ -26,7 +26,7 @@ export const mockFetch = async (url: string, opts: any = {}) => {
   }
 };
 
-export const mockDbQuery = (query: string, binds: any) => {
+export const mockDbQuery = (query: string, binds: unknown) => {
   console.log(`THERMONUCLEAR MOCK DB: ${query} - Binds: ${binds}`);
   return { 
     results: [{

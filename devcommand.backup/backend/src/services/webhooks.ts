@@ -165,7 +165,7 @@ export function createWebhooksRouter() {
 }
 
 // Handler functions
-async function handleGitHubPush(c: Context<{ Bindings: Env }>, payload: any) {
+async function handleGitHubPush(c: Context<{ Bindings: Env }>, payload: unknown) {
   // Extract metadata from the push event
   const metadata = {
     repository: payload.repository?.full_name,
@@ -184,7 +184,7 @@ async function handleGitHubPush(c: Context<{ Bindings: Env }>, payload: any) {
   // TODO: Queue agent task for processing
 }
 
-async function handleGitHubPullRequest(c: Context<{ Bindings: Env }>, payload: any) {
+async function handleGitHubPullRequest(c: Context<{ Bindings: Env }>, payload: unknown) {
   const metadata = {
     repository: payload.repository?.full_name,
     action: payload.action,
@@ -198,7 +198,7 @@ async function handleGitHubPullRequest(c: Context<{ Bindings: Env }>, payload: a
   // TODO: Update roadmap status based on PR events
 }
 
-async function handleStripeCheckoutCompleted(c: Context<{ Bindings: Env }>, event: any) {
+async function handleStripeCheckoutCompleted(c: Context<{ Bindings: Env }>, event: unknown) {
   const session = event.data.object;
   const customerId = session.customer;
   const subscriptionId = session.subscription;
@@ -209,7 +209,7 @@ async function handleStripeCheckoutCompleted(c: Context<{ Bindings: Env }>, even
   console.log('Stripe checkout completed:', { customerId, subscriptionId });
 }
 
-async function handleStripeSubscriptionUpdated(c: Context<{ Bindings: Env }>, event: any) {
+async function handleStripeSubscriptionUpdated(c: Context<{ Bindings: Env }>, event: unknown) {
   const subscription = event.data.object;
   
   // Update subscription status
@@ -227,7 +227,7 @@ async function handleStripeSubscriptionUpdated(c: Context<{ Bindings: Env }>, ev
     .run();
 }
 
-async function handleStripeSubscriptionDeleted(c: Context<{ Bindings: Env }>, event: any) {
+async function handleStripeSubscriptionDeleted(c: Context<{ Bindings: Env }>, event: unknown) {
   const subscription = event.data.object;
   
   // Cancel subscription in database
@@ -240,7 +240,7 @@ async function handleStripeSubscriptionDeleted(c: Context<{ Bindings: Env }>, ev
     .run();
 }
 
-async function handleN8NWorkflow(c: Context<{ Bindings: Env }>, workflowId: string, data: any) {
+async function handleN8NWorkflow(c: Context<{ Bindings: Env }>, workflowId: string, data: unknown) {
   console.log('n8n workflow triggered:', { workflowId, data });
   
   // Process workflow results
@@ -250,7 +250,7 @@ async function handleN8NWorkflow(c: Context<{ Bindings: Env }>, workflowId: stri
   }
 }
 
-async function handleVercelDeployment(c: Context<{ Bindings: Env }>, payload: any) {
+async function handleVercelDeployment(c: Context<{ Bindings: Env }>, payload: unknown) {
   const deployment = payload.payload;
   
   console.log('Vercel deployment ready:', {

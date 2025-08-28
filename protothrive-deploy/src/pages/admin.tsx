@@ -11,6 +11,8 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('api-keys');
 
   useEffect(() => {
+  // TODO: Add dependencies
+  // TODO: Add dependencies
     // Check if user is super admin
     const checkAuth = () => {
       const adminToken = localStorage.getItem('adminToken');

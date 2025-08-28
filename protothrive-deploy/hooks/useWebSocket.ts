@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 interface WebSocketMessage {
   type: 'update' | 'cursor' | 'selection' | 'presence' | 'init' | 'sync' | 'error' | 'pong';
   userId?: string;
-  data?: any;
+  data?: unknown;
   timestamp?: number;
 }
 
@@ -16,11 +16,11 @@ interface Participant {
 
 interface UseWebSocketOptions {
   roadmapId: string;
-  onUpdate?: (data: any) => void;
+  onUpdate?: (data: unknown) => void;
   onCursor?: (data: { userId: string; x: number; y: number; userEmail: string }) => void;
   onSelection?: (data: { userId: string; nodeId: string; userEmail: string }) => void;
   onPresence?: (participants: Participant[]) => void;
-  onSync?: (updates: any[]) => void;
+  onSync?: (updates: unknown[]) => void;
   autoReconnect?: boolean;
   reconnectDelay?: number;
 }
@@ -193,7 +193,7 @@ export function useWebSocket({
     setParticipants([]);
   }, []);
 
-  const sendUpdate = useCallback((data: any) => {
+  const sendUpdate = useCallback((data: unknown) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
         type: 'update',

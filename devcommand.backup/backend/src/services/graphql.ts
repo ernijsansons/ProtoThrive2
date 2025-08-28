@@ -113,7 +113,7 @@ const schema = buildSchema(`
 // GraphQL resolvers
 const rootResolver = {
   // Query resolvers
-  me: async (args: any, context: any) => {
+  me: async (args: unknown, context: unknown) => {
     const userId = context.userId;
     const user = await context.env.DB.prepare(
       'SELECT * FROM users WHERE id = ? AND deleted_at IS NULL'
@@ -124,7 +124,7 @@ const rootResolver = {
     return user;
   },
 
-  roadmaps: async (args: any, context: any) => {
+  roadmaps: async (args: unknown, context: unknown) => {
     const userId = context.userId;
     const { results } = await context.env.DB.prepare(
       `SELECT * FROM roadmaps 
@@ -134,7 +134,7 @@ const rootResolver = {
       .bind(userId)
       .all();
 
-    return results.map((r: any) => ({
+    return results.map((r: unknown) => ({
       ...r,
       jsonGraph: JSON.parse(r.json_graph),
       userId: r.user_id,
@@ -145,7 +145,7 @@ const rootResolver = {
     }));
   },
 
-  roadmap: async (args: { id: string }, context: any) => {
+  roadmap: async (args: { id: string }, context: unknown) => {
     const userId = context.userId;
     const roadmap = await context.env.DB.prepare(
       `SELECT * FROM roadmaps 
@@ -169,7 +169,7 @@ const rootResolver = {
     };
   },
 
-  agentLogs: async (args: { roadmapId: string }, context: any) => {
+  agentLogs: async (args: { roadmapId: string }, context: unknown) => {
     const userId = context.userId;
     
     // Verify roadmap belongs to user
@@ -191,7 +191,7 @@ const rootResolver = {
       .bind(args.roadmapId)
       .all();
 
-    return results.map((log: any) => ({
+    return results.map((log: unknown) => ({
       ...log,
       roadmapId: log.roadmap_id,
       taskType: log.task_type,
@@ -200,7 +200,7 @@ const rootResolver = {
     }));
   },
 
-  insights: async (args: { roadmapId: string }, context: any) => {
+  insights: async (args: { roadmapId: string }, context: unknown) => {
     const userId = context.userId;
     
     // Verify roadmap belongs to user
@@ -222,7 +222,7 @@ const rootResolver = {
       .bind(args.roadmapId)
       .all();
 
-    return results.map((insight: any) => ({
+    return results.map((insight: unknown) => ({
       ...insight,
       roadmapId: insight.roadmap_id,
       createdAt: insight.created_at,
@@ -230,21 +230,21 @@ const rootResolver = {
   },
 
   // Mutation resolvers
-  createRoadmap: async (args: { vision: string; vibeMode?: boolean }, context: any) => {
+  createRoadmap: async (args: { vision: string; vibeMode?: boolean }, context: unknown) => {
     // Implementation would be similar to REST endpoint
     // For brevity, returning a placeholder
     throw new Error('Not implemented - use REST API');
   },
 
-  updateRoadmap: async (args: any, context: any) => {
+  updateRoadmap: async (args: unknown, context: unknown) => {
     throw new Error('Not implemented - use REST API');
   },
 
-  deleteRoadmap: async (args: { id: string }, context: any) => {
+  deleteRoadmap: async (args: { id: string }, context: unknown) => {
     throw new Error('Not implemented - use REST API');
   },
 
-  triggerAgent: async (args: { roadmapId: string; taskType: string }, context: any) => {
+  triggerAgent: async (args: { roadmapId: string; taskType: string }, context: unknown) => {
     throw new Error('Not implemented - use REST API');
   },
 };

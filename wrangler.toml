@@ -1,55 +1,46 @@
-# Ref: CLAUDE.md Terminal 1 Phase 1 - Workers Configuration
-# Thermonuclear Cloudflare Workers Configuration for ProtoThrive
-
-name = "backend-thermo"
-main = "src/index.ts"
-compatibility_date = "2024-08-23"
-compatibility_flags = ["nodejs_compat"]
+name = "protothrive-backend-python"
+main = "src/main.py"
+compatibility_date = "2024-08-26"
+compatibility_flags = ["python_workers"]
 
 # Account and route configuration
-account_id = "${CF_ACCOUNT_ID}"
+account_id = "d2897bdebfa128919bd89b265e6a712e" # Placeholder, replace with actual
 workers_dev = true
 
 # Environment variables
 [vars]
 ENVIRONMENT = "development"
-SERVICE_NAME = "protothrive-backend"
+SERVICE_NAME = "protothrive-backend-python"
 
 # D1 Database binding
 [[d1_databases]]
 binding = "DB"
-database_name = "protothrive_thermo"
-database_id = "${D1_ID}"
+database_name = "protothrive-db"
+database_id = "0b6970f4-c6ca-4245-aabf-98fa2d4f28a8" # Placeholder, replace with actual
 
 # KV Namespace binding
 [[kv_namespaces]]
 binding = "KV"
-id = "${KV_ID}"
-preview_id = "${KV_ID}"
+id = "ec3183e7b4e94442b3f99b4d2f4b083e" # Placeholder, replace with actual
+preview_id = "ec3183e7b4e94442b3f99b4d2f4b083e" # Placeholder, replace with actual
 
-# Build configuration
+# Build configuration for Python Worker
 [build]
-command = "npm run build"
+command = "pip install -r requirements.txt" # Or poetry install if using poetry
+python_requirements_file = "requirements.txt" # Or poetry.lock if using poetry
 
 # Development environment
 [env.development]
-name = "backend-thermo-dev"
+name = "protothrive-backend-python-dev"
 vars = { ENVIRONMENT = "development" }
 
 # Staging environment
 [env.staging]
-name = "backend-thermo-staging"
+name = "protothrive-backend-python-staging"
 vars = { ENVIRONMENT = "staging" }
 
 # Production environment
 [env.production]
-name = "backend-thermo-prod"
+name = "protothrive-backend-python-prod"
 vars = { ENVIRONMENT = "production" }
-route = "api.protothrive.com/*"
-
-# Limits and usage model
-[limits]
-cpu_ms = 50
-
-[usage_model]
-default = "bundled"
+route = "api.protothrive.com/*" # Placeholder, replace with actual

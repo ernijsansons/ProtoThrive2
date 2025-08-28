@@ -1,7 +1,7 @@
 // Ref: CLAUDE.md Terminal 1 Phase 1 - Main Hono Application
 // Thermonuclear Backend API for ProtoThrive
 
-import { Hono } from 'hono';
+import { Hono, Context, Next } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { createYoga, createSchema } from 'graphql-yoga';
@@ -27,6 +27,7 @@ import {
 } from '../utils/validation';
 import type { D1Database, KVNamespace } from '@cloudflare/workers-types';
 import { checkKillSwitch, checkBudget } from '../utils/mocks-helpers';
+import { runOrchestrator } from '../utils/pythonExecutor'; // Ensure this import is correct
 
 /**
  * Mermaid ERD for ProtoThrive Database
@@ -95,7 +96,7 @@ export interface Env {
 
 interface User {
   id: string;
-  role: 'vibe_coder' | 'engineer' | 'exec';
+  role: 'vibe_coder' | 'engineer' | 'exec' | 'super_admin';
 }
 
 // Create Hono app
@@ -109,7 +110,7 @@ app.use('*', logger());
  * JWT validation middleware with security integration
  * Ref: CLAUDE.md Terminal 1 - Auth middleware + Phase 5 Security
  */
-async function validateJwtMiddleware(c: any, next: () => Promise<void>) {
+async function validateJwtMiddleware(c: Context, next: Next) {
   const authHeader = c.req.header('Authorization');
   const token = authHeader?.replace('Bearer ', '');
   
@@ -142,7 +143,7 @@ async function validateJwtMiddleware(c: any, next: () => Promise<void>) {
  * Security budget check middleware
  * Ref: CLAUDE.md Phase 5 - Security Across All Phases
  */
-async function checkBudgetMiddleware(c: any, next: () => Promise<void>) {
+async function checkBudgetMiddleware(c: Context, next: Next) {
   try {
     console.log('Thermonuclear Security: Checking budget...');
     
@@ -176,7 +177,7 @@ app.use('/graphql', checkBudgetMiddleware); // Security across all phases
 /**
  * Health check endpoint
  */
-app.get('/health', (c) => {
+app.get('/health', (c: Context) => {
   console.log('Thermonuclear Health Check: OK');
   return c.json({ status: 'ok', service: 'protothrive-backend' });
 });
@@ -185,7 +186,7 @@ app.get('/health', (c) => {
  * Root endpoint
  * Ref: CLAUDE.md Terminal 1 - Backend Fix
  */
-app.get('/', async (c) => {
+app.get('/', async (c: Context) => {
   console.log('Thermonuclear Root Endpoint Hit');
   // Test D1 connection
   try {
@@ -196,7 +197,7 @@ app.get('/', async (c) => {
       service: 'protothrive-backend',
       endpoints: ['/health', '/api/roadmaps', '/api/snippets', '/graphql']
     });
-  } catch (e) {
+  } catch (e: any) {
     console.error('Thermonuclear DB Test Error:', e);
     return c.json({ 
       status: 'Thermonuclear Backend Up - Ready',
@@ -213,7 +214,7 @@ app.get('/', async (c) => {
  */
 
 // Get roadmap by ID
-app.get('/api/roadmaps/:id', async (c) => {
+app.get('/api/roadmaps/:id', async (c: Context) => {
   try {
     const id = c.req.param('id');
     const user = c.get('user');
@@ -233,7 +234,7 @@ app.get('/api/roadmaps/:id', async (c) => {
 });
 
 // Get all roadmaps for user
-app.get('/api/roadmaps', async (c) => {
+app.get('/api/roadmaps', async (c: Context) => {
   try {
     const user = c.get('user');
     const params = validateQueryParams(c.req.query());
@@ -249,13 +250,24 @@ app.get('/api/roadmaps', async (c) => {
 });
 
 // Create new roadmap
-app.post('/api/roadmaps', async (c) => {
+app.post('/api/roadmaps', async (c: Context) => {
   try {
     const user = c.get('user');
     const body = await c.req.json();
     
     const validatedBody = validateRoadmapBody(body);
     const result = await insertRoadmap(user.id, validatedBody, c.env);
+    
+    // Trigger AI Orchestration
+    try {
+      const orchestratorOutput = await runOrchestrator(JSON.stringify(validatedBody.json_graph));
+      console.log('AI Orchestrator Output:', orchestratorOutput);
+      // Here you might parse the orchestratorOutput and store relevant data
+      // e.g., generated code, agent logs, updated roadmap status/score
+    } catch (aiError: any) {
+      console.error('Error triggering AI Orchestrator:', aiError);
+      // Decide how to handle AI orchestration failure (e.g., log, notify, partial success)
+    }
     
     console.log(`Thermonuclear POST: Roadmap ${result.id} created`);
     return c.json(result, 201);
@@ -266,7 +278,7 @@ app.post('/api/roadmaps', async (c) => {
 });
 
 // Update roadmap
-app.patch('/api/roadmaps/:id', async (c) => {
+app.patch('/api/roadmaps/:id', async (c: Context) => {
   try {
     const id = c.req.param('id');
     const user = c.get('user');
@@ -279,7 +291,7 @@ app.patch('/api/roadmaps/:id', async (c) => {
     const validatedBody = validateRoadmapUpdate(body);
     
     if (validatedBody.status) {
-      await updateRoadmapStatus(id, user.id, validatedBody.status, c.env);
+      await updateRoadmapStatus(id, user.id, validatedBody.status as Roadmap['status'], c.env);
     }
     
     console.log(`Thermonuclear PATCH: Roadmap ${id} updated`);
@@ -291,7 +303,7 @@ app.patch('/api/roadmaps/:id', async (c) => {
 });
 
 // Get snippets
-app.get('/api/snippets', async (c) => {
+app.get('/api/snippets', async (c: Context) => {
   try {
     const params = validateQueryParams(c.req.query());
     const snippets = await querySnippets(params.category, c.env);
@@ -305,7 +317,7 @@ app.get('/api/snippets', async (c) => {
 });
 
 // Create snippet
-app.post('/api/snippets', async (c) => {
+app.post('/api/snippets', async (c: Context) => {
   try {
     const body = await c.req.json();
     
@@ -328,7 +340,7 @@ app.post('/api/snippets', async (c) => {
 });
 
 // Create agent log
-app.post('/api/agent-logs', async (c) => {
+app.post('/api/agent-logs', async (c: Context) => {
   try {
     const body = await c.req.json();
     
@@ -344,7 +356,7 @@ app.post('/api/agent-logs', async (c) => {
 });
 
 // Get agent logs for roadmap
-app.get('/api/roadmaps/:id/logs', async (c) => {
+app.get('/api/roadmaps/:id/logs', async (c: Context) => {
   try {
     const id = c.req.param('id');
     
@@ -363,7 +375,7 @@ app.get('/api/roadmaps/:id/logs', async (c) => {
 });
 
 // Create insight
-app.post('/api/insights', async (c) => {
+app.post('/api/insights', async (c: Context) => {
   try {
     const body = await c.req.json();
     
@@ -394,12 +406,12 @@ const checkSuperAdmin = async (c: Context, next: Next) => {
 };
 
 // Get all API keys
-app.get('/api/admin/keys', checkSuperAdmin, async (c) => {
+app.get('/api/admin/keys', checkSuperAdmin, async (c: Context) => {
   try {
     console.log('Thermonuclear: Fetching API keys for admin');
     
     // Get keys from KV store
-    const keys = await c.env.KV.get('api_keys', 'json') || [];
+    const keys: any[] = await c.env.KV.get('api_keys', 'json') || [];
     
     // Mask the actual key values for security
     const maskedKeys = keys.map((key: any) => ({
@@ -415,7 +427,7 @@ app.get('/api/admin/keys', checkSuperAdmin, async (c) => {
 });
 
 // Add new API key
-app.post('/api/admin/keys', checkSuperAdmin, async (c) => {
+app.post('/api/admin/keys', checkSuperAdmin, async (c: Context) => {
   try {
     const body = await c.req.json();
     
@@ -426,7 +438,7 @@ app.post('/api/admin/keys', checkSuperAdmin, async (c) => {
     console.log(`Thermonuclear: Adding new API key for service ${body.service}`);
     
     // Get existing keys
-    const existingKeys = await c.env.KV.get('api_keys', 'json') || [];
+    const existingKeys: any[] = await c.env.KV.get('api_keys', 'json') || [];
     
     // Create new key entry
     const newKey = {
@@ -462,13 +474,13 @@ app.post('/api/admin/keys', checkSuperAdmin, async (c) => {
 });
 
 // Rotate API key
-app.post('/api/admin/keys/:id/rotate', checkSuperAdmin, async (c) => {
+app.post('/api/admin/keys/:id/rotate', checkSuperAdmin, async (c: Context) => {
   try {
     const keyId = c.req.param('id');
     console.log(`Thermonuclear: Rotating API key ${keyId}`);
     
     // Get existing keys
-    const existingKeys = await c.env.KV.get('api_keys', 'json') || [];
+    const existingKeys: any[] = await c.env.KV.get('api_keys', 'json') || [];
     const keyIndex = existingKeys.findIndex((k: any) => k.id === keyId);
     
     if (keyIndex === -1) {
@@ -497,13 +509,13 @@ app.post('/api/admin/keys/:id/rotate', checkSuperAdmin, async (c) => {
 });
 
 // Delete API key
-app.delete('/api/admin/keys/:id', checkSuperAdmin, async (c) => {
+app.delete('/api/admin/keys/:id', checkSuperAdmin, async (c: Context) => {
   try {
     const keyId = c.req.param('id');
     console.log(`Thermonuclear: Deleting API key ${keyId}`);
     
     // Get existing keys
-    const existingKeys = await c.env.KV.get('api_keys', 'json') || [];
+    const existingKeys: any[] = await c.env.KV.get('api_keys', 'json') || [];
     const keyToDelete = existingKeys.find((k: any) => k.id === keyId);
     
     if (!keyToDelete) {
@@ -598,33 +610,33 @@ const graphqlSchema = createSchema({
   `,
   resolvers: {
     Query: {
-      getRoadmap: async (_parent: any, args: any, context: any) => {
+      getRoadmap: async (_parent: unknown, args: { id: string }, context: { user: User; env: Env }) => {
         const user = context.user;
         return await queryRoadmap(args.id, user.id, context.env);
       },
-      getUserRoadmaps: async (_parent: any, args: any, context: any) => {
+      getUserRoadmaps: async (_parent: unknown, args: { status?: string }, context: { user: User; env: Env }) => {
         const user = context.user;
         return await queryUserRoadmaps(user.id, args.status, context.env);
       },
-      getSnippets: async (_parent: any, args: any, context: any) => {
+      getSnippets: async (_parent: unknown, args: { category?: string }, context: { user: User; env: Env }) => {
         return await querySnippets(args.category, context.env);
       },
-      getAgentLogs: async (_parent: any, args: any, context: any) => {
+      getAgentLogs: async (_parent: unknown, args: { roadmapId: string }, context: { user: User; env: Env }) => {
         return await queryAgentLogs(args.roadmapId, context.env);
       }
     },
     Mutation: {
-      createRoadmap: async (_parent: any, args: any, context: any) => {
+      createRoadmap: async (_parent: unknown, args: { input: { json_graph: string; vibe_mode: boolean } }, context: { user: User; env: Env }) => {
         const user = context.user;
         const result = await insertRoadmap(user.id, args.input, context.env);
         return await queryRoadmap(result.id, user.id, context.env);
       },
-      updateRoadmapStatus: async (_parent: any, args: any, context: any) => {
+      updateRoadmapStatus: async (_parent: unknown, args: { id: string; status: string }, context: { user: User; env: Env }) => {
         const user = context.user;
-        await updateRoadmapStatus(args.id, user.id, args.status, context.env);
+        await updateRoadmapStatus(args.id, user.id, args.status as Roadmap['status'], context.env);
         return await queryRoadmap(args.id, user.id, context.env);
       },
-      createSnippet: async (_parent: any, args: any, context: any) => {
+      createSnippet: async (_parent: unknown, args: { input: { category: string; code: string; ui_preview_url?: string } }, context: { user: User; env: Env }) => {
         const result = await insertSnippet(args.input, context.env);
         const snippets = await querySnippets(undefined, context.env);
         return snippets.find(s => s.id === result.id)!;
@@ -636,28 +648,28 @@ const graphqlSchema = createSchema({
 // Create GraphQL Yoga instance
 const yoga = createYoga({
   schema: graphqlSchema,
-  context: ({ request }: any) => {
+  context: ({ request }: { request: Request }) => {
     return {
-      user: (request as any).user as User,
-      env: (request as any).env as Env
+      user: (request as Request).user as User,
+      env: (request as Request).env as Env
     };
   },
   graphqlEndpoint: '/graphql'
 });
 
 // Mount GraphQL endpoint
-app.all('/graphql', (c) => {
+app.all('/graphql', (c: Context) => {
   // Pass user context and env to GraphQL
   (c.req as any).user = c.get('user');
   (c.req as any).env = c.env;
-  return yoga({ request: c.req.raw }, c.env);
+  return yoga({ request: c.req.raw as Request }, c.env);
 });
 
 /**
  * Global error handler
  * Ref: CLAUDE.md Terminal 1 - Error handling
  */
-app.onError((err, c) => {
+app.onError((err: Error, c: Context) => {
   const code = err.message?.split(':')[0] || 'ERR-500';
   console.error(`Thermonuclear Error: ${code} - ${err.message}`);
   

@@ -1,0 +1,87 @@
+[MASTER]
+# Python version
+py-version=3.11
+
+# Use multiple processes to speed up Pylint
+jobs=0
+
+# List of plugins to load
+load-plugins=
+
+# Use multiple processes to speed up Pylint
+jobs=0
+
+# Allow loading C extensions for speed
+unsafe-load-any-extension=no
+
+[MESSAGES CONTROL]
+# Disable specific warnings
+disable=C0114,C0115,C0116,R0903,C0103
+
+# Maximum number of characters on a single line
+max-line-length=100
+
+[REPORTS]
+# Set the output format
+output-format=text
+
+# Include a brief explanation of each error
+msg-template={path}:{line}: [{msg_id}({symbol}), {obj}] {msg}
+
+# Include the symbol name of the messages
+include-naming-hints=yes
+
+[FORMAT]
+# Maximum number of characters on a single line
+max-line-length=100
+
+# Regexp for a line that is allowed to be longer than the limit
+ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+
+# Allow the format of the output to be specified
+good-names=i,j,k,ex,Run,_
+
+[BASIC]
+# Regular expression which should only match function or class names
+good-names-rgxs=
+
+# Regular expression which should only match correct variable names
+good-names-rgxs=
+
+# Naming hint for variable names
+variable-naming-style=snake_case
+
+# Naming hint for function names
+function-naming-style=snake_case
+
+# Naming hint for constant names
+const-naming-style=UPPER_CASE
+
+# Naming hint for attribute names
+attr-naming-style=snake_case
+
+# Naming hint for argument names
+argument-naming-style=snake_case
+
+# Naming hint for class names
+class-naming-style=PascalCase
+
+# Naming hint for module names
+module-naming-style=snake_case
+
+# Naming hint for method names
+method-naming-style=snake_case
+
+# Naming hint for inline iteration names
+inlinevar-naming-style=
+
+[SIMILARITIES]
+# Minimum lines number of a similarity
+min-similarity-lines=4
+
+# Ignore imports when computing similarities
+ignore-imports=yes
+
+[MISCELLANEOUS]
+# List of note tags to take into consideration
+notes=

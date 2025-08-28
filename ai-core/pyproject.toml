@@ -4,10 +4,10 @@ version = "1.0.0"
 description = "AI Core & Agent Orchestration for ProtoThrive"
 authors = ["ProtoThrive Team <team@protothrive.com>"]
 readme = "README.md"
-python = "^3.12"
+package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.11"
 langchain = "^0.1.0"
 crewai = "^0.1.0"
 pinecone-client = "^2.2.0"

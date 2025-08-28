@@ -11,7 +11,7 @@ interface Session {
 interface BroadcastMessage {
   type: 'update' | 'cursor' | 'selection' | 'presence';
   userId: string;
-  data: any;
+  data: unknown;
   timestamp: number;
 }
 
@@ -21,7 +21,7 @@ export class RoadmapRoom {
   private roadmapId: string;
   private lastActivity: number;
   
-  constructor(state: DurableObjectState, env: any) {
+  constructor(state: DurableObjectState, env: unknown) {
     this.state = state;
     this.sessions = new Map();
     this.roadmapId = '';
@@ -115,7 +115,7 @@ export class RoadmapRoom {
     });
   }
 
-  private async handleMessage(session: Session, data: any) {
+  private async handleMessage(session: Session, data: unknown) {
     this.lastActivity = Date.now();
     
     try {
@@ -146,7 +146,7 @@ export class RoadmapRoom {
     }
   }
 
-  private async handleUpdate(session: Session, message: any) {
+  private async handleUpdate(session: Session, message: unknown) {
     // Broadcast update to all other sessions
     const broadcast: BroadcastMessage = {
       type: 'update',
@@ -169,7 +169,7 @@ export class RoadmapRoom {
     await this.state.storage.put('recentUpdates', recentUpdates);
   }
 
-  private async handleCursor(session: Session, message: any) {
+  private async handleCursor(session: Session, message: unknown) {
     // Broadcast cursor position to all other sessions
     const broadcast: BroadcastMessage = {
       type: 'cursor',
@@ -185,7 +185,7 @@ export class RoadmapRoom {
     await this.broadcast(broadcast, session.websocket);
   }
 
-  private async handleSelection(session: Session, message: any) {
+  private async handleSelection(session: Session, message: unknown) {
     // Broadcast selection to all other sessions
     const broadcast: BroadcastMessage = {
       type: 'selection',

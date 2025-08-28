@@ -184,7 +184,7 @@ export function createAgentsRouter() {
         .bind(roadmapId)
         .all();
 
-      return c.json(formatSuccess(results.map((log: any) => ({
+      return c.json(formatSuccess(results.map((log: unknown) => ({
         id: log.id,
         roadmapId: log.roadmap_id,
         taskType: log.task_type,
@@ -266,7 +266,7 @@ async function getMonthlyTaskCount(db: D1Database, userId: string) {
   return result?.count || 0;
 }
 
-async function triggerN8NWorkflow(env: Env, data: any) {
+async function triggerN8NWorkflow(env: Env, data: unknown) {
   try {
     const response = await retryWithBackoff(async () => {
       return await fetch(env.N8N_WEBHOOK_URL, {

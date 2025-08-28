@@ -103,7 +103,7 @@ app.use('*', logger());
  * JWT validation middleware with security integration
  * Ref: CLAUDE.md Terminal 1 - Auth middleware + Phase 5 Security
  */
-async function validateJwt(c: any, next: () => Promise<void>) {
+async function validateJwt(c: unknown, next: () => Promise<void>) {
   console.log('Thermonuclear Security: validateJwt middleware activated');
   const authHeader = c.req.header('Authorization');
   const token = authHeader?.replace('Bearer ', '');
@@ -143,7 +143,7 @@ async function validateJwt(c: any, next: () => Promise<void>) {
  * Security budget check middleware
  * Ref: CLAUDE.md Phase 5 - Security Across All Phases
  */
-async function checkBudgetMiddleware(c: any, next: () => Promise<void>) {
+async function checkBudgetMiddleware(c: unknown, next: () => Promise<void>) {
   try {
     console.log('Thermonuclear Security: Checking budget...');
     
@@ -159,7 +159,7 @@ async function checkBudgetMiddleware(c: any, next: () => Promise<void>) {
     
     console.log('Thermonuclear Security: Budget check passed');
     await next();
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Thermonuclear Security: Budget exceeded', error);
     return c.json({ 
       error: 'Request budget exceeded', 
@@ -202,7 +202,7 @@ app.get('/api/roadmaps/:id', async (c) => {
     
     console.log(`Thermonuclear GET: Roadmap ${id} retrieved`);
     return c.json(roadmap);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const code = error.message.split(':')[0] || 'ERR-500';
     return c.json({ error: error.message, code }, code.includes('404') ? 404 : 500);
   }
@@ -218,7 +218,7 @@ app.get('/api/roadmaps', async (c) => {
     
     console.log(`Thermonuclear GET: ${roadmaps.length} roadmaps retrieved`);
     return c.json({ roadmaps, total: roadmaps.length });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const code = error.message.split(':')[0] || 'ERR-500';
     return c.json({ error: error.message, code }, 500);
   }
@@ -235,7 +235,7 @@ app.post('/api/roadmaps', async (c) => {
     
     console.log(`Thermonuclear POST: Roadmap ${result.id} created`);
     return c.json(result, 201);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const code = error.message.split(':')[0] || 'ERR-500';
     return c.json({ error: error.message, code }, code.includes('400') ? 400 : 500);
   }
@@ -260,7 +260,7 @@ app.patch('/api/roadmaps/:id', async (c) => {
     
     console.log(`Thermonuclear PATCH: Roadmap ${id} updated`);
     return c.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const code = error.message.split(':')[0] || 'ERR-500';
     return c.json({ error: error.message, code }, code.includes('404') ? 404 : 500);
   }
@@ -274,7 +274,7 @@ app.get('/api/snippets', async (c) => {
     
     console.log(`Thermonuclear GET: ${snippets.length} snippets retrieved`);
     return c.json({ snippets, total: snippets.length });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const code = error.message.split(':')[0] || 'ERR-500';
     return c.json({ error: error.message, code }, 500);
   }
@@ -290,7 +290,7 @@ app.post('/api/snippets', async (c) => {
     
     console.log(`Thermonuclear POST: Snippet ${result.id} created`);
     return c.json(result, 201);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const code = error.message.split(':')[0] || 'ERR-500';
     return c.json({ error: error.message, code }, code.includes('400') ? 400 : 500);
   }
@@ -306,7 +306,7 @@ app.post('/api/agent-logs', async (c) => {
     
     console.log(`Thermonuclear POST: Agent log ${result.id} created`);
     return c.json(result, 201);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const code = error.message.split(':')[0] || 'ERR-500';
     return c.json({ error: error.message, code }, code.includes('400') ? 400 : 500);
   }
@@ -325,7 +325,7 @@ app.get('/api/roadmaps/:id/logs', async (c) => {
     
     console.log(`Thermonuclear GET: ${logs.length} agent logs retrieved`);
     return c.json({ logs, total: logs.length });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const code = error.message.split(':')[0] || 'ERR-500';
     return c.json({ error: error.message, code }, 500);
   }
@@ -341,7 +341,7 @@ app.post('/api/insights', async (c) => {
     
     console.log(`Thermonuclear POST: Insight ${result.id} created`);
     return c.json(result, 201);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const code = error.message.split(':')[0] || 'ERR-500';
     return c.json({ error: error.message, code }, code.includes('400') ? 400 : 500);
   }
@@ -456,7 +456,7 @@ const graphqlSchema = createSchema({
 // Create GraphQL Yoga instance
 const yoga = createYoga({
   schema: graphqlSchema,
-  context: (request: any) => ({
+  context: (request: unknown) => ({
     user: request.user
   }),
   graphqlEndpoint: '/graphql'

@@ -14,7 +14,7 @@ interface TabsContextType {
   onValueChange: (value: string) => void;
 }
 
-const TabsContext = React.createContext<TabsContextType | undefined>(undefined);
+const TabsContext = useMemo(() => React.createContext<TabsContextType | undefined>(undefined), []);
 
 export function Tabs({ defaultValue = '', value: controlledValue, onValueChange, children, className = '' }: TabsProps) {
   const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue);
@@ -36,7 +36,7 @@ export function Tabs({ defaultValue = '', value: controlledValue, onValueChange,
 
 export function TabsList({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`inline-flex h-10 items-center justify-center rounded-md bg-gray-100 p-1 ${className}`}>
+    <div className={`inline-flex h-10 items-center justify-center rounded-md bg-gray dark:bg-gray-800-100 p-1 ${className}`}>
       {children}
     </div>
   );
@@ -51,7 +51,7 @@ export function TabsTrigger({ value, children, className = '' }: { value: string
   return (
     <button
       className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
-        isActive ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+        isActive ? 'bg-white dark:bg-gray-800 text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
       } ${className}`}
       onClick={() => context.onValueChange(value)}
     >

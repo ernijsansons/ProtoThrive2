@@ -22,7 +22,7 @@ class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: bo
   }
 }
 
-export default function App({ Component, pageProps }: { Component: any, pageProps: any }) {
+export default React.memo(function) App({ Component, pageProps }: { Component: any, pageProps: any }) {
   console.log('Thermonuclear App Rendered');
   return (
     <ErrorBoundary>

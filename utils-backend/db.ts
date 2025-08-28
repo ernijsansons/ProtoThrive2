@@ -161,7 +161,7 @@ export async function updateRoadmapScore(
  */
 export async function querySnippets(category?: string): Promise<Snippet[]> {
   let query = 'SELECT * FROM snippets';
-  const binds: any[] = [];
+  const binds: unknown[] = [];
   
   if (category) {
     query += ' WHERE category = ?';

@@ -32,7 +32,7 @@ export function createRoadmapsRouter() {
         .all();
 
       // Parse JSON graphs
-      const roadmaps = results.map((r: any) => ({
+      const roadmaps = results.map((r: unknown) => ({
         ...r,
         jsonGraph: JSON.parse(r.jsonGraph),
         vibeMode: Boolean(r.vibeMode),
@@ -202,7 +202,7 @@ export function createRoadmapsRouter() {
 
       // Build update query dynamically
       const updates: string[] = [];
-      const values: any[] = [];
+      const values: unknown[] = [];
 
       if (jsonGraph !== undefined) {
         updates.push('json_graph = ?');

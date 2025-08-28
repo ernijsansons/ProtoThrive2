@@ -9,7 +9,7 @@ export interface MockFetchResponse {
 }
 
 export interface MockDbResult {
-  results: any[];
+  results: unknown[];
   success: boolean;
   meta?: {
     rows_affected?: number;
@@ -40,7 +40,7 @@ export const mockFetch = (url: string, opts: RequestInit = {}): Promise<MockFetc
  * Mock database query function for D1 operations
  * Ref: CLAUDE.md Global Configs & Mocks - JS Mocks
  */
-export const mockDbQuery = (query: string, binds?: any[]): MockDbResult => {
+export const mockDbQuery = (query: string, binds?: unknown[]): MockDbResult => {
   console.log(`THERMONUCLEAR MOCK DB: ${query} - Binds: ${JSON.stringify(binds)}`);
   
   // Return different results based on query type
@@ -147,7 +147,7 @@ export const generateMockUUID = (): string => {
  * Check if KV is paused (kill-switch)
  * Ref: CLAUDE.md Usage Guidelines - Kill-Switch
  */
-export const checkKillSwitch = async (_kv: any): Promise<boolean> => {
+export const checkKillSwitch = async (_kv: unknown): Promise<boolean> => {
   // Mock implementation - always return false (not paused)
   console.log('THERMONUCLEAR: Checking kill-switch - proto_paused = false');
   return false;
