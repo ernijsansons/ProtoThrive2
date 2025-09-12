@@ -2,6 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   
+  // Critical: Allow all hosts for Replit proxy
+  experimental: {
+    allowedHosts: true,
+  },
+  
   // TypeScript and ESLint
   typescript: {
     tsconfigPath: './tsconfig.json',
@@ -13,7 +18,7 @@ const nextConfig = {
 
   // Environment variables
   env: {
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:5000',
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787',
     SPLINE_SCENE: process.env.SPLINE_SCENE || 'https://prod.spline.design/neon-cube-thermo/scene.splinecode',
   },
