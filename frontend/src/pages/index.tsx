@@ -1,3 +1,4 @@
+import Header from '@/components/Header';
 import MagicCanvas from '@/components/MagicCanvas';
 import InsightsPanel from '@/components/InsightsPanel';
 import {useStore} from '@/store';
@@ -12,10 +13,15 @@ const Dashboard = () => {
   }, [fetchRoadmap]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-      <MagicCanvas />
-      <InsightsPanel />
-      <button onClick={toggleMode} className="bg-blue-500 text-white p-2 rounded">Toggle Mode</button>
+    <div className="min-h-screen bg-dark-primary">
+      <Header />
+      <main className="pt-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+          <MagicCanvas />
+          <InsightsPanel />
+          <button onClick={toggleMode} className="btn-elite">Toggle Mode</button>
+        </div>
+      </main>
     </div>
   );
 };

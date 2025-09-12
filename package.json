@@ -42,6 +42,7 @@
     "npm": ">=10.0.0"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "framer-motion": "^12.23.12"
   }
 }
