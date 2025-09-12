@@ -431,3 +431,57 @@ h6 { font-size: 1rem; }
     scroll-behavior: auto !important;
   }
 }
+
+/* Custom Scrollbar for Sidebar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--neon-blue-primary) var(--dark-secondary);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--dark-secondary);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--neon-blue-primary);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-blue-light);
+  box-shadow: 0 0 8px var(--neon-blue-primary);
+}
+
+/* Text truncation utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Drag and drop visual feedback */
+.drag-over {
+  background: rgba(0, 210, 255, 0.1);
+  border: 2px dashed var(--neon-blue-primary);
+  transform: scale(1.02);
+}
+
+.drag-active {
+  cursor: grabbing;
+  transform: rotate(2deg) scale(0.95);
+  box-shadow: 0 10px 30px rgba(0, 210, 255, 0.3);
+}
