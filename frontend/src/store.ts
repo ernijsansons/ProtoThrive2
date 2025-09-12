@@ -25,6 +25,7 @@ interface State {
   loadGraph: (nodes: Node[], edges: Edge[]) => void;
   toggleMode: () => void;
   updateScore: (score: number) => void;
+  fetchRoadmap: (id: string) => void;
 }
 
 export const useStore = create<State>((set) => ({
@@ -50,5 +51,12 @@ export const useStore = create<State>((set) => ({
   updateScore: (score) => {
     console.log('Thermonuclear Score Updated:', score);
     set({ thriveScore: score });
+  },
+  fetchRoadmap: (id) => {
+    console.log('Thermonuclear Fetch Roadmap:', id);
+    // Mock fetch implementation for now
+    // In a real app, this would fetch from the backend API
+    // For now, just update the score to show it's working
+    set({ thriveScore: Math.random() * 1.0 });
   }
 }));

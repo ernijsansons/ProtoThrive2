@@ -2,10 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
   
-  // Critical: Allow all hosts for Replit proxy
-  experimental: {
-    allowedHosts: true,
-  },
   
   // TypeScript and ESLint
   typescript: {
