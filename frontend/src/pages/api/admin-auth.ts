@@ -1,6 +1,9 @@
 // Ref: CLAUDE.md - Super Admin Authentication
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+// Export edge runtime for Cloudflare Pages compatibility
+export const runtime = 'edge';
+
 // Mock super admin credentials - in production, use proper auth service
 const SUPER_ADMIN_CREDENTIALS = {
   email: 'admin@protothrive.com',

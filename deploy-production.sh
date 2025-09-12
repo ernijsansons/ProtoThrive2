@@ -102,21 +102,21 @@ echo -e "${YELLOW}Building frontend...${NC}"
 npm run build
 
 # Check if build was successful
-if [ ! -d ".next" ]; then
-    echo -e "${RED}❌ Frontend build failed - no .next directory found${NC}"
+if [ ! -d "out" ]; then
+    echo -e "${RED}❌ Frontend build failed - no out directory found${NC}"
     exit 1
 fi
 
 # Deploy frontend to Cloudflare Pages
 echo -e "${YELLOW}Deploying frontend to Cloudflare Pages...${NC}"
 if [ "$ENVIRONMENT" = "production" ]; then
-    wrangler pages deploy .next \
+    wrangler pages deploy out \
         --project-name=protothrive-frontend \
         --branch=main \
         --commit-message="Production deployment - $(date '+%Y-%m-%d %H:%M:%S')"
     FRONTEND_URL="https://protothrive-frontend.pages.dev"
 else
-    wrangler pages deploy .next \
+    wrangler pages deploy out \
         --project-name=protothrive-frontend \
         --branch="$ENVIRONMENT" \
         --commit-message="$ENVIRONMENT deployment - $(date '+%Y-%m-%d %H:%M:%S')"

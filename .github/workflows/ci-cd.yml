@@ -50,7 +50,7 @@ jobs:
       - name: Run ESLint
         run: |
           echo "Thermonuclear Validation: Running lint checks"
-          npm run lint || echo "No lint script found - proceeding"
+          npm run lint
           echo "Thermonuclear Checkpoint: Lint completed"
 
   # Test job - Run unit and integration tests
@@ -85,7 +85,7 @@ jobs:
       - name: Run unit tests
         run: |
           echo "Thermonuclear Validation: Running tests"
-          npm test || echo "No test script found - proceeding"
+          npm test
           echo "Thermonuclear Checkpoint: Tests completed"
 
       - name: Upload coverage reports
@@ -128,7 +128,7 @@ jobs:
       - name: Build application
         run: |
           echo "Thermonuclear Build: Compiling application"
-          npm run build || echo "No build script found - proceeding"
+          npm run build
           echo "Thermonuclear Checkpoint: Build completed"
 
       - name: Upload build artifacts
@@ -179,10 +179,25 @@ jobs:
           name: build-artifacts
 
       - name: Deploy to Cloudflare Workers (Staging)
+        working-directory: backend
         run: |
-          echo "Thermonuclear Deploy: Pushing to staging environment"
-          wrangler deploy --env staging || echo "Mock deploy to staging"
-          echo "Thermonuclear Checkpoint: Staging deployment completed"
+          echo "Thermonuclear Deploy: Pushing backend to staging environment"
+          wrangler deploy --env staging
+          echo "Thermonuclear Checkpoint: Backend staging deployment completed"
+
+      - name: Build Frontend for Staging
+        working-directory: frontend
+        run: |
+          echo "Thermonuclear Build: Building frontend for staging"
+          npm run build
+          echo "Thermonuclear Checkpoint: Frontend build completed"
+
+      - name: Deploy to Cloudflare Pages (Staging)
+        working-directory: frontend
+        run: |
+          echo "Thermonuclear Deploy: Pushing frontend to staging environment"
+          wrangler pages deploy out --project-name=protothrive-frontend --branch=staging
+          echo "Thermonuclear Checkpoint: Frontend staging deployment completed"
 
   # Deploy to production - For version tags
   deploy-prod:
@@ -222,10 +237,25 @@ jobs:
           name: build-artifacts
 
       - name: Deploy to Cloudflare Workers (Production)
+        working-directory: backend
         run: |
-          echo "Thermonuclear Deploy: Pushing to production environment"
-          wrangler publish --env prod || echo "Mock deploy to production"
-          echo "Thermonuclear Checkpoint: Production deployment completed"
+          echo "Thermonuclear Deploy: Pushing backend to production environment"
+          wrangler deploy --env production
+          echo "Thermonuclear Checkpoint: Backend production deployment completed"
+
+      - name: Build Frontend for Production
+        working-directory: frontend
+        run: |
+          echo "Thermonuclear Build: Building frontend for production"
+          npm run build
+          echo "Thermonuclear Checkpoint: Frontend build completed"
+
+      - name: Deploy to Cloudflare Pages (Production)
+        working-directory: frontend
+        run: |
+          echo "Thermonuclear Deploy: Pushing frontend to production environment"
+          wrangler pages deploy out --project-name=protothrive-frontend --branch=main
+          echo "Thermonuclear Checkpoint: Frontend production deployment completed"
 
       - name: Create Release
         uses: actions/create-release@v1

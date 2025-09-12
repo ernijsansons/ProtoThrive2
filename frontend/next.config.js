@@ -2,6 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   
+  // Static export for Cloudflare Pages
+  output: 'export',
+  trailingSlash: true,
+  skipTrailingSlashRedirect: true,
   
   // TypeScript and ESLint
   typescript: {
@@ -19,8 +23,9 @@ const nextConfig = {
     SPLINE_SCENE: process.env.SPLINE_SCENE || 'https://prod.spline.design/neon-cube-thermo/scene.splinecode',
   },
 
-  // Image optimization
+  // Image optimization - disabled for static export
   images: {
+    unoptimized: true,
     domains: ['localhost', 'devcommand.com', 'spline.design', 'uxpilot.ai'],
     formats: ['image/avif', 'image/webp'],
   },
