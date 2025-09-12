@@ -24,7 +24,7 @@ interface RoadmapItem {
 }
 
 const Dashboard = () => {
-  const {toggleMode, fetchRoadmap} = useStore();
+  const {toggleMode, fetchRoadmap, mode} = useStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [selectedRoadmapItem, setSelectedRoadmapItem] = useState<RoadmapItem | null>(null);
@@ -71,32 +71,32 @@ const Dashboard = () => {
           transition={{ duration: 0.3 }}
         >
           <div className="h-full p-4 overflow-y-auto">
-            {/* Canvas and Content Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 h-full">
-              {/* Main Canvas Area */}
-              <div className="min-h-[600px] bg-dark-secondary/50 rounded-xl border border-neon-blue-primary/20 p-4 backdrop-blur-sm">
+            {/* Elite Canvas Layout - 70% Canvas / 30% Insights */}
+            <div className="flex flex-col lg:flex-row gap-6 h-full">
+              {/* Main Canvas Area - 70% Width */}
+              <div className="flex-grow lg:w-[70%] min-h-[600px] bg-dark-secondary/50 rounded-xl border border-neon-blue-primary/20 p-4 backdrop-blur-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold text-elite bg-gradient-neon-mix bg-clip-text text-transparent">
-                    Magic Canvas
+                    Elite Magic Canvas
                   </h2>
                   <div className="flex items-center space-x-2">
                     <button 
                       onClick={toggleMode} 
                       className="btn-elite text-sm px-4 py-2"
                     >
-                      Toggle Mode
+                      {mode === '2d' ? '🎯 Switch to 3D' : '🔮 Switch to 2D'}
                     </button>
                   </div>
                 </div>
-                <div className="h-full">
-                  <MagicCanvas />
+                <div className="h-[calc(100%-60px)]">
+                  <MagicCanvas className="w-full h-full" />
                 </div>
               </div>
 
-              {/* Insights Panel */}
-              <div className="min-h-[600px] bg-dark-secondary/50 rounded-xl border border-neon-green-primary/20 p-4 backdrop-blur-sm">
+              {/* Insights Panel - 30% Width */}
+              <div className="flex-shrink-0 lg:w-[30%] min-h-[600px] bg-dark-secondary/50 rounded-xl border border-neon-green-primary/20 p-4 backdrop-blur-sm">
                 <h2 className="text-lg font-bold text-neon-green-primary mb-4">
-                  Insights Panel
+                  Elite Insights
                 </h2>
                 <InsightsPanel />
                 
