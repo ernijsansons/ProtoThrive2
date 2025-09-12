@@ -26,7 +26,7 @@ const MagicCanvas = () => {
   };
 
   return (
-    <div style={{ width: '100vw', height: '80vh' }}>
+    <div style={{ width: '100%', height: '80vh' }}>
       {mode === '2d' ? (
         <ReactFlow 
           nodes={rfNodes} 
