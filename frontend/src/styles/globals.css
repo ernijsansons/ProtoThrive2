@@ -1,0 +1,433 @@
+/* ProtoThrive Elite Dark Neon Theme Foundation */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Elite Neon Color Variables */
+:root {
+  /* Neon Blues */
+  --neon-blue-primary: #00D2FF;
+  --neon-blue-secondary: #0099CC;
+  --neon-blue-light: #33DDFF;
+  --neon-blue-dark: #0088BB;
+  
+  /* Neon Greens */
+  --neon-green-primary: #00FF88;
+  --neon-green-secondary: #00CC66;
+  --neon-green-light: #33FF99;
+  --neon-green-dark: #00BB55;
+  
+  /* Dark Base Colors */
+  --dark-primary: #0A0A0B;
+  --dark-secondary: #1A1A1B;
+  --dark-tertiary: #2A2A2B;
+  --dark-hover: #3A3A3B;
+  
+  /* Accent Colors */
+  --neon-purple: #BB00FF;
+  --neon-cyan: #00FFDD;
+  --neon-pink: #FF0088;
+  --neon-orange: #FF6600;
+  
+  /* Text Colors */
+  --text-primary: #FFFFFF;
+  --text-secondary: #CCCCCC;
+  --text-muted: #888888;
+  --text-accent: var(--neon-blue-primary);
+  
+  /* Glow Shadows */
+  --glow-blue: 0 0 20px var(--neon-blue-primary);
+  --glow-green: 0 0 20px var(--neon-green-primary);
+  --glow-purple: 0 0 20px var(--neon-purple);
+  --glow-intense-blue: 0 0 40px var(--neon-blue-primary), 0 0 80px var(--neon-blue-primary);
+  --glow-intense-green: 0 0 40px var(--neon-green-primary), 0 0 80px var(--neon-green-primary);
+  
+  /* Gradients */
+  --gradient-blue: linear-gradient(135deg, var(--neon-blue-primary) 0%, var(--neon-blue-secondary) 100%);
+  --gradient-green: linear-gradient(135deg, var(--neon-green-primary) 0%, var(--neon-green-secondary) 100%);
+  --gradient-dark: linear-gradient(135deg, var(--dark-primary) 0%, var(--dark-secondary) 100%);
+  --gradient-neon-mix: linear-gradient(135deg, var(--neon-blue-primary) 0%, var(--neon-green-primary) 100%);
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--dark-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Neon Text Animations */
+@keyframes neonGlow {
+  0%, 100% {
+    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor;
+  }
+  50% {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+  }
+}
+
+@keyframes neonPulse {
+  0%, 100% {
+    box-shadow: var(--glow-blue);
+  }
+  50% {
+    box-shadow: var(--glow-intense-blue);
+  }
+}
+
+@keyframes neonFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes slideInFromLeft {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromRight {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Utility Classes */
+.neon-text-blue {
+  color: var(--neon-blue-primary);
+  text-shadow: 0 0 10px var(--neon-blue-primary);
+}
+
+.neon-text-green {
+  color: var(--neon-green-primary);
+  text-shadow: 0 0 10px var(--neon-green-primary);
+}
+
+.neon-glow-blue {
+  box-shadow: var(--glow-blue);
+}
+
+.neon-glow-green {
+  box-shadow: var(--glow-green);
+}
+
+.neon-glow-intense-blue {
+  box-shadow: var(--glow-intense-blue);
+}
+
+.neon-glow-intense-green {
+  box-shadow: var(--glow-intense-green);
+}
+
+.gradient-blue {
+  background: var(--gradient-blue);
+}
+
+.gradient-green {
+  background: var(--gradient-green);
+}
+
+.gradient-dark {
+  background: var(--gradient-dark);
+}
+
+.gradient-neon-mix {
+  background: var(--gradient-neon-mix);
+  background-size: 400% 400%;
+  animation: gradientShift 4s ease-in-out infinite;
+}
+
+.animate-neon-glow {
+  animation: neonGlow 2s ease-in-out infinite;
+}
+
+.animate-neon-pulse {
+  animation: neonPulse 2s ease-in-out infinite;
+}
+
+.animate-neon-flicker {
+  animation: neonFlicker 3s ease-in-out infinite;
+}
+
+.animate-slide-in-left {
+  animation: slideInFromLeft 0.8s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInFromRight 0.8s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.6s ease-out forwards;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--dark-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--neon-blue-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-blue-light);
+  box-shadow: 0 0 10px var(--neon-blue-primary);
+}
+
+/* Selection Styling */
+::selection {
+  background: var(--neon-blue-primary);
+  color: var(--dark-primary);
+}
+
+::-moz-selection {
+  background: var(--neon-blue-primary);
+  color: var(--dark-primary);
+}
+
+/* Focus States */
+*:focus {
+  outline: 2px solid var(--neon-blue-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 10px var(--neon-blue-primary);
+}
+
+/* Elite Button Base Styles */
+.btn-elite {
+  position: relative;
+  padding: 12px 24px;
+  background: transparent;
+  border: 2px solid var(--neon-blue-primary);
+  color: var(--neon-blue-primary);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.btn-elite::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--gradient-blue);
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+.btn-elite:hover {
+  color: var(--text-primary);
+  box-shadow: var(--glow-blue);
+  transform: translateY(-2px);
+}
+
+.btn-elite:hover::before {
+  left: 0;
+}
+
+.btn-elite:active {
+  transform: translateY(0);
+}
+
+/* Elite Card Styles */
+.card-elite {
+  background: rgba(26, 26, 27, 0.8);
+  border: 1px solid rgba(0, 210, 255, 0.3);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+.card-elite:hover {
+  border-color: var(--neon-blue-primary);
+  box-shadow: var(--glow-blue);
+  transform: translateY(-4px);
+}
+
+/* Elite Input Styles */
+.input-elite {
+  background: rgba(26, 26, 27, 0.8);
+  border: 2px solid rgba(0, 210, 255, 0.3);
+  color: var(--text-primary);
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.input-elite:focus {
+  border-color: var(--neon-blue-primary);
+  box-shadow: var(--glow-blue);
+}
+
+.input-elite::placeholder {
+  color: var(--text-muted);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5em;
+}
+
+h1 { font-size: 3rem; }
+h2 { font-size: 2.5rem; }
+h3 { font-size: 2rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1rem; }
+
+.text-elite {
+  background: var(--gradient-neon-mix);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 400% 400%;
+  animation: gradientShift 3s ease-in-out infinite;
+}
+
+/* Loading Spinner */
+.spinner-elite {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 210, 255, 0.3);
+  border-top: 3px solid var(--neon-blue-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Glass Morphism Effect */
+.glass-elite {
+  background: rgba(26, 26, 27, 0.2);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  h1 { font-size: 2.5rem; }
+  h2 { font-size: 2rem; }
+  h3 { font-size: 1.5rem; }
+  
+  .btn-elite {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+  
+  .card-elite {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.75rem; }
+  h3 { font-size: 1.25rem; }
+  
+  .btn-elite {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+  }
+  
+  .card-elite {
+    padding: 12px;
+  }
+}
+
+/* Dark mode compatibility */
+@media (prefers-color-scheme: dark) {
+  /* Theme is already dark, but we can add adjustments here if needed */
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

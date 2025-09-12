@@ -1,6 +1,7 @@
 // Ref: CLAUDE.md Phase 2 - Error boundary
 import { Component } from 'react';
 import 'reactflow/dist/style.css';
+import '../styles/globals.css';
 
 class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean}> {
   constructor(props: {children: React.ReactNode}) {
