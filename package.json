@@ -5,8 +5,7 @@
   "private": true,
   "workspaces": [
     "backend",
-    "frontend", 
-    "ai-core",
+    "frontend",
     "automation",
     "security"
   ],
