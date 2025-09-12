@@ -153,13 +153,17 @@ interface EliteSidebarProps {
   onToggleCollapse: () => void;
   onTemplateSelect?: (template: any) => void;
   onRoadmapItemSelect?: (item: any) => void;
+  isMobile?: boolean;
+  isOpen?: boolean;
 }
 
 const EliteSidebar: React.FC<EliteSidebarProps> = ({
   isCollapsed,
   onToggleCollapse,
   onTemplateSelect,
-  onRoadmapItemSelect
+  onRoadmapItemSelect,
+  isMobile = false,
+  isOpen = false
 }) => {
   const [activeTab, setActiveTab] = useState<'templates' | 'roadmap'>('templates');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['ui-components']));
@@ -213,6 +217,9 @@ const EliteSidebar: React.FC<EliteSidebarProps> = ({
     onRoadmapItemSelect?.(item);
   }, [onRoadmapItemSelect]);
 
+  // Mobile touch handlers - removed conflicting swipe down gesture
+  // that interfered with list scrolling for better UX
+
   // Drag functionality
   const handleDragStart = useCallback((e: React.DragEvent, template: any) => {
     e.dataTransfer.setData('text/plain', JSON.stringify(template));
@@ -237,18 +244,7 @@ const EliteSidebar: React.FC<EliteSidebarProps> = ({
     }
   };
 
-  const sidebarVariants = {
-    expanded: {
-      width: '20%',
-      minWidth: 300,
-      transition: { duration: 0.3 }
-    },
-    collapsed: {
-      width: '60px',
-      minWidth: 60,
-      transition: { duration: 0.3 }
-    }
-  };
+  // Remove duplicate sidebar animations - parent handles positioning
 
   const contentVariants = {
     visible: {
@@ -264,15 +260,20 @@ const EliteSidebar: React.FC<EliteSidebarProps> = ({
   };
 
   return (
-    <motion.div
-      variants={sidebarVariants}
-      animate={isCollapsed ? 'collapsed' : 'expanded'}
-      className="h-screen bg-dark-secondary/95 backdrop-blur-xl border-r border-neon-blue-primary/30 flex flex-col overflow-hidden relative"
+    <div
+      className={`
+        h-screen bg-dark-secondary/95 backdrop-blur-xl border-r border-neon-blue-primary/30 
+        flex flex-col overflow-hidden relative
+        ${isMobile ? 'w-full' : ''}
+      `}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-neon-blue-primary/20">
+      {/* Header - Mobile & Desktop */}
+      <div className={`
+        flex items-center justify-between border-b border-neon-blue-primary/20
+        ${isMobile ? 'p-3 bg-dark-primary/50' : 'p-4'}
+      `}>
         <AnimatePresence mode="wait">
-          {!isCollapsed && (
+          {(isMobile || !isCollapsed) && (
             <motion.div
               variants={contentVariants}
               initial="hidden"
@@ -280,14 +281,22 @@ const EliteSidebar: React.FC<EliteSidebarProps> = ({
               exit="hidden"
               className="flex items-center space-x-3"
             >
-              <div className="w-8 h-8 rounded-lg bg-gradient-neon-mix flex items-center justify-center">
-                <Squares2X2Icon className="w-5 h-5 text-white" />
+              <div className={`
+                rounded-lg bg-gradient-neon-mix flex items-center justify-center
+                ${isMobile ? 'w-6 h-6' : 'w-8 h-8'}
+              `}>
+                <Squares2X2Icon className={`text-white ${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-elite bg-gradient-neon-mix bg-clip-text text-transparent">
+                <h2 className={`
+                  font-bold text-elite bg-gradient-neon-mix bg-clip-text text-transparent
+                  ${isMobile ? 'text-base' : 'text-lg'}
+                `}>
                   Elite Studio
                 </h2>
-                <p className="text-xs text-text-muted">Design System</p>
+                <p className={`text-text-muted ${isMobile ? 'text-xs' : 'text-xs'}`}>
+                  Design System
+                </p>
               </div>
             </motion.div>
           )}
@@ -295,11 +304,16 @@ const EliteSidebar: React.FC<EliteSidebarProps> = ({
         
         <motion.button
           onClick={onToggleCollapse}
-          className="p-2 rounded-lg hover:bg-dark-hover/50 transition-colors duration-200 group"
+          className={`
+            p-2 rounded-lg hover:bg-dark-hover/50 transition-colors duration-200 group
+            ${isMobile ? 'p-1.5' : ''}
+          `}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
         >
-          {isCollapsed ? (
+          {isMobile ? (
+            <XMarkIcon className="w-5 h-5 text-neon-blue-primary group-hover:text-neon-blue-light" />
+          ) : isCollapsed ? (
             <ChevronRightIcon className="w-5 h-5 text-neon-blue-primary group-hover:text-neon-blue-light" />
           ) : (
             <ChevronLeftIcon className="w-5 h-5 text-neon-blue-primary group-hover:text-neon-blue-light" />
@@ -307,9 +321,9 @@ const EliteSidebar: React.FC<EliteSidebarProps> = ({
         </motion.button>
       </div>
 
-      {/* Content Area */}
+      {/* Content Area - Mobile & Desktop */}
       <AnimatePresence mode="wait">
-        {!isCollapsed && (
+        {(isMobile || !isCollapsed) && (
           <motion.div
             variants={contentVariants}
             initial="hidden"
@@ -530,7 +544,7 @@ const EliteSidebar: React.FC<EliteSidebarProps> = ({
 
       {/* Neon Glow Effect */}
       <div className="absolute inset-y-0 right-0 w-1 bg-gradient-to-b from-transparent via-neon-blue-primary to-transparent opacity-50"></div>
-    </motion.div>
+    </div>
   );
 };
 

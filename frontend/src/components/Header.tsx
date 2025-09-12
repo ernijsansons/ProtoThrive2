@@ -6,14 +6,18 @@ import {
   ChevronDownIcon, 
   UserCircleIcon, 
   MagnifyingGlassIcon as SearchIcon, 
-  SparklesIcon 
+  SparklesIcon,
+  Bars3Icon 
 } from '@heroicons/react/24/outline';
 
 interface HeaderProps {
   className?: string;
+  isMobile?: boolean;
+  isTablet?: boolean;
+  onToggleSidebar?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ className = '' }) => {
+const Header: React.FC<HeaderProps> = ({ className = '', isMobile = false, isTablet = false, onToggleSidebar }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [thriveProgress, setThriveProgress] = useState(73); // Example progress
@@ -99,28 +103,49 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
       variants={headerVariants}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${className}`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className={`max-w-7xl mx-auto transition-all duration-300 ${
+        isMobile ? 'px-3' : 'px-4 sm:px-6 lg:px-8'
+      }`}>
+        <div className={`flex items-center justify-between transition-all duration-300 ${
+          isMobile ? 'h-14' : 'h-16'
+        }`}>
           
-          {/* Left: ProtoThrive Logo */}
-          <motion.div
-            variants={logoVariants}
-            whileHover="hover"
-            className="flex items-center space-x-3"
-          >
-            <div className="relative">
-              <div className="w-10 h-10 rounded-lg bg-gradient-neon-mix flex items-center justify-center">
-                <SparklesIcon className="w-6 h-6 text-white" />
+          {/* Left: Mobile Hamburger + Logo */}
+          <div className="flex items-center space-x-3">
+            {/* Mobile Hamburger Menu */}
+            {(isMobile || isTablet) && onToggleSidebar && (
+              <motion.button
+                onClick={onToggleSidebar}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-10 h-10 rounded-lg bg-dark-secondary/60 backdrop-blur-lg border border-neon-blue-primary/30 flex items-center justify-center hover:border-neon-blue-primary/60 transition-all duration-300"
+              >
+                <Bars3Icon className="w-5 h-5 text-neon-blue-primary" />
+              </motion.button>
+            )}
+            
+            {/* ProtoThrive Logo */}
+            <motion.div
+              variants={logoVariants}
+              whileHover="hover"
+              className="flex items-center space-x-2"
+            >
+              <div className="relative">
+                <div className={`rounded-lg bg-gradient-neon-mix flex items-center justify-center ${
+                  isMobile ? 'w-8 h-8' : 'w-10 h-10'
+                }`}>
+                  <SparklesIcon className={`text-white ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} />
+                </div>
+                <div className="absolute -inset-1 bg-gradient-neon-mix rounded-lg blur opacity-30 animate-neon-pulse"></div>
               </div>
-              <div className="absolute -inset-1 bg-gradient-neon-mix rounded-lg blur opacity-30 animate-neon-pulse"></div>
-            </div>
-            <div className="hidden sm:block">
-              <h1 className="text-xl font-bold text-elite bg-gradient-neon-mix bg-clip-text text-transparent animate-gradient-shift">
-                ProtoThrive
-              </h1>
-              <p className="text-xs text-neon-blue-light/80">Elite Platform</p>
-            </div>
-          </motion.div>
+              <div className={isMobile ? 'hidden' : 'hidden sm:block'}>
+                <h1 className="text-xl font-bold text-elite bg-gradient-neon-mix bg-clip-text text-transparent animate-gradient-shift">
+                  ProtoThrive
+                </h1>
+                <p className="text-xs text-neon-blue-light/80">Elite Platform</p>
+              </div>
+            </motion.div>
+          </div>
 
           {/* Center: AI Chat Bar */}
           <motion.div 

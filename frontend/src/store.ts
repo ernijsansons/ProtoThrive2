@@ -45,6 +45,32 @@ interface ProjectMetrics {
   };
 }
 
+export type DeploymentStatus = 'ready' | 'building' | 'deployed' | 'error';
+export type SystemStatus = 'healthy' | 'warning' | 'error' | 'offline';
+
+interface SystemStatusData {
+  canvas: SystemStatus;
+  aiAgents: SystemStatus;
+  database: SystemStatus;
+  overall: SystemStatus;
+}
+
+interface BuildInfo {
+  version: string;
+  lastUpdated: Date;
+  deploymentUrl?: string;
+  buildId?: string;
+}
+
+interface FooterState {
+  deploymentStatus: DeploymentStatus;
+  isDeploying: boolean;
+  deployProgress: number;
+  systemStatus: SystemStatusData;
+  buildInfo: BuildInfo;
+  showBuildInfo: boolean;
+}
+
 interface InsightsPanelState {
   isExpanded: boolean;
   position: 'sidebar' | 'bottom';
@@ -60,6 +86,7 @@ interface State {
   mode: '2d' | '3d';
   thriveScore: number;
   insightsPanel: InsightsPanelState;
+  footer: FooterState;
   loadGraph: (nodes: Node[], edges: Edge[]) => void;
   toggleMode: () => void;
   updateScore: (score: number) => void;
@@ -70,6 +97,15 @@ interface State {
   addChatMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   setAgentTyping: (typing: boolean) => void;
   updateMetrics: (metrics: Partial<ProjectMetrics>) => void;
+  // Footer actions
+  setDeploymentStatus: (status: DeploymentStatus) => void;
+  setDeployProgress: (progress: number) => void;
+  updateSystemStatus: (status: Partial<SystemStatusData>) => void;
+  toggleBuildInfo: () => void;
+  triggerDeploy: () => Promise<void>;
+  handleSave: () => void;
+  handleExport: () => void;
+  handleShare: () => void;
 }
 
 export const useStore = create<State>((set, get) => ({
@@ -84,6 +120,24 @@ export const useStore = create<State>((set, get) => ({
   ],
   mode: '2d',
   thriveScore: 0.73,
+  footer: {
+    deploymentStatus: 'ready',
+    isDeploying: false,
+    deployProgress: 0,
+    systemStatus: {
+      canvas: 'healthy',
+      aiAgents: 'healthy',
+      database: 'healthy',
+      overall: 'healthy'
+    },
+    buildInfo: {
+      version: '2.1.0',
+      lastUpdated: new Date(Date.now() - 300000),
+      deploymentUrl: 'https://protothrive-elite.vercel.app',
+      buildId: 'pb-2024-09-12-1430'
+    },
+    showBuildInfo: false
+  },
   insightsPanel: {
     isExpanded: true,
     position: 'sidebar',
@@ -203,5 +257,74 @@ export const useStore = create<State>((set, get) => ({
         }
       }
     }));
+  },
+  // Footer actions
+  setDeploymentStatus: (status) => {
+    set((state) => ({
+      footer: {
+        ...state.footer,
+        deploymentStatus: status
+      }
+    }));
+  },
+  setDeployProgress: (progress) => {
+    set((state) => ({
+      footer: {
+        ...state.footer,
+        deployProgress: progress
+      }
+    }));
+  },
+  updateSystemStatus: (status) => {
+    set((state) => ({
+      footer: {
+        ...state.footer,
+        systemStatus: {
+          ...state.footer.systemStatus,
+          ...status
+        }
+      }
+    }));
+  },
+  toggleBuildInfo: () => {
+    set((state) => ({
+      footer: {
+        ...state.footer,
+        showBuildInfo: !state.footer.showBuildInfo
+      }
+    }));
+  },
+  triggerDeploy: async () => {
+    const { setDeploymentStatus, setDeployProgress } = get();
+    
+    console.log('Thermonuclear Deploy Started');
+    setDeploymentStatus('building');
+    set((state) => ({ footer: { ...state.footer, isDeploying: true } }));
+    
+    // Simulate deployment progress
+    for (let i = 0; i <= 100; i += 10) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      setDeployProgress(i);
+    }
+    
+    setDeploymentStatus('deployed');
+    set((state) => ({ footer: { ...state.footer, isDeploying: false } }));
+    
+    // Reset to ready after 3 seconds
+    setTimeout(() => {
+      setDeploymentStatus('ready');
+    }, 3000);
+  },
+  handleSave: () => {
+    console.log('Thermonuclear Save Action');
+    // Add save logic here
+  },
+  handleExport: () => {
+    console.log('Thermonuclear Export Action');
+    // Add export logic here
+  },
+  handleShare: () => {
+    console.log('Thermonuclear Share Action');
+    // Add share logic here
   }
 }));

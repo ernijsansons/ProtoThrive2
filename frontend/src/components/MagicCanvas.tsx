@@ -59,9 +59,11 @@ const eliteEdgeStyles = {
 
 interface MagicCanvasProps {
   className?: string;
+  isMobile?: boolean;
+  isTablet?: boolean;
 }
 
-const MagicCanvasCore = ({ className = '' }: MagicCanvasProps) => {
+const MagicCanvasCore = ({ className = '', isMobile = false, isTablet = false }: MagicCanvasProps) => {
   console.log('Thermonuclear Elite MagicCanvas Rendered');
   const { nodes: storeNodes, edges: storeEdges, mode, thriveScore } = useStore();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -74,6 +76,12 @@ const MagicCanvasCore = ({ className = '' }: MagicCanvasProps) => {
     connectionCount: 0,
     completionRate: 0,
   });
+  
+  // Mobile-specific state
+  const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null);
+  const [isMultiTouch, setIsMultiTouch] = useState(false);
+  const [lastTouchTime, setLastTouchTime] = useState(0);
+  const [touchZoomActive, setTouchZoomActive] = useState(false);
   
   const reactFlowInstance = useReactFlow();
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -179,6 +187,127 @@ const MagicCanvasCore = ({ className = '' }: MagicCanvasProps) => {
 
     setNodes((nds) => nds.concat(newNode));
   }, [reactFlowInstance, setNodes]);
+
+  // Mobile touch gesture handlers - Non-conflicting with React Flow
+  const handleTouchStart = useCallback((event: React.TouchEvent) => {
+    if (!isMobile && !isTablet) return;
+    
+    // Only handle touches on control panel or non-React Flow elements
+    const target = event.target as HTMLElement;
+    if (target.closest('.react-flow__renderer')) {
+      // Let React Flow handle its own touch events
+      return;
+    }
+    
+    const touch = event.touches[0];
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY });
+    setIsMultiTouch(event.touches.length > 1);
+    
+    // Detect double tap for mobile zoom (only on control elements)
+    const currentTime = Date.now();
+    if (currentTime - lastTouchTime < 300) {
+      // Double tap detected - fit view or zoom to selection
+      if (selectedNodes.length > 0) {
+        reactFlowInstance.fitView({ 
+          nodes: selectedNodes.map(id => ({ id })),
+          padding: 0.3,
+          duration: 500 
+        });
+      } else {
+        reactFlowInstance.fitView({ padding: 0.2, duration: 500 });
+      }
+    }
+    setLastTouchTime(currentTime);
+  }, [isMobile, isTablet, selectedNodes, reactFlowInstance, lastTouchTime]);
+
+  const handleTouchMove = useCallback((event: React.TouchEvent) => {
+    if (!isMobile && !isTablet) return;
+    
+    // Only prevent default on non-React Flow elements to avoid conflicts
+    const target = event.target as HTMLElement;
+    if (target.closest('.react-flow__renderer')) {
+      // Let React Flow handle its own gestures
+      return;
+    }
+    
+    // Handle multi-touch on control elements only
+    if (event.touches.length === 2 && !touchZoomActive) {
+      setTouchZoomActive(true);
+      // Don't preventDefault here - let React Flow handle zoom
+    }
+  }, [isMobile, isTablet, touchZoomActive]);
+
+  const handleTouchEnd = useCallback((event: React.TouchEvent) => {
+    if (!isMobile && !isTablet || !touchStartPos) return;
+    
+    // Only handle touches on control panel or non-React Flow elements
+    const target = event.target as HTMLElement;
+    if (target.closest('.react-flow__renderer')) {
+      // Let React Flow handle its own touch events
+      setTouchStartPos(null);
+      setIsMultiTouch(false);
+      setTouchZoomActive(false);
+      return;
+    }
+    
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - touchStartPos.x;
+    const deltaY = touch.clientY - touchStartPos.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // Reset multi-touch and zoom states
+    setIsMultiTouch(false);
+    setTouchZoomActive(false);
+    setTouchStartPos(null);
+    
+    // Handle swipe gestures only on control elements
+    if (distance > 50) {
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Horizontal swipe
+        if (deltaX > 50) {
+          // Swipe right - fit view
+          reactFlowInstance.fitView({ padding: 0.2, duration: 500 });
+        } else if (deltaX < -50) {
+          // Swipe left - center on selected nodes or reset
+          if (selectedNodes.length > 0) {
+            const selectedNodeObjects = nodes.filter(n => selectedNodes.includes(n.id));
+            if (selectedNodeObjects.length > 0) {
+              const avgX = selectedNodeObjects.reduce((sum, n) => sum + n.position.x, 0) / selectedNodeObjects.length;
+              const avgY = selectedNodeObjects.reduce((sum, n) => sum + n.position.y, 0) / selectedNodeObjects.length;
+              reactFlowInstance.setCenter(avgX, avgY, { zoom: 1.2, duration: 500 });
+            }
+          }
+        }
+      }
+    }
+  }, [isMobile, isTablet, touchStartPos, selectedNodes, nodes, reactFlowInstance]);
+
+  // Enhanced mobile drag and drop for touch devices
+  const handleMobileTouchNodeDrop = useCallback((position: { x: number; y: number }, templateData: any) => {
+    if (!isMobile && !isTablet) return;
+    
+    const flowPosition = reactFlowInstance.screenToFlowPosition(position);
+    const newNode: Node = {
+      id: `mobile-${templateData.id}-${Date.now()}`,
+      type: 'custom',
+      position: flowPosition,
+      data: {
+        label: templateData.name || templateData.label,
+        status: 'gray',
+        templateMatch: templateData.id,
+        isMobileCreated: true,
+      },
+      style: {
+        background: 'rgba(42, 42, 43, 0.8)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: isMobile ? '8px' : '12px',
+        backdropFilter: 'blur(10px)',
+        transform: isMobile ? 'scale(0.9)' : 'scale(1)',
+      },
+    };
+
+    setNodes((nds) => nds.concat(newNode));
+  }, [isMobile, isTablet, reactFlowInstance, setNodes]);
 
   // Elite canvas controls
   const handleZoomIn = () => reactFlowInstance.zoomIn();
@@ -286,6 +415,9 @@ const MagicCanvasCore = ({ className = '' }: MagicCanvasProps) => {
         style={{
           background: 'transparent',
         }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Elite Background with Neon Grid */}
         <Background 
