@@ -45,7 +45,6 @@ const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [showMobileInsights, setShowMobileInsights] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
 
   // Hydration-safe mobile detection
   const checkMobileLayout = useCallback(() => {
@@ -74,7 +73,6 @@ const Dashboard = () => {
 
   // Hydration-safe effect for mobile detection
   useEffect(() => {
-    setIsMounted(true);
     checkMobileLayout();
     
     if (typeof window !== 'undefined') {
@@ -142,21 +140,6 @@ const Dashboard = () => {
     // Here you could navigate or update the view
   };
 
-  // Prevent hydration mismatch by ensuring consistent rendering
-  if (!isMounted) {
-    return (
-      <div className="min-h-screen bg-dark-primary">
-        <div className="fixed top-0 left-0 right-0 z-50 h-16 bg-dark-primary/80 backdrop-blur-lg border-b border-neon-blue-primary/20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-center">
-            <div className="animate-pulse text-neon-blue-primary">Loading...</div>
-          </div>
-        </div>
-        <div className="pt-16 h-screen flex items-center justify-center">
-          <div className="animate-pulse text-text-muted">Initializing Elite Platform...</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div 

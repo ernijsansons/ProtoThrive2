@@ -67,5 +67,9 @@ export const useBodyScrollLock = (lockId: string, shouldLock: boolean) => {
     isLocked = false;
   };
 
-  return { emergencyUnlock, activeLockCount: activeLocks.size };
+  return { 
+    isScrollLocked: isLocked, 
+    activeLockCount: activeLocks.size, 
+    emergencyUnlock 
+  };
 };
