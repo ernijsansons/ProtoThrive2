@@ -345,7 +345,7 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ className = '', isMobile:
                       ? 'rgba(0, 210, 255, 0.1)' 
                       : isSwipingHorizontal 
                         ? 'rgba(0, 255, 136, 0.1)' 
-                        : 'transparent'
+                        : 'rgba(0, 0, 0, 0)'
                   }}
                   whileHover={{ 
                     backgroundColor: 'rgba(0, 210, 255, 0.05)',

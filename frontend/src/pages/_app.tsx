@@ -27,7 +27,9 @@ export default function App({ Component, pageProps }: { Component: any, pageProp
   console.log('Thermonuclear App Rendered');
   return (
     <ErrorBoundary>
-      <Component {...pageProps} />
+      <div suppressHydrationWarning>
+        <Component {...pageProps} />
+      </div>
     </ErrorBoundary>
   );
 }

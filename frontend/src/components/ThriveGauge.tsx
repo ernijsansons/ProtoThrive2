@@ -70,7 +70,9 @@ const ThriveGauge: React.FC<ThriveGaugeProps> = ({
         className="relative w-full h-full"
         animate={{
           scale: isGlowing ? 1.05 : 1,
-          filter: isGlowing ? 'drop-shadow(0 0 20px currentColor)' : 'none'
+          filter: isGlowing 
+            ? `drop-shadow(0 0 20px ${scoreColor})` 
+            : `drop-shadow(0 0 0px ${scoreColor})`
         }}
         transition={{ duration: 0.5 }}
       >
@@ -102,10 +104,9 @@ const ThriveGauge: React.FC<ThriveGaugeProps> = ({
             initial={{ strokeDasharray: `0 ${circumference}` }}
             animate={{ strokeDasharray }}
             transition={{ duration: 2, ease: 'easeOut' }}
-            className="filter drop-shadow-lg"
             style={{ 
               filter: `drop-shadow(0 0 8px ${scoreColor})`,
-              transition: 'stroke 0.3s ease'
+              transition: 'stroke 0.3s ease, filter 0.3s ease'
             }}
           />
           

@@ -23,8 +23,10 @@ const Header: React.FC<HeaderProps> = ({ className = '', isMobile = false, isTab
   const [thriveProgress, setThriveProgress] = useState(73); // Example progress
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Handle scroll effect
+  // Hydration-safe scroll effect
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
@@ -167,6 +169,7 @@ const Header: React.FC<HeaderProps> = ({ className = '', isMobile = false, isTab
                   scale: 1.02,
                   boxShadow: '0 0 25px rgba(0, 210, 255, 0.3)',
                 }}
+                suppressHydrationWarning
               />
               {chatInput && (
                 <motion.div
