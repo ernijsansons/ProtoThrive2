@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-<<<<<<< HEAD
   swcMinify: true,
-=======
   
   // Static export for Cloudflare Pages
   output: 'export',
@@ -88,8 +86,6 @@ const nextConfig = {
 
     return config;
   },
-
->>>>>>> 9993d4daa71e4a7919def7cd132b67cde036847a
 };
 
 module.exports = nextConfig;
