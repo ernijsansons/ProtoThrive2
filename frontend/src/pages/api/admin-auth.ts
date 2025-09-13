@@ -2,7 +2,18 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { validateEnvironment, verifyPassword, generateToken, sanitizeInput, RateLimiter } from '../utils/secure-auth';
 
+<<<<<<< HEAD
 const rateLimiter = new RateLimiter();
+=======
+// Export edge runtime for Cloudflare Pages compatibility
+export const runtime = 'edge';
+
+// Mock super admin credentials - in production, use proper auth service
+const SUPER_ADMIN_CREDENTIALS = {
+  email: 'admin@protothrive.com',
+  password: 'ThermonuclearAdmin2025!' // In production, this would be hashed
+};
+>>>>>>> 9993d4daa71e4a7919def7cd132b67cde036847a
 
 export default async function handler(
   req: NextApiRequest,

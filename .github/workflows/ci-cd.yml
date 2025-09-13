@@ -32,7 +32,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Cache npm dependencies
         uses: actions/cache@v4
@@ -48,12 +55,17 @@ jobs:
       - name: Install dependencies
         run: |
           echo "Thermonuclear Init: Installing dependencies"
-          npm ci || npm install
+          npm ci
+          npm run install-workspaces
 
       - name: Run ESLint
         run: |
           echo "Thermonuclear Validation: Running lint checks"
+<<<<<<< HEAD
           npm run lint || echo "Lint check completed with warnings"
+=======
+          npm run lint
+>>>>>>> 9993d4daa71e4a7919def7cd132b67cde036847a
           echo "Thermonuclear Checkpoint: Lint completed"
 
   # Test job - Run unit and integration tests
@@ -70,17 +82,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install dependencies
         run: |
           echo "Thermonuclear Init: Installing test dependencies"
-          npm ci || npm install
+          npm ci
+          npm run install-workspaces
 
       - name: Run unit tests
         run: |
           echo "Thermonuclear Validation: Running tests"
-          npm test || echo "No test script found - proceeding"
+          npm test
           echo "Thermonuclear Checkpoint: Tests completed"
 
       - name: Upload coverage reports
@@ -105,17 +125,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install dependencies
         run: |
           echo "Thermonuclear Init: Installing build dependencies"
-          npm ci || npm install
+          npm ci
+          npm run install-workspaces
 
       - name: Build application
         run: |
           echo "Thermonuclear Build: Compiling application"
-          npm run build || echo "No build script found - proceeding"
+          npm run build
           echo "Thermonuclear Checkpoint: Build completed"
 
       - name: Upload build artifacts
@@ -147,6 +175,14 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install Wrangler
         run: |
           echo "Thermonuclear Init: Installing Cloudflare Wrangler"
@@ -158,10 +194,25 @@ jobs:
           name: build-artifacts
 
       - name: Deploy to Cloudflare Workers (Staging)
+        working-directory: backend
         run: |
-          echo "Thermonuclear Deploy: Pushing to staging environment"
-          wrangler deploy --env staging || echo "Mock deploy to staging"
-          echo "Thermonuclear Checkpoint: Staging deployment completed"
+          echo "Thermonuclear Deploy: Pushing backend to staging environment"
+          wrangler deploy --env staging
+          echo "Thermonuclear Checkpoint: Backend staging deployment completed"
+
+      - name: Build Frontend for Staging
+        working-directory: frontend
+        run: |
+          echo "Thermonuclear Build: Building frontend for staging"
+          npm run build
+          echo "Thermonuclear Checkpoint: Frontend build completed"
+
+      - name: Deploy to Cloudflare Pages (Staging)
+        working-directory: frontend
+        run: |
+          echo "Thermonuclear Deploy: Pushing frontend to staging environment"
+          wrangler pages deploy out --project-name=protothrive-frontend --branch=staging
+          echo "Thermonuclear Checkpoint: Frontend staging deployment completed"
 
   # Deploy to production - For version tags
   deploy-prod:
@@ -182,6 +233,14 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install Wrangler
         run: |
           echo "Thermonuclear Init: Installing Cloudflare Wrangler"
@@ -193,10 +252,25 @@ jobs:
           name: build-artifacts
 
       - name: Deploy to Cloudflare Workers (Production)
+        working-directory: backend
         run: |
-          echo "Thermonuclear Deploy: Pushing to production environment"
-          wrangler publish --env prod || echo "Mock deploy to production"
-          echo "Thermonuclear Checkpoint: Production deployment completed"
+          echo "Thermonuclear Deploy: Pushing backend to production environment"
+          wrangler deploy --env production
+          echo "Thermonuclear Checkpoint: Backend production deployment completed"
+
+      - name: Build Frontend for Production
+        working-directory: frontend
+        run: |
+          echo "Thermonuclear Build: Building frontend for production"
+          npm run build
+          echo "Thermonuclear Checkpoint: Frontend build completed"
+
+      - name: Deploy to Cloudflare Pages (Production)
+        working-directory: frontend
+        run: |
+          echo "Thermonuclear Deploy: Pushing frontend to production environment"
+          wrangler pages deploy out --project-name=protothrive-frontend --branch=main
+          echo "Thermonuclear Checkpoint: Frontend production deployment completed"
 
       - name: Create Release
         uses: actions/create-release@v1
