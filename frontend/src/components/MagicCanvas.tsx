@@ -379,7 +379,7 @@ const MagicCanvasCore = ({ className = '', isMobile = false, isTablet = false }:
         <div className="absolute top-4 right-4 z-10">
           <div className="glass-elite p-3 rounded-lg">
             <div className="flex items-center space-x-3 text-sm">
-              <Sparkles className="h-4 w-4 text-neon-blue-primary animate-neon-glow" />
+              <Sparkles className="h-4 w-4 text-neon-blue-primary animate-neon-glow" suppressHydrationWarning={true} />
               <span className="text-neon-blue-primary">3D Mode Active</span>
             </div>
           </div>
@@ -460,7 +460,7 @@ const MagicCanvasCore = ({ className = '', isMobile = false, isTablet = false }:
             transition={{ delay: 0.2 }}
           >
             <div className="flex items-center space-x-3 mb-3">
-              <Layers className="h-5 w-5 text-neon-blue-primary" />
+              <Layers className="h-5 w-5 text-neon-blue-primary" suppressHydrationWarning={true} />
               <h3 className="text-sm font-bold text-neon-blue-primary">Canvas Stats</h3>
             </div>
             <div className="space-y-2 text-xs">
@@ -503,35 +503,35 @@ const MagicCanvasCore = ({ className = '', isMobile = false, isTablet = false }:
                 className="p-2 rounded bg-neon-blue-primary/20 hover:bg-neon-blue-primary/30 transition-colors neon-glow-blue"
                 title="Zoom In"
               >
-                <ZoomIn className="h-4 w-4 text-neon-blue-primary" />
+                <ZoomIn className="h-4 w-4 text-neon-blue-primary" suppressHydrationWarning={true} />
               </button>
               <button 
                 onClick={handleZoomOut}
                 className="p-2 rounded bg-neon-blue-primary/20 hover:bg-neon-blue-primary/30 transition-colors neon-glow-blue"
                 title="Zoom Out"
               >
-                <ZoomOut className="h-4 w-4 text-neon-blue-primary" />
+                <ZoomOut className="h-4 w-4 text-neon-blue-primary" suppressHydrationWarning={true} />
               </button>
               <button 
                 onClick={handleFitView}
                 className="p-2 rounded bg-neon-green-primary/20 hover:bg-neon-green-primary/30 transition-colors neon-glow-green"
                 title="Fit View"
               >
-                <Maximize className="h-4 w-4 text-neon-green-primary" />
+                <Maximize className="h-4 w-4 text-neon-green-primary" suppressHydrationWarning={true} />
               </button>
               <button 
                 onClick={handleReset}
                 className="p-2 rounded bg-neon-purple/20 hover:bg-neon-purple/30 transition-colors neon-glow-purple"
                 title="Reset View"
               >
-                <RotateCcw className="h-4 w-4 text-neon-purple" />
+                <RotateCcw className="h-4 w-4 text-neon-purple" suppressHydrationWarning={true} />
               </button>
               <button 
                 onClick={handleExport}
                 className="p-2 rounded bg-neon-orange/20 hover:bg-neon-orange/30 transition-colors"
                 title="Export Canvas"
               >
-                <Download className="h-4 w-4 text-neon-orange" />
+                <Download className="h-4 w-4 text-neon-orange" suppressHydrationWarning={true} />
               </button>
             </div>
           </motion.div>
@@ -547,7 +547,7 @@ const MagicCanvasCore = ({ className = '', isMobile = false, isTablet = false }:
               exit={{ opacity: 0, y: 20 }}
             >
               <div className="flex items-center space-x-3 mb-2">
-                <Settings className="h-4 w-4 text-neon-purple" />
+                <Settings className="h-4 w-4 text-neon-purple" suppressHydrationWarning={true} />
                 <span className="text-sm font-bold text-neon-purple">
                   {selectedNodes.length} Node{selectedNodes.length > 1 ? 's' : ''} Selected
                 </span>

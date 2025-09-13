@@ -1,5 +1,4 @@
 import Header from '@/components/Header';
-import MagicCanvas from '@/components/MagicCanvas';
 import InsightsPanel from '@/components/InsightsPanel';
 import EliteSidebar from '@/components/EliteSidebar';
 import Footer from '@/components/Footer';
@@ -7,6 +6,10 @@ import {useStore} from '@/store';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
+
+// Dynamically import MagicCanvas with SSR disabled to prevent hydration errors
+const MagicCanvas = dynamic(() => import('@/components/MagicCanvas'), { ssr: false });
 
 // Type definitions
 interface Template {
