@@ -1,0 +1,21 @@
+{
+  "timestamp": "2025-09-20T06:51:50.624541",
+  "duration_seconds": 0.0,
+  "tests": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "success_rate": 100.0
+  },
+  "test_results": {
+    "Configuration Files": true,
+    "Sentry Integration": true,
+    "Datadog Metrics": true,
+    "Performance Monitoring": true,
+    "Geographic Tracking": true,
+    "Cost Monitoring": true
+  },
+  "sentry_events": 2,
+  "datadog_metrics": 43,
+  "overall_status": "PASS"
+}

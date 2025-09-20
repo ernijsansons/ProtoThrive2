@@ -1,0 +1,301 @@
+{
+  "project_config": {
+    "name": "protothrive-backend",
+    "platform": "python",
+    "environment": "production",
+    "release": "1.0.0"
+  },
+  "performance_monitoring": {
+    "enabled": true,
+    "traces_sample_rate": 0.1,
+    "profiles_sample_rate": 0.1,
+    "transaction_thresholds": {
+      "response_time_ms": 100,
+      "database_query_ms": 50,
+      "cache_operation_ms": 20
+    }
+  },
+  "error_tracking": {
+    "sample_rate": 1.0,
+    "ignore_errors": [
+      "AbortError",
+      "NetworkError",
+      "TimeoutError"
+    ],
+    "capture_unhandled_rejections": true,
+    "capture_console_integrations": false
+  },
+  "custom_tags": {
+    "platform": "cloudflare-workers",
+    "architecture": "thermonuclear-optimized",
+    "cache_enabled": "true",
+    "argo_routing": "true",
+    "geographic_optimization": "true",
+    "optimization_features": [
+      "cache_api_migration",
+      "d1_query_optimization",
+      "argo_smart_routing",
+      "tiered_caching",
+      "geographic_durable_objects",
+      "r2_images_optimization"
+    ]
+  },
+  "alert_rules": [
+    {
+      "name": "High Error Rate",
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
+          "value": 10,
+          "time": "minute",
+          "name": "The issue is seen more than 10 times in 1 minute"
+        }
+      ],
+      "actions": [
+        {
+          "id": "sentry.rules.actions.notify_event.NotifyEventAction",
+          "name": "Send a notification via Slack"
+        },
+        {
+          "id": "sentry.rules.actions.notify_event_service.NotifyEventServiceAction",
+          "service": "pagerduty",
+          "name": "Send a notification via PagerDuty"
+        }
+      ],
+      "actionMatch": "any",
+      "filterMatch": "any",
+      "frequency": 5
+    },
+    {
+      "name": "Performance Regression",
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.regression_event.RegressionEventCondition",
+          "name": "The issue's status changes from resolved to unresolved"
+        }
+      ],
+      "actions": [
+        {
+          "id": "sentry.rules.actions.notify_event.NotifyEventAction",
+          "name": "Send a notification via Slack"
+        }
+      ],
+      "actionMatch": "any",
+      "filterMatch": "any",
+      "frequency": 30
+    },
+    {
+      "name": "Critical Error Categories",
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.tagged_event.TaggedEventCondition",
+          "key": "error_category",
+          "match": "eq",
+          "value": "authentication"
+        },
+        {
+          "id": "sentry.rules.conditions.tagged_event.TaggedEventCondition",
+          "key": "error_category",
+          "match": "eq",
+          "value": "security"
+        }
+      ],
+      "actions": [
+        {
+          "id": "sentry.rules.actions.notify_event.NotifyEventAction",
+          "name": "Send a notification via Slack"
+        },
+        {
+          "id": "sentry.rules.actions.notify_event_service.NotifyEventServiceAction",
+          "service": "pagerduty",
+          "name": "Send a notification via PagerDuty"
+        }
+      ],
+      "actionMatch": "any",
+      "filterMatch": "any",
+      "frequency": 1
+    }
+  ],
+  "notification_settings": {
+    "slack": {
+      "channel": "#protothrive-alerts",
+      "webhook_url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+      "username": "Sentry",
+      "icon_emoji": ":warning:",
+      "include_rules": ["High Error Rate", "Performance Regression", "Critical Error Categories"]
+    },
+    "email": {
+      "enabled": true,
+      "recipients": [
+        "team@protothrive.com",
+        "oncall@protothrive.com"
+      ],
+      "frequency": "immediate"
+    },
+    "pagerduty": {
+      "service_key": "YOUR_PAGERDUTY_SERVICE_KEY",
+      "severity_mapping": {
+        "critical": "critical",
+        "error": "error",
+        "warning": "warning",
+        "info": "info"
+      }
+    }
+  },
+  "custom_contexts": {
+    "protothrive": {
+      "optimization_feature": "string",
+      "performance_tier": "string",
+      "cache_tier": "string",
+      "region": "string",
+      "user_id": "string",
+      "session_id": "string",
+      "response_time_ms": "number",
+      "cache_hit": "boolean",
+      "optimization_score": "number"
+    },
+    "performance": {
+      "response_time_ms": "number",
+      "database_query_time_ms": "number",
+      "cache_hit_rate": "number",
+      "optimization_active": "boolean",
+      "argo_routing_enabled": "boolean"
+    },
+    "geographic": {
+      "region": "string",
+      "edge_location": "string",
+      "routing_optimized": "boolean",
+      "session_sticky": "boolean"
+    }
+  },
+  "fingerprinting_rules": [
+    {
+      "type": "fingerprint",
+      "matchers": [
+        ["error.type", "PerformanceError"],
+        ["tags.optimization_feature", "*"]
+      ],
+      "fingerprint": ["{{ error.type }}", "{{ tags.optimization_feature }}"]
+    },
+    {
+      "type": "fingerprint",
+      "matchers": [
+        ["error.type", "CacheError"],
+        ["tags.cache_tier", "*"]
+      ],
+      "fingerprint": ["{{ error.type }}", "{{ tags.cache_tier }}"]
+    },
+    {
+      "type": "fingerprint",
+      "matchers": [
+        ["error.type", "GeographicError"],
+        ["tags.region", "*"]
+      ],
+      "fingerprint": ["{{ error.type }}", "{{ tags.region }}"]
+    }
+  ],
+  "release_tracking": {
+    "enabled": true,
+    "auto_deploy_tracking": true,
+    "commit_integration": "github",
+    "repository": "protothrive/backend"
+  },
+  "data_scrubbing": {
+    "scrub_data": true,
+    "scrub_defaults": true,
+    "sensitive_fields": [
+      "password",
+      "secret",
+      "token",
+      "api_key",
+      "auth",
+      "authorization",
+      "credit_card",
+      "ssn"
+    ],
+    "scrub_ip_addresses": false
+  },
+  "retention": {
+    "error_retention_days": 90,
+    "transaction_retention_days": 30,
+    "session_retention_days": 30
+  },
+  "integrations": {
+    "github": {
+      "enabled": true,
+      "repository": "protothrive/backend",
+      "auto_assign_issues": true
+    },
+    "slack": {
+      "enabled": true,
+      "channel": "#protothrive-alerts"
+    },
+    "pagerduty": {
+      "enabled": true,
+      "service_key": "YOUR_PAGERDUTY_SERVICE_KEY"
+    },
+    "datadog": {
+      "enabled": true,
+      "correlation": true,
+      "metric_alerts": true
+    }
+  },
+  "quota_management": {
+    "error_quota": 10000,
+    "transaction_quota": 100000,
+    "attachment_quota": "1GB",
+    "spike_protection": true
+  },
+  "dashboard_widgets": [
+    {
+      "title": "Error Rate by Optimization Feature",
+      "type": "line_chart",
+      "query": "error.handled:false",
+      "group_by": ["tags.optimization_feature"],
+      "time_period": "24h"
+    },
+    {
+      "title": "Performance Issues by Region",
+      "type": "bar_chart",
+      "query": "error.type:PerformanceError",
+      "group_by": ["tags.region"],
+      "time_period": "7d"
+    },
+    {
+      "title": "Cache Errors by Tier",
+      "type": "pie_chart",
+      "query": "error.type:CacheError",
+      "group_by": ["tags.cache_tier"],
+      "time_period": "24h"
+    },
+    {
+      "title": "Response Time Distribution",
+      "type": "histogram",
+      "query": "transaction.name:api_request",
+      "metric": "transaction.duration",
+      "time_period": "1h"
+    }
+  ],
+  "search_filters": [
+    {
+      "name": "Optimization Errors",
+      "query": "tags.optimization_feature:* AND error.handled:false"
+    },
+    {
+      "name": "Performance Regressions",
+      "query": "error.type:PerformanceError AND tags.severity:critical"
+    },
+    {
+      "name": "Geographic Issues",
+      "query": "tags.region:* AND (error.type:GeographicError OR error.type:RoutingError)"
+    },
+    {
+      "name": "Cache Problems",
+      "query": "tags.cache_tier:* AND error.type:CacheError"
+    },
+    {
+      "name": "Thermonuclear Status",
+      "query": "tags.architecture:thermonuclear-optimized"
+    }
+  ]
+}

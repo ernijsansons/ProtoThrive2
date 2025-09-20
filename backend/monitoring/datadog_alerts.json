@@ -1,0 +1,228 @@
+{
+  "monitors": [
+    {
+      "name": "🚨 ProtoThrive - Critical Response Time P99",
+      "type": "metric alert",
+      "query": "avg(last_5m):avg:protothrive.performance.response_time.p99{environment:production} > 200",
+      "message": "⚠️ **CRITICAL**: P99 response time is above 200ms threshold!\n\n**Current Value**: {{value}}ms\n**Threshold**: 200ms\n**Environment**: {{environment.name}}\n**Region**: {{region.name}}\n\n**Impact**: Users experiencing slow response times\n**Action Required**: Immediate investigation needed\n\n**Runbook**: Check cache hit rates, database performance, and Argo routing\n\n**Dashboard**: [ProtoThrive Performance](https://app.datadoghq.com/dashboard/protothrive-performance)\n\n@slack-alerts @pagerduty-critical",
+      "tags": [
+        "service:protothrive",
+        "team:backend",
+        "severity:critical",
+        "category:performance"
+      ],
+      "options": {
+        "thresholds": {
+          "critical": 200,
+          "warning": 150
+        },
+        "notify_audit": false,
+        "require_full_window": false,
+        "notify_no_data": true,
+        "no_data_timeframe": 10,
+        "evaluation_delay": 60,
+        "escalation_message": "🚨 **ESCALATION**: P99 response time still critical after 10 minutes!\n\n@oncall-engineer @team-lead"
+      }
+    },
+    {
+      "name": "⚠️ ProtoThrive - Response Time P50 Degradation",
+      "type": "metric alert",
+      "query": "avg(last_10m):avg:protothrive.performance.response_time.p50{environment:production} > 50",
+      "message": "⚠️ **WARNING**: P50 response time above optimal threshold\n\n**Current Value**: {{value}}ms\n**Target**: <25ms\n**Threshold**: 50ms\n**Environment**: {{environment.name}}\n\n**Performance Impact**: Sub-optimal user experience\n**Recommendation**: Check optimization features and cache performance\n\n**Possible Causes**:\n- Cache hit rate degradation\n- Database query performance\n- Argo routing issues\n- Geographic routing problems\n\n@slack-performance",
+      "tags": [
+        "service:protothrive",
+        "team:backend",
+        "severity:warning",
+        "category:performance"
+      ],
+      "options": {
+        "thresholds": {
+          "warning": 50,
+          "critical": 100
+        },
+        "notify_audit": false,
+        "require_full_window": false,
+        "notify_no_data": false,
+        "evaluation_delay": 60
+      }
+    },
+    {
+      "name": "📉 ProtoThrive - Cache Hit Rate Low",
+      "type": "metric alert",
+      "query": "avg(last_15m):avg:protothrive.performance.cache_hit_rate{environment:production} < 70",
+      "message": "📉 **CACHE PERFORMANCE**: Hit rate below optimal threshold\n\n**Current Hit Rate**: {{value}}%\n**Target**: >90%\n**Critical Threshold**: <70%\n**Environment**: {{environment.name}}\n\n**Impact**: Increased response times and database load\n**Action**: Investigate cache tier performance\n\n**Check**:\n- HOT tier performance: `protothrive.cache.hot.hit_rate`\n- WARM tier performance: `protothrive.cache.warm.hit_rate`\n- COLD tier performance: `protothrive.cache.cold.hit_rate`\n- Cache invalidation patterns\n- Tiered caching strategy\n\n@slack-performance @team-cache",
+      "tags": [
+        "service:protothrive",
+        "team:backend",
+        "severity:warning",
+        "category:cache"
+      ],
+      "options": {
+        "thresholds": {
+          "warning": 80,
+          "critical": 70
+        },
+        "notify_audit": false,
+        "require_full_window": true,
+        "notify_no_data": false,
+        "evaluation_delay": 120
+      }
+    },
+    {
+      "name": "💸 ProtoThrive - Budget Alert Critical",
+      "type": "metric alert",
+      "query": "avg(last_1h):avg:protothrive.cost.budget.utilization_pct{environment:production} >= 95",
+      "message": "💸 **BUDGET CRITICAL**: Monthly budget utilization at 95%!\n\n**Current Utilization**: {{value}}%\n**Monthly Budget**: $500\n**Estimated Monthly Cost**: ${{eval \"value * 5\"}} USD\n\n**⚠️ IMMEDIATE ACTION REQUIRED**:\n1. Review cost breakdown by service\n2. Check for unexpected traffic spikes\n3. Verify optimization features are active\n4. Consider budget increase if traffic is legitimate\n\n**Cost Breakdown**:\n- Workers: `protothrive.cost.service.workers`\n- D1 Database: `protothrive.cost.service.d1_database`\n- KV Store: `protothrive.cost.service.kv_store`\n- R2 Storage: `protothrive.cost.service.r2_storage`\n- Images: `protothrive.cost.service.images_service`\n\n@slack-alerts @finance-team @team-lead",
+      "tags": [
+        "service:protothrive",
+        "team:backend",
+        "severity:critical",
+        "category:cost"
+      ],
+      "options": {
+        "thresholds": {
+          "warning": 80,
+          "critical": 95
+        },
+        "notify_audit": true,
+        "require_full_window": false,
+        "notify_no_data": false,
+        "evaluation_delay": 300
+      }
+    },
+    {
+      "name": "🌍 ProtoThrive - Geographic Performance Degradation",
+      "type": "metric alert",
+      "query": "avg(last_10m):avg:protothrive.geographic.response_time{environment:production} by {region} > 100",
+      "message": "🌍 **GEOGRAPHIC PERFORMANCE**: Region {{region.name}} experiencing degraded performance\n\n**Region**: {{region.name}}\n**Response Time**: {{value}}ms\n**Target**: <50ms per region\n**Threshold**: 100ms\n\n**Regional Analysis**:\n- Check Argo Smart Routing for this region\n- Verify Durable Objects performance\n- Review geographic cache distribution\n- Confirm edge server health\n\n**Optimization Features to Check**:\n- Geographic Durable Objects placement\n- Regional cache performance\n- Argo routing optimization\n- Cross-region failover\n\n@slack-performance @team-geographic",
+      "tags": [
+        "service:protothrive",
+        "team:backend",
+        "severity:warning",
+        "category:geographic"
+      ],
+      "options": {
+        "thresholds": {
+          "warning": 75,
+          "critical": 100
+        },
+        "notify_audit": false,
+        "require_full_window": false,
+        "notify_no_data": false,
+        "evaluation_delay": 120
+      }
+    },
+    {
+      "name": "⚡ ProtoThrive - Database Query Performance",
+      "type": "metric alert",
+      "query": "avg(last_10m):avg:protothrive.performance.database.query_time{environment:production} > 50",
+      "message": "⚡ **DATABASE PERFORMANCE**: Query time above optimal threshold\n\n**Current Query Time**: {{value}}ms\n**Target**: <20ms\n**Threshold**: 50ms\n**Environment**: {{environment.name}}\n\n**Performance Impact**: Slower response times, potential cache misses\n\n**Investigation Steps**:\n1. Check D1 query optimization effectiveness\n2. Review JOIN operations performance\n3. Verify query batching is working\n4. Check for N+1 query problems\n5. Review database connection pooling\n\n**Related Metrics**:\n- Cache hit rate: May indicate cache bypass\n- Response time correlation\n- Database utilization\n\n@slack-performance @team-database",
+      "tags": [
+        "service:protothrive",
+        "team:backend",
+        "severity:warning",
+        "category:database"
+      ],
+      "options": {
+        "thresholds": {
+          "warning": 30,
+          "critical": 50
+        },
+        "notify_audit": false,
+        "require_full_window": false,
+        "notify_no_data": false,
+        "evaluation_delay": 90
+      }
+    },
+    {
+      "name": "🎯 ProtoThrive - Optimization Score Low",
+      "type": "metric alert",
+      "query": "avg(last_20m):avg:protothrive.optimization.score{environment:production} < 0.7",
+      "message": "🎯 **OPTIMIZATION SCORE**: Overall performance score below target\n\n**Current Score**: {{value}}\n**Target**: >0.9\n**Threshold**: <0.7\n\n**Score Components**:\n- Response Time Performance (60% weight)\n- Cache Hit Rate Performance (40% weight)\n\n**Action Required**:\n1. Review all optimization features status\n2. Check individual component performance\n3. Verify thermonuclear optimizations are active\n4. Review recent deployments or changes\n\n**Optimization Features to Verify**:\n- ✅ Cache API Migration\n- ✅ D1 Query Optimization\n- ✅ Argo Smart Routing\n- ✅ Tiered Caching Strategy\n- ✅ Geographic Durable Objects\n- ✅ R2 + Images Optimization\n\n@slack-performance @team-optimization",
+      "tags": [
+        "service:protothrive",
+        "team:backend",
+        "severity:warning",
+        "category:optimization"
+      ],
+      "options": {
+        "thresholds": {
+          "warning": 0.8,
+          "critical": 0.7
+        },
+        "notify_audit": false,
+        "require_full_window": true,
+        "notify_no_data": false,
+        "evaluation_delay": 180
+      }
+    },
+    {
+      "name": "📊 ProtoThrive - Error Rate Elevated",
+      "type": "metric alert",
+      "query": "avg(last_5m):avg:protothrive.geographic.error_rate{environment:production} > 0.05",
+      "message": "📊 **ERROR RATE**: Elevated error rate detected\n\n**Current Error Rate**: {{value}}% ({{eval \"value * 100\"}}%)\n**Target**: <0.1%\n**Threshold**: >5%\n**Environment**: {{environment.name}}\n\n**Critical Impact**: User experience degradation\n\n**Immediate Actions**:\n1. Check Sentry for error details and patterns\n2. Review recent deployments\n3. Verify all services are healthy\n4. Check authentication and authorization systems\n\n**Error Analysis**:\n- Geographic distribution of errors\n- Error type categorization\n- Service component analysis\n- Recent change correlation\n\n**Sentry Dashboard**: Check for detailed error tracking\n\n@slack-alerts @oncall-engineer",
+      "tags": [
+        "service:protothrive",
+        "team:backend",
+        "severity:critical",
+        "category:errors"
+      ],
+      "options": {
+        "thresholds": {
+          "warning": 0.01,
+          "critical": 0.05
+        },
+        "notify_audit": false,
+        "require_full_window": false,
+        "notify_no_data": false,
+        "evaluation_delay": 60
+      }
+    },
+    {
+      "name": "🚀 ProtoThrive - Argo Routing Degradation",
+      "type": "metric alert",
+      "query": "avg(last_15m):avg:protothrive.argo.optimization_rate{environment:production} < 0.5",
+      "message": "🚀 **ARGO ROUTING**: Optimization rate below expected threshold\n\n**Current Optimization Rate**: {{value}}% ({{eval \"value * 100\"}}%)\n**Target**: >80%\n**Threshold**: <50%\n\n**Impact**: Sub-optimal routing performance, slower response times\n\n**Investigation**:\n1. Check Cloudflare Argo Smart Routing status\n2. Verify routing configuration in wrangler.toml\n3. Review geographic routing patterns\n4. Check for network issues or outages\n\n**Related Performance**:\n- Geographic response time impact\n- Overall response time correlation\n- Regional performance distribution\n\n**Configuration to Verify**:\n- `ARGO_SMART_ROUTING = \"true\"`\n- `ARGO_TIERED_CACHING = \"true\"`\n- Placement mode = \"smart\"\n\n@slack-performance @team-routing",
+      "tags": [
+        "service:protothrive",
+        "team:backend",
+        "severity:warning",
+        "category:routing"
+      ],
+      "options": {
+        "thresholds": {
+          "warning": 0.7,
+          "critical": 0.5
+        },
+        "notify_audit": false,
+        "require_full_window": true,
+        "notify_no_data": false,
+        "evaluation_delay": 150
+      }
+    }
+  ],
+  "notification_channels": {
+    "slack-alerts": "@slack-protothrive-alerts",
+    "slack-performance": "@slack-protothrive-performance",
+    "team-cache": "@slack-cache-team",
+    "team-database": "@slack-database-team",
+    "team-geographic": "@slack-geographic-team",
+    "team-optimization": "@slack-optimization-team",
+    "team-routing": "@slack-routing-team",
+    "pagerduty-critical": "@pagerduty-service-protothrive",
+    "oncall-engineer": "@pagerduty-oncall",
+    "team-lead": "@slack-team-leads",
+    "finance-team": "@slack-finance-alerts"
+  },
+  "alert_policies": {
+    "escalation_rules": {
+      "critical_no_ack_15min": "Auto-escalate critical alerts not acknowledged within 15 minutes",
+      "repeat_every_30min": "Repeat critical alerts every 30 minutes until resolved",
+      "auto_resolve_24h": "Auto-resolve alerts after 24 hours if metrics return to normal"
+    },
+    "maintenance_windows": {
+      "weekly_maintenance": "Sundays 02:00-04:00 UTC - Suppress non-critical alerts",
+      "deployment_window": "During deployments - Suppress performance alerts for 10 minutes"
+    }
+  }
+}

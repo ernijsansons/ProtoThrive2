@@ -1,0 +1,7 @@
+
+# Environment files (SECURITY: Never commit secrets)
+.env
+.env.local
+.env.production
+*.pem
+*.key
