@@ -65,7 +65,22 @@
       "Bash(./INSTANT_DEPLOY.sh)",
       "WebFetch(domain:protothrive-frontend.pages.dev)",
       "WebFetch(domain:25f8e87b.protothrive-frontend.pages.dev)",
-      "WebFetch(domain:4618f627.protothrive-frontend.pages.dev)"
+      "WebFetch(domain:4618f627.protothrive-frontend.pages.dev)",
+      "Bash(PYTHONPATH=./src python -m pytest monitoring/test_monitoring.py::MonitoringTestSuite::test_health_checks -v)",
+      "Bash(pip install:*)",
+      "Bash(npm run migrate:*)",
+      "Bash(for file in frontend/src/utils/perfect-phase{4,5,6,7,8,9}.ts)",
+      "Bash(do)",
+      "Bash(if [ -f \"$file\" ])",
+      "Bash(then)",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(for file in frontend/src/utils/ultimate-{performance,security,ai}.ts)",
+      "Bash(npm test:*)",
+      "Bash(npm ci:*)",
+      "Bash(/dev/null)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "defaultMode": "acceptEdits"
   }

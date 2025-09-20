@@ -1,15 +1,21 @@
 {
-  "name": "backend",
+  "name": "protothrive-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/main.py",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "wrangler dev"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production",
+    "test": "python -m pytest tests/ -v",
+    "lint": "python -m flake8 src/ --max-line-length=100",
+    "migrate": "wrangler d1 execute protothrive-db --file=../migrations/001_init.sql",
+    "migrate:remote": "wrangler d1 execute protothrive-db --file=../migrations/001_init.sql --remote"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": ["protothrive", "backend", "cloudflare-workers", "python"],
+  "author": "ProtoThrive Team",
+  "license": "MIT",
+  "description": "ProtoThrive Backend API - Cloudflare Workers Python Application",
   "devDependencies": {
     "wrangler": "^4.32.0"
   }

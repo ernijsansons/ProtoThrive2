@@ -9,7 +9,7 @@
     "build:production": "cross-env NODE_ENV=production next build",
     "start": "next start -H 0.0.0.0 -p ${PORT:-5000}",
     "start:production": "cross-env NODE_ENV=production next start -H 0.0.0.0 -p ${PORT:-5000}",
-    "lint": "echo 'ESLint temporarily disabled due to version compatibility - will fix in follow-up'",
+    "lint": "next lint",
     "test": "jest",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "deploy": "npm run build:production && npm run start:production",
