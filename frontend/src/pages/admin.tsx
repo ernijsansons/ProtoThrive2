@@ -1,34 +1,32 @@
 // Ref: CLAUDE.md - Super Admin Dashboard
-import { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import ApiKeysManager from '../components/ApiKeysManager';
 
-const AdminDashboard = useCallback(() => {
+const AdminDashboard = () => {
   console.log('Thermonuclear AdminDashboard Rendered');
   
-  const router = useMemo(() => useRouter(), []);
+  const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('api-keys');
 
-  useEffect(() => {
-  // TODO: Add dependencies
-  // TODO: Add dependencies
-    // Check if user is super admin
-    const checkAuth = useCallback(() => {
-      const adminToken = localStorage.getItem('adminToken');
-      const userRole = localStorage.getItem('userRole');
-      
-      if (!adminToken || userRole !== 'super_admin') {
-        console.log('Thermonuclear: Unauthorized access attempt');
-        router.push('/');
-        return;
-      }
-      
-      setIsAuthenticated(true);
-    };
-
-    checkAuth();
+  const checkAuth = useCallback(() => {
+    const adminToken = localStorage.getItem('adminToken');
+    const userRole = localStorage.getItem('userRole');
+    
+    if (!adminToken || userRole !== 'super_admin') {
+      console.log('Thermonuclear: Unauthorized access attempt');
+      router.push('/');
+      return;
+    }
+    
+    setIsAuthenticated(true);
   }, [router]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   if (!isAuthenticated) {
     return (

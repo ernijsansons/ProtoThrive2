@@ -1,10 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../store';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import ThriveGauge from './ThriveGauge';
 import AgentChatInterface from './AgentChatInterface';
 import MetricsCards from './MetricsCards';
+import AgentReportDisplay from './AgentReportDisplay';
+import EnhancedAgentReportDisplay from './EnhancedAgentReportDisplay';
+import AgentAnalysisLoader from './AgentAnalysisLoader';
+import ToastNotification, { useToast } from './ToastNotification';
+import AnalysisHistory from './AnalysisHistory';
+import AgentControlPanel from './AgentControlPanel';
+import AgentStatusMonitor from './AgentStatusMonitor';
 import { 
   ChevronDownIcon,
   ChevronUpIcon,
@@ -14,7 +22,9 @@ import {
   ClockIcon,
   DevicePhoneMobileIcon,
   ComputerDesktopIcon,
-  XMarkIcon
+  XMarkIcon,
+  PlayIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 
 interface InsightsPanelProps {
@@ -28,12 +38,31 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ className = '', isMobile:
   
   const { 
     insightsPanel: { isExpanded, position, activeTab },
+    agentReport,
+    isLoading,
+    currentRoadmapId,
+    analysisHistory,
+    agentConfig,
+    agentStatus,
+    runAgentAnalysis,
     toggleInsightsPanel,
     setInsightsPanelPosition,
-    setInsightsPanelTab
+    setInsightsPanelTab,
+    removeAnalysisHistoryEntry,
+    clearAnalysisHistory,
+    updateAgentConfig,
+    updateAgentStatus,
+    startAgentAnalysis,
+    pauseAgentAnalysis,
+    stopAgentAnalysis,
+    resetAgentConfig
   } = useStore();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isRunningAnalysis, setIsRunningAnalysis] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState("Initializing analysis...");
+  const { toast, showSuccess, showError, hideToast } = useToast();
   
   // Mobile touch gesture state
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
@@ -147,8 +176,69 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ className = '', isMobile:
     }
   };
 
-  // Tab configurations
-  const tabs = [
+  // Memoize progress steps to avoid recreation on every render
+  const progressSteps = useMemo(() => [
+    "Initializing analysis...",
+    "Analyzing roadmap structure...",
+    "Processing node relationships...",
+    "Evaluating confidence metrics...",
+    "Generating insights...",
+    "Finalizing report..."
+  ], []);
+
+  // Handle AI Analysis button click
+  const handleRunAnalysis = useCallback(async () => {
+    if (isRunningAnalysis || isLoading || !currentRoadmapId) return;
+    
+    setIsRunningAnalysis(true);
+    setAnalysisProgress(0);
+    setCurrentStep("Initializing analysis...");
+    
+    const progressInterval = setInterval(() => {
+      setAnalysisProgress(prev => {
+        const nextStep = Math.min(prev + 20, 100);
+        const stepIndex = Math.floor((nextStep / 100) * progressSteps.length);
+        if (stepIndex < progressSteps.length) {
+          setCurrentStep(progressSteps[stepIndex]);
+        }
+        return nextStep;
+      });
+    }, 500);
+    
+    try {
+      await runAgentAnalysis(currentRoadmapId, {
+        task: 'Analyze this roadmap and provide comprehensive insights',
+        budget: 0.5,
+        mode: 'fallback'
+      });
+      
+      clearInterval(progressInterval);
+      setAnalysisProgress(100);
+      setCurrentStep("Analysis complete!");
+      
+      showSuccess(
+        "Analysis Complete!",
+        "Your roadmap has been analyzed successfully. Check the insights below."
+      );
+    } catch (error) {
+      clearInterval(progressInterval);
+      console.error('Failed to run AI analysis:', error);
+      
+      showError(
+        "Analysis Failed",
+        error instanceof Error ? error.message : "An unexpected error occurred during analysis."
+      );
+    } finally {
+      setTimeout(() => {
+        setIsRunningAnalysis(false);
+        setAnalysisProgress(0);
+        setCurrentStep("Initializing analysis...");
+      }, 1000);
+    }
+  }, [isRunningAnalysis, isLoading, currentRoadmapId, runAgentAnalysis, progressSteps, showSuccess, showError]);
+
+  // Memoize tab configurations to avoid recreation on every render
+  const tabs = useMemo(() => [
     {
       id: 'overview' as const,
       label: 'Overview',
@@ -172,10 +262,23 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ className = '', isMobile:
       label: 'Activity',
       icon: <ClockIcon className="w-4 h-4" />,
       color: 'neon-orange'
+    },
+    {
+      id: 'history' as const,
+      label: 'History',
+      icon: <ChartBarIcon className="w-4 h-4" />,
+      color: 'neon-blue'
+    },
+    {
+      id: 'controls' as const,
+      label: 'Controls',
+      icon: <Cog6ToothIcon className="w-4 h-4" />,
+      color: 'neon-purple'
     }
-  ];
+  ], []);
 
-  const getTabColorClass = (color: string, isActive: boolean) => {
+  // Memoize color class function to avoid recreation on every render
+  const getTabColorClass = useCallback((color: string, isActive: boolean) => {
     const colorMap = {
       'neon-green': isActive ? 'text-neon-green-primary border-neon-green-primary bg-neon-green-primary/10' : 'text-text-muted hover:text-neon-green-light',
       'neon-blue': isActive ? 'text-neon-blue-primary border-neon-blue-primary bg-neon-blue-primary/10' : 'text-text-muted hover:text-neon-blue-light',
@@ -183,7 +286,7 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ className = '', isMobile:
       'neon-orange': isActive ? 'text-neon-orange border-neon-orange bg-neon-orange/10' : 'text-text-muted hover:text-neon-orange'
     };
     return colorMap[color as keyof typeof colorMap] || colorMap['neon-blue'];
-  };
+  }, []);
 
   // Panel animations
   const panelVariants = {
@@ -235,6 +338,54 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ className = '', isMobile:
                 <div className="text-xs text-text-muted">Status</div>
               </div>
             </div>
+            
+            {/* AI Analysis Button */}
+            <div className="pt-4 border-t border-neon-blue-primary/20">
+              <div id="analysis-button-description" className="sr-only">
+                Click to run AI analysis on the current roadmap. This will analyze the project structure and provide insights about the roadmap's health and potential improvements.
+              </div>
+              <motion.button
+                onClick={handleRunAnalysis}
+                disabled={isRunningAnalysis || isLoading || !currentRoadmapId}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                aria-label={isRunningAnalysis ? "AI Analysis in progress" : currentRoadmapId ? "Run AI Analysis on current roadmap" : "No roadmap selected"}
+                aria-describedby="analysis-button-description"
+                className={`w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-lg font-medium text-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-neon-blue-primary focus:ring-offset-2 focus:ring-offset-dark-secondary ${
+                  isRunningAnalysis || isLoading || !currentRoadmapId
+                    ? 'bg-dark-tertiary/50 border border-neon-blue-primary/30 text-text-muted cursor-not-allowed'
+                    : 'bg-gradient-blue border border-neon-blue-primary/50 text-white hover:shadow-glow-blue'
+                }`}
+              >
+                {isRunningAnalysis ? (
+                  <>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-4 h-4 border-2 border-current border-t-transparent rounded-full"
+                    />
+                    <span>Running Analysis...</span>
+                  </>
+                ) : !currentRoadmapId ? (
+                  <>
+                    <PlayIcon className="w-4 h-4" />
+                    <span>No Roadmap Selected</span>
+                  </>
+                ) : (
+                  <>
+                    <PlayIcon className="w-4 h-4" />
+                    <span>Run AI Analysis</span>
+                  </>
+                )}
+              </motion.button>
+            </div>
+
+            {/* Agent Report Display */}
+            {agentReport && (
+              <div className="pt-4 border-t border-neon-blue-primary/20">
+                <EnhancedAgentReportDisplay report={agentReport} />
+              </div>
+            )}
           </div>
         );
       case 'chat':
@@ -276,6 +427,56 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ className = '', isMobile:
             </div>
           </div>
         );
+      case 'history':
+        return (
+          <AnalysisHistory
+            history={analysisHistory}
+            onViewEntry={(entry) => {
+              // TODO: Implement view entry functionality
+              console.log('View entry:', entry);
+            }}
+            onDeleteEntry={removeAnalysisHistoryEntry}
+            onClearHistory={clearAnalysisHistory}
+          />
+        );
+      case 'controls':
+        return (
+          <div className="space-y-6">
+            <AgentControlPanel
+              config={agentConfig}
+              status={agentStatus}
+              onConfigChange={updateAgentConfig}
+              onStartAnalysis={() => {
+                startAgentAnalysis();
+                if (currentRoadmapId) {
+                  runAgentAnalysis(currentRoadmapId, {
+                    task: agentConfig.task,
+                    budget: agentConfig.budget,
+                    mode: agentConfig.mode
+                  });
+                }
+              }}
+              onStopAnalysis={stopAgentAnalysis}
+              onPauseAnalysis={pauseAgentAnalysis}
+              onResetConfig={resetAgentConfig}
+            />
+            <AgentStatusMonitor
+              status={agentStatus}
+              onStart={() => {
+                startAgentAnalysis();
+                if (currentRoadmapId) {
+                  runAgentAnalysis(currentRoadmapId, {
+                    task: agentConfig.task,
+                    budget: agentConfig.budget,
+                    mode: agentConfig.mode
+                  });
+                }
+              }}
+              onPause={pauseAgentAnalysis}
+              onStop={stopAgentAnalysis}
+            />
+          </div>
+        );
       default:
         return null;
     }
@@ -304,16 +505,6 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ className = '', isMobile:
   }
 
   return (
-<<<<<<< HEAD
-    <div className="p-4 bg-gray dark:bg-gray-800-800 rounded-lg sm:p-4 bg-gray dark:bg-gray-800-800 rounded-lg md:p-4 bg-gray dark:bg-gray-800-800 rounded-lg lg:p-4 bg-gray dark:bg-gray-800-800 rounded-lg">
-      <h2 className="text-white sm:text-white md:text-white lg:text-white">Thrive Score</h2>
-      <div 
-        className="h-4 bg-gradient dark:bg-gray-800-to-r from-blue-500 to-orange-500 sm:h-4 bg-gradient dark:bg-gray-800-to-r from-blue-500 to-orange-500 md:h-4 bg-gradient dark:bg-gray-800-to-r from-blue-500 to-orange-500 lg:h-4 bg-gradient dark:bg-gray-800-to-r from-blue-500 to-orange-500" 
-        style={{ width: `${thriveScore * 100}%` }}
-      />
-      <p className="text-white sm:text-white md:text-white lg:text-white">{thriveScore.toFixed(2)}</p>
-    </div>
-=======
     <>
       {/* Mobile/Bottom Panel */}
       {position === 'bottom' && (
@@ -599,8 +790,21 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ className = '', isMobile:
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
         />
       )}
+
+      {/* Agent Analysis Loader */}
+      <AgentAnalysisLoader
+        isRunning={isRunningAnalysis}
+        progress={analysisProgress}
+        currentStep={currentStep}
+        agentName="Thermonuclear AI"
+      />
+
+      {/* Toast Notifications */}
+      <ToastNotification
+        toast={toast}
+        onClose={hideToast}
+      />
     </>
->>>>>>> 9993d4daa71e4a7919def7cd132b67cde036847a
   );
 };
 

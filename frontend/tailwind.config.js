@@ -4,39 +4,56 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Neon Blues
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        // Custom Neon Colors
         'neon-blue': {
           primary: '#00D2FF',
           secondary: '#0099CC', 
           light: '#33DDFF',
           dark: '#0088BB',
         },
-        // Neon Greens
         'neon-green': {
           primary: '#00FF88',
           secondary: '#00CC66',
           light: '#33FF99',
           dark: '#00BB55',
         },
-        // Dark Base Colors
-        'dark': {
-          primary: '#0A0A0B',
-          secondary: '#1A1A1B',
-          tertiary: '#2A2A2B',
-          hover: '#3A3A3B',
-        },
-        // Accent Colors
         'neon-purple': '#BB00FF',
         'neon-cyan': '#00FFDD',
         'neon-pink': '#FF0088',
         'neon-orange': '#FF6600',
-        // Text Colors
-        'text': {
-          primary: '#FFFFFF',
-          secondary: '#CCCCCC',
-          muted: '#888888',
-          accent: '#00D2FF',
-        }
       },
       backgroundImage: {
         'gradient-blue': 'linear-gradient(135deg, #00D2FF 0%, #0099CC 100%)',

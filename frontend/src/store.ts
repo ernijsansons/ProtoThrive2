@@ -1,6 +1,8 @@
 // Ref: CLAUDE.md Phase 2 - Store with exact Zustand interfaces
 import { create } from 'zustand';
 
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
+
 interface Node {
   id: string;
   label: string;
@@ -10,11 +12,23 @@ interface Node {
     y: number;
     z: number;
   };
+  type?: string;
+  data?: {
+    label: string;
+    status: string;
+  };
 }
 
 interface Edge {
   from: string;
   to: string;
+  id?: string;
+  source?: string;
+  target?: string;
+  type?: string;
+  data?: {
+    label: string;
+  };
 }
 
 interface ChatMessage {
@@ -43,6 +57,63 @@ interface ProjectMetrics {
     tasksInProgress: number;
     blockers: number;
   };
+}
+
+interface AgentReport {
+  agent: string;
+  confidence: number;
+  cost: {
+    estimate: number;
+    actual: number;
+    consumed: number;
+    remaining: number;
+  };
+  fallback_used: boolean;
+  trace: Array<{
+    agent: string;
+    success: boolean;
+    confidence: number;
+    cost: number;
+    error?: string;
+  }>;
+  error?: string;
+}
+
+interface AnalysisHistoryEntry {
+  id: string;
+  timestamp: Date;
+  agent: string;
+  confidence: number;
+  cost: number;
+  success: boolean;
+  fallbackUsed: boolean;
+  duration: number; // in seconds
+}
+
+interface AgentConfig {
+  selectedAgent: 'enterprise' | 'lightweight' | 'auto';
+  budget: number;
+  maxBudget: number;
+  confidenceThreshold: number;
+  mode: 'fallback' | 'direct' | 'parallel';
+  task: string;
+  enableFallback: boolean;
+  enableParallel: boolean;
+  customPrompts: boolean;
+}
+
+interface AgentStatus {
+  isRunning: boolean;
+  isPaused: boolean;
+  currentStep: string;
+  progress: number;
+  estimatedTime: number;
+  actualCost: number;
+  remainingBudget: number;
+  agentName: string;
+  confidence: number;
+  success: boolean;
+  error?: string;
 }
 
 export type DeploymentStatus = 'ready' | 'building' | 'deployed' | 'error';
@@ -74,7 +145,7 @@ interface FooterState {
 interface InsightsPanelState {
   isExpanded: boolean;
   position: 'sidebar' | 'bottom';
-  activeTab: 'overview' | 'chat' | 'metrics' | 'activity';
+  activeTab: 'overview' | 'chat' | 'metrics' | 'activity' | 'history' | 'controls';
   chatHistory: ChatMessage[];
   metrics: ProjectMetrics;
   isTyping: boolean;
@@ -87,16 +158,35 @@ interface State {
   thriveScore: number;
   insightsPanel: InsightsPanelState;
   footer: FooterState;
+  agentReport: AgentReport | null;
+  currentRoadmapId: string | null;
+  analysisHistory: AnalysisHistoryEntry[];
+  agentConfig: AgentConfig;
+  agentStatus: AgentStatus;
   loadGraph: (nodes: Node[], edges: Edge[]) => void;
   toggleMode: () => void;
   updateScore: (score: number) => void;
   fetchRoadmap: (id: string) => void;
   toggleInsightsPanel: () => void;
   setInsightsPanelPosition: (position: 'sidebar' | 'bottom') => void;
-  setInsightsPanelTab: (tab: 'overview' | 'chat' | 'metrics' | 'activity') => void;
+  setInsightsPanelTab: (tab: 'overview' | 'chat' | 'metrics' | 'activity' | 'history' | 'controls') => void;
   addChatMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   setAgentTyping: (typing: boolean) => void;
   updateMetrics: (metrics: Partial<ProjectMetrics>) => void;
+  // Agent analysis actions
+  runAgentAnalysis: (roadmapId: string, overrides?: { task?: string; budget?: number; mode?: string }) => Promise<void>;
+  setAgentReport: (report: AgentReport | null) => void;
+  setCurrentRoadmapId: (id: string | null) => void;
+  addAnalysisHistoryEntry: (entry: Omit<AnalysisHistoryEntry, 'id' | 'timestamp'>) => void;
+  removeAnalysisHistoryEntry: (id: string) => void;
+  clearAnalysisHistory: () => void;
+  // Agent control actions
+  updateAgentConfig: (config: Partial<AgentConfig>) => void;
+  updateAgentStatus: (status: Partial<AgentStatus>) => void;
+  startAgentAnalysis: () => void;
+  pauseAgentAnalysis: () => void;
+  stopAgentAnalysis: () => void;
+  resetAgentConfig: () => void;
   // Footer actions
   setDeploymentStatus: (status: DeploymentStatus) => void;
   setDeployProgress: (progress: number) => void;
@@ -106,15 +196,14 @@ interface State {
   handleSave: () => void;
   handleExport: () => void;
   handleShare: () => void;
+  createRoadmap: (roadmap: { name: string }, token: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  userRole: string | null;
+  setUserRole: (role: string) => void;
 }
 
 export const useStore = create<State>((set, get) => ({
-<<<<<<< HEAD
-  nodes: [],
-  edges: [],
-  mode: '2d',
-  thriveScore: 0,
-=======
   nodes: [
     {id: 'n1', label: 'Thermo Start', status: 'gray', position: {x: 0, y: 0, z: 0}},
     {id: 'n2', label: 'Middle', status: 'gray', position: {x: 100, y: 100, z: 0}},
@@ -189,7 +278,36 @@ export const useStore = create<State>((set, get) => ({
     },
     isTyping: false
   },
->>>>>>> 9993d4daa71e4a7919def7cd132b67cde036847a
+  isLoading: false,
+  error: null,
+  userRole: null,
+  agentReport: null,
+  currentRoadmapId: null,
+  analysisHistory: [],
+  agentConfig: {
+    selectedAgent: 'auto',
+    budget: 0.5,
+    maxBudget: 1.0,
+    confidenceThreshold: 0.8,
+    mode: 'fallback',
+    task: 'Analyze this roadmap and provide comprehensive insights',
+    enableFallback: true,
+    enableParallel: false,
+    customPrompts: false
+  },
+  agentStatus: {
+    isRunning: false,
+    isPaused: false,
+    currentStep: 'Ready',
+    progress: 0,
+    estimatedTime: 0,
+    actualCost: 0,
+    remainingBudget: 1.0,
+    agentName: 'Auto Selection',
+    confidence: 0,
+    success: false
+  },
+  setUserRole: (role) => set({ userRole: role }),
   loadGraph: (nodes, edges) => {
     console.log('Thermonuclear LoadGraph - Nodes:', nodes.length, 'Edges:', edges.length);
     set({ nodes, edges });
@@ -202,50 +320,47 @@ export const useStore = create<State>((set, get) => ({
     console.log('Thermonuclear Score Updated:', score);
     set({ thriveScore: score });
   },
-<<<<<<< HEAD
-  fetchRoadmap: async (roadmapId: string) => {
-    console.log(`Thermonuclear Fetching Roadmap: ${roadmapId}`);
+  fetchRoadmap: async (roadmapId: string, token?: string) => {
+    set({ isLoading: true, error: null, currentRoadmapId: roadmapId });
+    console.log('Thermonuclear Fetching Roadmap:', roadmapId);
     try {
-      // In a real application, you would fetch from your backend API
-      // For now, we'll use a mock fetch or dummy data
-      const response = await fetch(`/api/roadmaps/${roadmapId}`, {
-        headers: {
-          'Authorization': 'Bearer uuid-thermo-1.mock-jwt-token' // Mock JWT token
-        }
-      });
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`${BASE_URL}/api/roadmaps/${roadmapId}`, { headers });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      
-      // Assuming data.json_graph is a stringified JSON of nodes and edges
-      const graphData = JSON.parse(data.json_graph);
-      get().loadGraph(graphData.nodes, graphData.edges);
-      get().updateScore(data.thrive_score);
+      const graphData = typeof data.json_graph === 'string' ? JSON.parse(data.json_graph) : data.json_graph || {};
+      const nodes = Array.isArray(graphData.nodes) ? graphData.nodes : [];
+      const edges = Array.isArray(graphData.edges) ? graphData.edges : [];
+      get().loadGraph(nodes, edges);
+      if (typeof data.thrive_score === 'number') {
+        get().updateScore(data.thrive_score);
+      }
+      if (data.user?.role) {
+        set({ userRole: data.user.role });
+      }
+      if (data.agent_report) {
+        get().setAgentReport(data.agent_report);
+      }
       console.log('Thermonuclear Roadmap fetched successfully:', data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Thermonuclear Error fetching roadmap:', error);
-      // Load dummy data on error for development purposes
+      set({ error: error.message || 'Failed to fetch roadmap' });
       get().loadGraph(
         [
-          {id: 'n1', label: 'Thermo Start (Error)', status: 'gray', position: {x: 0, y: 0, z: 0}},
-          {id: 'n2', label: 'Middle (Error)', status: 'gray', position: {x: 100, y: 100, z: 0}},
-          {id: 'n3', label: 'End (Error)', status: 'gray', position: {x: 200, y: 200, z: 0}}
+          { id: 'n1', label: 'Thermo Start (Error)', status: 'gray', position: { x: 0, y: 0, z: 0 } },
+          { id: 'n2', label: 'Middle (Error)', status: 'gray', position: { x: 100, y: 100, z: 0 } },
+          { id: 'n3', label: 'End (Error)', status: 'gray', position: { x: 200, y: 200, z: 0 } },
         ],
-        [
-          {from: 'n1', to: 'n2'},
-          {from: 'n2', to: 'n3'}
-        ]
+        []
       );
-      get().updateScore(0.1); // Low score on error
+    } finally {
+      set({ isLoading: false });
     }
-=======
-  fetchRoadmap: (id) => {
-    console.log('Thermonuclear Fetch Roadmap:', id);
-    // Mock fetch implementation for now
-    // In a real app, this would fetch from the backend API
-    // For now, just update the score to show it's working
-    set({ thriveScore: Math.random() * 1.0 });
   },
   toggleInsightsPanel: () => {
     set((state) => ({
@@ -371,6 +486,232 @@ export const useStore = create<State>((set, get) => ({
   handleShare: () => {
     console.log('Thermonuclear Share Action');
     // Add share logic here
->>>>>>> 9993d4daa71e4a7919def7cd132b67cde036847a
+  },
+  createRoadmap: async (roadmap: { name: string }, token: string) => {
+    set({ isLoading: true, error: null });
+    console.log("Creating roadmap:", roadmap);
+    try {
+      const response = await fetch(`${BASE_URL}/api/roadmaps`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(roadmap),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("Roadmap created successfully:", data);
+      // Optionally, you can fetch the roadmaps again to update the list
+      // get().fetchRoadmaps();
+    } catch (error: any) {
+      console.error("Error creating roadmap:", error);
+      set({ error: error.message });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  setAgentReport: (report) => {
+    console.log('Thermonuclear Agent Report Updated:', report);
+    set({ agentReport: report });
+  },
+  setCurrentRoadmapId: (id) => {
+    console.log('Thermonuclear Current Roadmap ID Updated:', id);
+    set({ currentRoadmapId: id });
+  },
+  runAgentAnalysis: async (roadmapId: string, overrides = {}) => {
+    set({ isLoading: true, error: null });
+    console.log('Thermonuclear Running Agent Analysis:', roadmapId, overrides);
+    try {
+      const response = await fetch(`${BASE_URL}/api/agent/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          task: overrides.task || 'Analyze this roadmap and provide insights',
+          budget: overrides.budget,
+          mode: overrides.mode,
+          roadmap_id: roadmapId
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Thermonuclear Agent Analysis completed:', data);
+      
+      // Store the agent report
+      if (data.agent_report) {
+        get().setAgentReport(data.agent_report);
+        
+        // Add to analysis history
+        get().addAnalysisHistoryEntry({
+          agent: data.agent_report.agent,
+          confidence: data.agent_report.confidence,
+          cost: data.agent_report.cost.actual,
+          success: true,
+          fallbackUsed: data.agent_report.fallback_used,
+          duration: 3 // Mock duration for now
+        });
+      } else {
+        // If no agent_report in response, create one from the outcome
+        const report: AgentReport = {
+          agent: data.result?.agent || 'unknown',
+          confidence: data.result?.confidence || 0,
+          cost: {
+            estimate: data.result?.cost_estimate || 0,
+            actual: data.result?.cost_actual || 0,
+            consumed: data.budget_consumed || 0,
+            remaining: data.budget_remaining || 0,
+          },
+          fallback_used: data.fallback_used || false,
+          trace: data.trace || [],
+          error: data.error
+        };
+        get().setAgentReport(report);
+        
+        // Add to analysis history
+        get().addAnalysisHistoryEntry({
+          agent: report.agent,
+          confidence: report.confidence,
+          cost: report.cost.actual,
+          success: !report.error,
+          fallbackUsed: report.fallback_used,
+          duration: 3 // Mock duration for now
+        });
+      }
+    } catch (error: any) {
+      console.error('Thermonuclear Error running agent analysis:', error);
+      set({ error: error.message || 'Failed to run agent analysis' });
+      
+      // Set error in agent report
+      const errorReport: AgentReport = {
+        agent: 'error',
+        confidence: 0,
+        cost: { estimate: 0, actual: 0, consumed: 0, remaining: 0 },
+        fallback_used: false,
+        trace: [],
+        error: error.message || 'Failed to run agent analysis'
+      };
+      get().setAgentReport(errorReport);
+      
+      // Add error to analysis history
+      get().addAnalysisHistoryEntry({
+        agent: 'error',
+        confidence: 0,
+        cost: 0,
+        success: false,
+        fallbackUsed: false,
+        duration: 0
+      });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  // Analysis history actions
+  addAnalysisHistoryEntry: (entry) => {
+    const newEntry: AnalysisHistoryEntry = {
+      ...entry,
+      id: Math.random().toString(36).substr(2, 9),
+      timestamp: new Date()
+    };
+    set(state => ({ 
+      analysisHistory: [newEntry, ...state.analysisHistory].slice(0, 50) // Keep last 50 entries
+    }));
+  },
+
+  removeAnalysisHistoryEntry: (id) => {
+    set(state => ({
+      analysisHistory: state.analysisHistory.filter(entry => entry.id !== id)
+    }));
+  },
+
+  clearAnalysisHistory: () => {
+    set({ analysisHistory: [] });
+  },
+
+  // Agent control actions
+  updateAgentConfig: (config) => {
+    set(state => ({
+      agentConfig: { ...state.agentConfig, ...config }
+    }));
+  },
+
+  updateAgentStatus: (status) => {
+    set(state => ({
+      agentStatus: { ...state.agentStatus, ...status }
+    }));
+  },
+
+  startAgentAnalysis: () => {
+    set(state => ({
+      agentStatus: {
+        ...state.agentStatus,
+        isRunning: true,
+        isPaused: false,
+        currentStep: 'Initializing analysis...',
+        progress: 0,
+        error: undefined
+      }
+    }));
+  },
+
+  pauseAgentAnalysis: () => {
+    set(state => ({
+      agentStatus: {
+        ...state.agentStatus,
+        isRunning: false,
+        isPaused: true,
+        currentStep: 'Paused'
+      }
+    }));
+  },
+
+  stopAgentAnalysis: () => {
+    set(state => ({
+      agentStatus: {
+        ...state.agentStatus,
+        isRunning: false,
+        isPaused: false,
+        currentStep: 'Stopped',
+        progress: 0
+      }
+    }));
+  },
+
+  resetAgentConfig: () => {
+    set({
+      agentConfig: {
+        selectedAgent: 'auto',
+        budget: 0.5,
+        maxBudget: 1.0,
+        confidenceThreshold: 0.8,
+        mode: 'fallback',
+        task: 'Analyze this roadmap and provide comprehensive insights',
+        enableFallback: true,
+        enableParallel: false,
+        customPrompts: false
+      },
+      agentStatus: {
+        isRunning: false,
+        isPaused: false,
+        currentStep: 'Ready',
+        progress: 0,
+        estimatedTime: 0,
+        actualCost: 0,
+        remainingBudget: 1.0,
+        agentName: 'Auto Selection',
+        confidence: 0,
+        success: false
+      }
+    });
   }
 }));
+

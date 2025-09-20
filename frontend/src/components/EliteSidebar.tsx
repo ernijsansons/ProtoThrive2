@@ -221,9 +221,11 @@ const EliteSidebar: React.FC<EliteSidebarProps> = ({
   // that interfered with list scrolling for better UX
 
   // Drag functionality
-  const handleDragStart = useCallback((e: React.DragEvent, template: any) => {
-    e.dataTransfer.setData('text/plain', JSON.stringify(template));
-    e.dataTransfer.effectAllowed = 'copy';
+  const handleDragStart = useCallback((e: any, template: any) => {
+    if (e.dataTransfer) {
+      e.dataTransfer.setData('text/plain', JSON.stringify(template));
+      e.dataTransfer.effectAllowed = 'copy';
+    }
   }, []);
 
   const getStatusColor = (status: string) => {
@@ -422,7 +424,7 @@ const EliteSidebar: React.FC<EliteSidebarProps> = ({
                                 <motion.div
                                   key={template.id}
                                   draggable
-                                  onDragStart={(e: React.DragEvent<HTMLDivElement>) => handleDragStart(e, template)}
+                                  onDragStart={(e) => handleDragStart(e, template)}
                                   onClick={() => handleTemplateClick(template)}
                                   className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 group ${
                                     selectedTemplate === template.id

@@ -1,0 +1,17 @@
+{
+  "name": "@protothrive/shared-types",
+  "version": "0.1.0",
+  "description": "Shared TypeScript contracts for the ProtoThrive platform.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5",
+    "typescript": "^5.4.0"
+  }
+}

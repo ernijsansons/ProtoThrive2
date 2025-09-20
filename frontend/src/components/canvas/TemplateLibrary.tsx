@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback }, { useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { X, Search, Database, User, ShoppingCart, Mail, Lock, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

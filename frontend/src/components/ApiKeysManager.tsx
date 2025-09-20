@@ -1,5 +1,6 @@
 // Ref: CLAUDE.md - API Keys Management for Super Admin
-import { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { mockFetch } from '../utils/mocks';
 
 interface ApiKey {
@@ -11,7 +12,7 @@ interface ApiKey {
   status: 'active' | 'inactive';
 }
 
-const ApiKeysManager = useCallback(() => {
+const ApiKeysManager = () => {
   console.log('Thermonuclear ApiKeysManager Rendered');
   
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -38,7 +39,7 @@ const ApiKeysManager = useCallback(() => {
       });
       
       if (response.ok) {
-        const data = useMemo(() => await response.json(), []);
+        const data = await response.json();
         setApiKeys(data.keys || []);
       } else {
         // Use mock data as fallback since admin endpoints might not exist yet

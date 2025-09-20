@@ -212,3 +212,15 @@ async def softDeleteUser(user_id: str, env: Any) -> None:
         print(f"Thermonuclear Soft Delete: User {user_id} marked for deletion")
     except Exception as e:
         raise ValueError({'code': 'DB-500', 'message': str(e) or 'Failed to soft delete user'})
+
+async def queryUser(user_id: str, env: Any) -> Optional[User]:
+    try:
+        stmt = env["DB"].prepare('SELECT * FROM users WHERE id = ?').bind(user_id)
+        result = await stmt.first()
+        
+        if not result:
+            return None
+        
+        return result
+    except Exception as e:
+        raise ValueError({'code': 'DB-500', 'message': str(e) or 'Failed to query user'})

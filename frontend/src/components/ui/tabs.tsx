@@ -1,5 +1,6 @@
 // Ref: CLAUDE.md - Simple Tabs Component
 import * as React from 'react';
+import { useMemo } from 'react';
 
 interface TabsProps {
   defaultValue?: string;

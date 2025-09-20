@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "protothrive-shared-python"
+version = "0.1.0"
+description = "Shared Python utilities for ProtoThrive backend and agents."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "ProtoThrive" }]
+dependencies = [
+    "pydantic>=2.6.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,9 +1,9 @@
-import Header from '@/components/Header';
+import { Header } from '@/components/Header';
 import InsightsPanel from '@/components/InsightsPanel';
 import EliteSidebar from '@/components/EliteSidebar';
-import Footer from '@/components/Footer';
+import { Footer } from '@/components/Footer';
 import {useStore} from '@/store';
-import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';

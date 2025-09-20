@@ -1,10 +1,10 @@
 # Ref: CLAUDE.md Terminal 1 Phase 1 - Workers Configuration
-# Thermonuclear Cloudflare Workers Configuration for ProtoThrive
+# Thermonuclear Cloudflare Workers Configuration for ProtoThrive - Python Backend
 
 name = "backend-thermo"
-main = "src/index.ts"
-compatibility_date = "2024-08-23"
-compatibility_flags = ["nodejs_compat"]
+main = "src/main.py"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["python_workers"]
 
 # Account and route configuration
 account_id = "d2897bdebfa128919bd89b265e6a712e"
@@ -13,6 +13,13 @@ workers_dev = true
 # Environment variables
 [vars]
 ENVIRONMENT = "development"
+AGENT_MODE = "fallback"
+AGENT_BUDGET_DEFAULT = "0.40"
+AGENT_BUDGET_MAX = "1.00"
+AGENT_BUDGET_FALLBACK_MIN = "0.05"
+AGENT_CONFIDENCE_THRESHOLD = "0.8"
+# ENTERPRISE_AGENT_URL="https://your-enterprise-agent-endpoint"
+# ENTERPRISE_AGENT_TOKEN="your-token"
 SERVICE_NAME = "protothrive-backend"
 
 # D1 Database binding
@@ -27,9 +34,9 @@ binding = "KV"
 id = "ec3183e7b4e94442b3f99b4d2f4b083e"
 preview_id = "ec3183e7b4e94442b3f99b4d2f4b083e"
 
-# Build configuration
-[build]
-command = "npm run build"
+# Build configuration (not needed for Python workers)
+# [build]
+# command = "python build_script.py"
 
 # Development environment
 [env.development]
@@ -44,8 +51,20 @@ vars = { ENVIRONMENT = "staging" }
 # Production environment
 [env.production]
 name = "backend-thermo-prod"
-vars = { ENVIRONMENT = "production" }
+vars = { ENVIRONMENT = "production", AGENT_MODE = "fallback", AGENT_BUDGET_DEFAULT = "0.40", AGENT_BUDGET_MAX = "1.00", AGENT_BUDGET_FALLBACK_MIN = "0.05", AGENT_CONFIDENCE_THRESHOLD = "0.8", SERVICE_NAME = "protothrive-backend" }
 route = "api.protothrive.com/*"
+
+# Include D1 Database binding for production
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "protothrive-db"
+database_id = "0b6970f4-c6ca-4245-aabf-98fa2d4f28a8"
+
+# Include KV Namespace binding for production
+[[env.production.kv_namespaces]]
+binding = "KV"
+id = "ec3183e7b4e94442b3f99b4d2f4b083e"
+preview_id = "ec3183e7b4e94442b3f99b4d2f4b083e"
 
 # Limits commented out for free plan
 # [limits]
