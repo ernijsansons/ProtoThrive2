@@ -13,7 +13,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
   const [secret, setSecret] = useState<string>('');
   const [qrCode, setQrCode] = useState<string>('');
   const [token, setToken] = useState<string>('');
-  const [step, setStep] = useState<'setup' | 'verify'>('setup');
+  const [step, setStep] = useState<'setup' | 'verify' | 'backup'>('setup');
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   
   useEffect(() => {
