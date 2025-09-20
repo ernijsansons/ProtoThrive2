@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 // Perfect Production Deployment Utilities
 export const perfectProductionDeployment = {
   // Perfect production environment

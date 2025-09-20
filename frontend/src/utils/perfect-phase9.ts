@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 // Perfect Final Push Utilities
 export const perfectFinalPush = {
   // Perfect performance monitoring

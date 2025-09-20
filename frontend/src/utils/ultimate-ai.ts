@@ -1,3 +1,5 @@
+import { useState, useEffect, useCallback } from 'react';
+
 // Ultimate AI Utilities
 export const ultimateAI = {
   // Advanced natural language processing
@@ -78,7 +80,7 @@ export const ultimateAI = {
     responses: {
       greeting: ['Hello!', 'Hi there!', 'Welcome!'],
       farewell: ['Goodbye!', 'See you later!', 'Take care!'],
-      unknown: ['I'm not sure about that.', 'Could you rephrase that?', 'I don't understand.']
+      unknown: ["I'm not sure about that.", "Could you rephrase that?", "I don't understand."]
     },
     
     getResponse: (input: string): string => {

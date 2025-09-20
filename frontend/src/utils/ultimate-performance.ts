@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 // Ultimate Performance Utilities
 export const ultimatePerformance = {
   // Virtual scrolling for large datasets

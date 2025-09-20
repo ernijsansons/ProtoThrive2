@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 // Perfect Performance Optimization Utilities
 export const perfectPerformanceOptimization = {
   // Perfect React optimization

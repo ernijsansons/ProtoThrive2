@@ -1,4 +1,6 @@
 // Perfect Test Suite Repair Utilities
+import { useState, useEffect } from 'react';
+
 export const perfectTestSuiteRepair = {
   // Perfect Jest configuration
   jest: {

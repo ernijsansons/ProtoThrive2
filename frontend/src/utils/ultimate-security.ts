@@ -1,3 +1,5 @@
+import { useState, useEffect, useCallback } from 'react';
+
 // Ultimate Security Utilities
 export const ultimateSecurity = {
   // Advanced encryption utilities
@@ -70,7 +72,7 @@ export const ultimateSecurity = {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#x27;')
-        .replace(/\/g, '&#x2F;');
+        .replace(/\//g, '&#x2F;');
     }
   },
   

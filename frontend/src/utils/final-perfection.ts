@@ -1,4 +1,6 @@
 // Final Perfection Utilities
+import { useState, useEffect } from 'react';
+
 export const finalPerfection = {
   // Final performance optimization
   performance: {

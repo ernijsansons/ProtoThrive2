@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 // Perfect Advanced Features Utilities
 export const perfectAdvancedFeatures = {
   // Perfect OAuth2 integration

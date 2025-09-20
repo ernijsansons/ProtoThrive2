@@ -1,4 +1,6 @@
 // Impossible Utilities - Beyond 100%
+import { useState, useEffect } from 'react';
+
 export const impossibleFeatures = {
   // Quantum computing simulation
   quantum: {

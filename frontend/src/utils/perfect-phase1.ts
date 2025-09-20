@@ -1,4 +1,6 @@
 // Perfect Initial Setup Utilities
+import { useState, useEffect } from 'react';
+
 export const perfectInitialSetup = {
   // Perfect CrewAI implementation
   crewAI: {

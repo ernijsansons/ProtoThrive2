@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 // Perfect Ultimate Optimization Utilities
 export const perfectUltimateOptimization = {
   // Perfect virtual scrolling

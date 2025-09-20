@@ -1,4 +1,6 @@
 // Perfect Security Hardening Utilities
+import { useState, useEffect } from 'react';
+
 export const perfectSecurityHardening = {
   // Perfect authentication system
   authentication: {

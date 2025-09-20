@@ -1,4 +1,6 @@
 // Perfect Optimization Utilities
+import { useState, useEffect } from 'react';
+
 export const perfectOptimization = {
   // Perfect performance monitoring
   performance: {
@@ -15,7 +17,9 @@ export const perfectOptimization = {
         // Measure Core Web Vitals
         const observer = new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
-            perfectOptimization.performance.metrics[entry.name] = entry.value;
+            // Use duration for paint entries, or cast to any for specialized entries
+            const value = (entry as any).value || entry.duration || entry.startTime;
+            perfectOptimization.performance.metrics[entry.name] = value;
           }
         });
         
@@ -42,8 +46,8 @@ export const perfectOptimization = {
       console.error('Perfect Error Handler:', error, errorInfo);
       
       // Send to monitoring service
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'exception', {
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'exception', {
           description: error.message,
           fatal: false
         });
@@ -65,7 +69,7 @@ export const perfectOptimization = {
   // Perfect accessibility
   accessibility: {
     checkA11y: () => {
-      const issues = [];
+      const issues: string[] = [];
       
       // Check for alt text
       document.querySelectorAll('img').forEach(img => {
@@ -81,7 +85,8 @@ export const perfectOptimization = {
       
       // Check for keyboard navigation
       document.querySelectorAll('button, a, input').forEach(el => {
-        if (!el.tabIndex && el.style.display !== 'none') {
+        const htmlEl = el as HTMLElement;
+        if (!htmlEl.tabIndex && htmlEl.style.display !== 'none') {
           issues.push('Element not keyboard accessible');
         }
       });
@@ -92,7 +97,7 @@ export const perfectOptimization = {
     fixA11y: () => {
       // Auto-fix common accessibility issues
       document.querySelectorAll('img:not([alt])').forEach(img => {
-        img.alt = 'Image';
+        (img as HTMLImageElement).alt = 'Image';
       });
       
       document.querySelectorAll('button:not([aria-label])').forEach(button => {

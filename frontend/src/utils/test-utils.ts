@@ -66,7 +66,7 @@ export const cleanupTestData = async () => {
   }
   
   // Reset any global mocks
-  if (typeof mockFetch !== 'undefined') {
-    mockFetch.reset();
+  if (typeof mockFetch !== 'undefined' && (mockFetch as any).reset) {
+    (mockFetch as any).reset();
   }
 };

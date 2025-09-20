@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 // Perfect Staging Deployment Utilities
 export const perfectStagingDeployment = {
   // Perfect Cloudflare deployment

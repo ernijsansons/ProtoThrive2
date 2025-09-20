@@ -1,7 +1,7 @@
 import React from 'react';
 // Ref: CLAUDE.md Phase 2 - Jest tests for MagicCanvas
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MagicCanvas } from '../src/components/magic-canvas';
+import MagicCanvas from '../src/components/MagicCanvas';
 // import Dashboard from '../src/pages/index'; // Dashboard is now in app/dashboard/page.tsx
 import { useStore } from '../src/store';
 
