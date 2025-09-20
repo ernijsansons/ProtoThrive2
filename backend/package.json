@@ -12,11 +12,19 @@
     "migrate": "wrangler d1 execute protothrive-db --file=../migrations/001_init.sql",
     "migrate:remote": "wrangler d1 execute protothrive-db --file=../migrations/001_init.sql --remote"
   },
-  "keywords": ["protothrive", "backend", "cloudflare-workers", "python"],
+  "keywords": [
+    "protothrive",
+    "backend",
+    "cloudflare-workers",
+    "python"
+  ],
   "author": "ProtoThrive Team",
   "license": "MIT",
   "description": "ProtoThrive Backend API - Cloudflare Workers Python Application",
   "devDependencies": {
     "wrangler": "^4.32.0"
+  },
+  "dependencies": {
+    "exit-hook": "2.2.1"
   }
 }

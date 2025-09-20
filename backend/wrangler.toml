@@ -65,6 +65,7 @@ vars = { ENVIRONMENT = "development" }
 # Staging environment
 [env.staging]
 name = "backend-thermo-staging"
+main = "src/worker.js"
 vars = { ENVIRONMENT = "staging" }
 
 # Production environment

@@ -5,7 +5,7 @@ Implements comprehensive security checks and protection
 
 import time
 import hashlib
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, Optional, Set, Union
 from js import Request, Response, console
 from .validation import SecurityValidationError, validate_auth_header
 
@@ -143,7 +143,7 @@ class SecurityMiddleware:
 
         return None
 
-    async def process_request(self, request: Request) -> Optional[Response]:
+    async def process_request(self, request: Request) -> Any:
         """Process request through security middleware"""
 
         # Get client IP
@@ -189,7 +189,7 @@ class SecurityMiddleware:
         except:
             return 'unknown'
 
-    def create_error_response(self, message: str, status: int) -> Response:
+    def create_error_response(self, message: str, status: int) -> Any:
         """Create standardized error response"""
         import json
         return Response.new(
@@ -251,7 +251,7 @@ class AuthenticationMiddleware:
             return None
 
     @staticmethod
-    def create_auth_error_response() -> Response:
+    def create_auth_error_response() -> Any:
         """Create authentication error response"""
         import json
         return Response.new(
