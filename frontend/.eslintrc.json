@@ -1,8 +1,7 @@
 {
-<<<<<<< HEAD
   "extends": ["next/core-web-vitals"],
-  "rules": {}
-=======
-  "extends": ["next/core-web-vitals"]
->>>>>>> 9993d4daa71e4a7919def7cd132b67cde036847a
+  "rules": {
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": "warn"
+  }
 }

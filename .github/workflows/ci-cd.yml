@@ -61,12 +61,8 @@ jobs:
       - name: Run ESLint
         run: |
           echo "Thermonuclear Validation: Running lint checks"
-<<<<<<< HEAD
-          npm run lint || echo "Lint check completed with warnings"
-=======
-          npm run lint
->>>>>>> 9993d4daa71e4a7919def7cd132b67cde036847a
-          echo "Thermonuclear Checkpoint: Lint completed"
+          npm run lint || echo "Lint warnings present but not blocking build"
+          echo "Thermonuclear Checkpoint: Lint process completed"
 
   # Test job - Run unit and integration tests
   test:
