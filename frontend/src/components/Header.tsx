@@ -1,10 +1,24 @@
 import { UserButton } from "@clerk/nextjs";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Menu } from "lucide-react";
 
-export function Header() {
+interface HeaderProps {
+  isMobile: boolean;
+  isTablet: boolean;
+  onToggleSidebar: () => void;
+}
+
+export function Header({ isMobile, isTablet, onToggleSidebar }: HeaderProps) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="flex items-center space-x-4">
+        {(isMobile || isTablet) && (
+          <button
+            onClick={onToggleSidebar}
+            className="p-2 rounded-md hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <Menu className="h-6 w-6 text-primary" />
+          </button>
+        )}
         <Sparkles className="h-8 w-8 text-primary neon-glow" />
         <h1 className="text-2xl font-bold text-primary drop-shadow-lg">ProtoThrive</h1>
       </div>

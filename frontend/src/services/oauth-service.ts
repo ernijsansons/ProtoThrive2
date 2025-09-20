@@ -6,8 +6,8 @@ export class OAuthService {
     const state = this.generateState();
     
     const params = new URLSearchParams({
-      client_id: config.clientId,
-      redirect_uri: config.redirectUri,
+      client_id: config.clientId || '',
+      redirect_uri: config.redirectUri || '',
       scope: config.scope,
       response_type: 'code',
       state: state
@@ -41,10 +41,10 @@ export class OAuthService {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: config.clientId,
-        client_secret: config.clientSecret,
+        client_id: config.clientId || '',
+        client_secret: config.clientSecret || '',
         code: code,
-        redirect_uri: config.redirectUri,
+        redirect_uri: config.redirectUri || '',
         grant_type: 'authorization_code'
       })
     });
@@ -60,13 +60,13 @@ export class OAuthService {
     };
   }
   
-  private static async getUserInfo(provider: string, accessToken: string): Promise<any> {
-    const endpoints = {
+  private static async getUserInfo(provider: keyof typeof oauthConfig.providers, accessToken: string): Promise<any> {
+    const endpoints: Record<keyof typeof oauthConfig.providers, string> = {
       google: 'https://www.googleapis.com/oauth2/v2/userinfo',
       github: 'https://api.github.com/user',
       microsoft: 'https://graph.microsoft.com/v1.0/me'
     };
-    
+
     const response = await fetch(endpoints[provider], {
       headers: {
         'Authorization': `Bearer ${accessToken}`

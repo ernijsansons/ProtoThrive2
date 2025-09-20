@@ -1,11 +1,13 @@
 // Ref: CLAUDE.md - Real API Fetch for Production
-export const mockFetch = async (url: string, opts: unknown = {}) => {
+export const mockFetch = async (url: string, opts: RequestInit = {}) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://backend-thermo.ernijs-ansons.workers.dev';
   const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
-  
+
   // Fix auth header format for backend
-  if (opts.headers?.Authorization === 'Bearer mock') {
-    opts.headers.Authorization = 'Bearer mock.uuid-thermo-1.signature';
+  const headers = opts.headers as Record<string, string> || {};
+  if (headers.Authorization === 'Bearer mock') {
+    headers.Authorization = 'Bearer mock.uuid-thermo-1.signature';
+    opts.headers = headers;
   }
   
   console.log(`THERMONUCLEAR API CALL: ${fullUrl}`);
