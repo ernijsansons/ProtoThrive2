@@ -7,7 +7,9 @@ compatibility_date = "2024-12-01"
 compatibility_flags = ["python_workers"]
 
 # Account and route configuration
-account_id = "d2897bdebfa128919bd89b265e6a712e"
+# SECURITY FIX: Moved account_id to environment variable to prevent exposure
+# Set CLOUDFLARE_ACCOUNT_ID in your environment or .env file
+# account_id = "${CLOUDFLARE_ACCOUNT_ID}"
 workers_dev = true
 
 # Environment variables
@@ -21,6 +23,23 @@ AGENT_CONFIDENCE_THRESHOLD = "0.8"
 # ENTERPRISE_AGENT_URL="https://your-enterprise-agent-endpoint"
 # ENTERPRISE_AGENT_TOKEN="your-token"
 SERVICE_NAME = "protothrive-backend"
+
+# CLOUDFLARE OPTIMIZATION: Argo Smart Routing Configuration
+ARGO_SMART_ROUTING = "true"
+ARGO_TIERED_CACHING = "true"
+PERFORMANCE_TARGET_MS = "25"
+CACHE_EVERYTHING_TTL = "300"  # 5 minutes for dynamic content
+EDGE_CACHE_TTL = "900"        # 15 minutes for static content
+
+# PRODUCTION MONITORING: Sentry + Datadog Integration
+SENTRY_DSN = "https://your-sentry-dsn@sentry.io/project-id"
+SENTRY_SAMPLE_RATE = "1.0"
+SENTRY_TRACES_SAMPLE_RATE = "0.1"
+DATADOG_API_KEY = "your-datadog-api-key"
+DATADOG_APP_KEY = "your-datadog-app-key"
+DATADOG_SITE = "datadoghq.com"
+MONTHLY_BUDGET_USD = "500.0"
+RELEASE_VERSION = "1.0.0"
 
 # D1 Database binding
 [[d1_databases]]
@@ -51,8 +70,17 @@ vars = { ENVIRONMENT = "staging" }
 # Production environment
 [env.production]
 name = "backend-thermo-prod"
-vars = { ENVIRONMENT = "production", AGENT_MODE = "fallback", AGENT_BUDGET_DEFAULT = "0.40", AGENT_BUDGET_MAX = "1.00", AGENT_BUDGET_FALLBACK_MIN = "0.05", AGENT_CONFIDENCE_THRESHOLD = "0.8", SERVICE_NAME = "protothrive-backend" }
+vars = { ENVIRONMENT = "production", AGENT_MODE = "fallback", AGENT_BUDGET_DEFAULT = "0.40", AGENT_BUDGET_MAX = "1.00", AGENT_BUDGET_FALLBACK_MIN = "0.05", AGENT_CONFIDENCE_THRESHOLD = "0.8", SERVICE_NAME = "protothrive-backend", ARGO_SMART_ROUTING = "true", ARGO_TIERED_CACHING = "true", PERFORMANCE_TARGET_MS = "25", CACHE_EVERYTHING_TTL = "300", EDGE_CACHE_TTL = "900", SENTRY_SAMPLE_RATE = "1.0", SENTRY_TRACES_SAMPLE_RATE = "0.1", DATADOG_SITE = "datadoghq.com", MONTHLY_BUDGET_USD = "500.0", RELEASE_VERSION = "1.0.0" }
 route = "api.protothrive.com/*"
+
+# Production secrets (set via wrangler secret put)
+# wrangler secret put SENTRY_DSN --env production
+# wrangler secret put DATADOG_API_KEY --env production
+# wrangler secret put DATADOG_APP_KEY --env production
+
+# Argo Smart Routing optimization
+[env.production.placement]
+mode = "smart"
 
 # Include D1 Database binding for production
 [[env.production.d1_databases]]
@@ -65,6 +93,31 @@ database_id = "0b6970f4-c6ca-4245-aabf-98fa2d4f28a8"
 binding = "KV"
 id = "ec3183e7b4e94442b3f99b4d2f4b083e"
 preview_id = "ec3183e7b4e94442b3f99b4d2f4b083e"
+
+# Durable Objects configuration (disabled for free plan deployment)
+# [[durable_objects.bindings]]
+# name = "RATE_LIMITER"
+# class_name = "RateLimiterDurableObject"
+# script_name = "rate-limiter-worker"
+
+# Migration for Durable Objects (disabled for initial deployment)
+# [[migrations]]
+# tag = "v1"
+# new_sqlite_classes = ["RateLimiterDurableObject"]
+
+# CLOUDFLARE OPTIMIZATION: Performance tuning for Argo Smart Routing
+# Placement configuration for optimal routing
+[placement]
+mode = "smart"  # Enable Argo Smart Routing
+
+# Zone configuration for production routing
+# [env.production.zone_id]
+# Configure in Cloudflare Dashboard: Zone > Speed > Optimization
+# Enable: Argo Smart Routing, Tiered Caching, Enhanced HTTP/2 Prioritization
+
+# Service bindings for geographic optimization
+# [services]
+# Configure in Dashboard for multi-region deployment
 
 # Limits commented out for free plan
 # [limits]
