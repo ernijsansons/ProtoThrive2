@@ -1,5 +1,6 @@
 // Ref: CLAUDE.md Phase 2 - Store with exact Zustand interfaces
 import { create } from 'zustand';
+import { authService } from './services/auth';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
 
@@ -324,11 +325,12 @@ export const useStore = create<State>((set, get) => ({
     set({ isLoading: true, error: null, currentRoadmapId: roadmapId });
     console.log('Thermonuclear Fetching Roadmap:', roadmapId);
     try {
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      const response = await fetch(`${BASE_URL}/api/roadmaps/${roadmapId}`, { headers });
+      // Use authentication service for API calls
+      const response = await authService.makeAuthenticatedRequest(
+        `${BASE_URL}/api/roadmaps/${roadmapId}`,
+        { method: 'GET' }
+      );
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

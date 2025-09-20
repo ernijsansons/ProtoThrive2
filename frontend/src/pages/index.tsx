@@ -4,7 +4,9 @@ import EliteSidebar from '@/components/EliteSidebar';
 import { Footer } from '@/components/Footer';
 import {useStore} from '@/store';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 
@@ -29,9 +31,11 @@ interface RoadmapItem {
 }
 
 const Dashboard = () => {
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
   const {
-    toggleMode, 
-    fetchRoadmap, 
+    toggleMode,
+    fetchRoadmap,
     mode,
     triggerDeploy,
     handleSave,
@@ -66,18 +70,19 @@ const Dashboard = () => {
   }, []);
 
   // Consolidated body scroll lock using shared hook for sidebar and mobile insights
-  const { isScrollLocked, activeLockCount } = useBodyScrollLock({
-    lockId: 'dashboard-modals',
-    isLocked: isSidebarOpen || showMobileInsights,
-    onLockChange: (locked) => {
-      console.log(`Dashboard scroll lock ${locked ? 'activated' : 'deactivated'}. Active locks: ${activeLockCount}`);
+  const { isScrollLocked, activeLockCount } = useBodyScrollLock('dashboard-modals', isSidebarOpen || showMobileInsights);
+
+  // Authentication check
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
     }
-  });
+  }, [isAuthenticated, isLoading, router]);
 
   // Hydration-safe effect for mobile detection
   useEffect(() => {
     checkMobileLayout();
-    
+
     if (typeof window !== 'undefined') {
       window.addEventListener('resize', checkMobileLayout);
       return () => window.removeEventListener('resize', checkMobileLayout);
@@ -85,9 +90,25 @@ const Dashboard = () => {
   }, [checkMobileLayout]);
 
   useEffect(() => {
-    // Fetch a dummy roadmap for now. In a real app, this would come from user context.
-    fetchRoadmap('uuid-thermo-1'); 
-  }, [fetchRoadmap]);
+    // Only fetch roadmap if authenticated
+    if (isAuthenticated) {
+      fetchRoadmap('uuid-thermo-1');
+    }
+  }, [fetchRoadmap, isAuthenticated]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-lg">Loading ProtoThrive...</div>
+      </div>
+    );
+  }
+
+  // Don't render dashboard if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const handleToggleSidebar = () => {
     if (isMobile) {

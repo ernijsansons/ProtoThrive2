@@ -4,14 +4,17 @@ import 'reactflow/dist/style.css';
 import '../styles/globals.css';
 import ErrorBoundary from '../components/ErrorBoundary';
 import ProductionMonitor from '../components/ProductionMonitor';
+import { AuthProvider } from '../contexts/AuthContext';
 
 function App({ Component, pageProps }: AppProps) {
   return (
     <ErrorBoundary>
-      <div suppressHydrationWarning>
-        <Component {...pageProps} />
-        <ProductionMonitor />
-      </div>
+      <AuthProvider>
+        <div suppressHydrationWarning>
+          <Component {...pageProps} />
+          <ProductionMonitor />
+        </div>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }
