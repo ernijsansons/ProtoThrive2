@@ -1,12 +1,6 @@
-/**
- * Login Page for ProtoThrive
- * Handles user authentication with development mode support
- */
-
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
-import { motion } from 'framer-motion';
 
 const LoginPage: React.FC = () => {
   const router = useRouter();
@@ -55,42 +49,82 @@ const LoginPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-lg">Loading...</div>
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#111827',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ color: '#ffffff', fontSize: '1.125rem' }}>Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md"
-      >
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #111827 0%, #1e3a8a 50%, #7c3aed 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem'
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '28rem',
+        opacity: 1,
+        transform: 'translateY(0)',
+        transition: 'all 0.6s ease'
+      }}>
+        <div style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(16px)',
+          borderRadius: '1rem',
+          padding: '2rem',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          border: '1px solid rgba(255, 255, 255, 0.2)'
+        }}>
           {/* Logo/Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">ProtoThrive</h1>
-            <p className="text-blue-200">AI-Powered Development Platform</p>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <h1 style={{
+              fontSize: '1.875rem',
+              fontWeight: 'bold',
+              color: '#ffffff',
+              marginBottom: '0.5rem',
+              fontFamily: 'Inter, system-ui, sans-serif'
+            }}>
+              ProtoThrive
+            </h1>
+            <p style={{ color: '#bfdbfe' }}>AI-Powered Development Platform</p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-red-500/20 border border-red-500/50 rounded-lg p-3 mb-6"
-            >
-              <p className="text-red-200 text-sm">{error}</p>
-            </motion.div>
+            <div style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.2)',
+              border: '1px solid rgba(239, 68, 68, 0.5)',
+              borderRadius: '0.5rem',
+              padding: '0.75rem',
+              marginBottom: '1.5rem',
+              opacity: 1,
+              transform: 'scale(1)',
+              transition: 'all 0.2s ease'
+            }}>
+              <p style={{ color: '#fecaca', fontSize: '0.875rem' }}>{error}</p>
+            </div>
           )}
 
           {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-blue-200 mb-2">
+          <form onSubmit={handleLogin} style={{ marginBottom: '2rem' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label htmlFor="email" style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                color: '#bfdbfe',
+                marginBottom: '0.5rem'
+              }}>
                 Email
               </label>
               <input
@@ -99,14 +133,38 @@ const LoginPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '0.5rem',
+                  color: '#ffffff',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  transition: 'all 0.2s ease'
+                }}
                 placeholder="Enter your email"
                 disabled={isSubmitting}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-blue-200 mb-2">
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label htmlFor="password" style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                color: '#bfdbfe',
+                marginBottom: '0.5rem'
+              }}>
                 Password
               </label>
               <input
@@ -115,49 +173,136 @@ const LoginPage: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '0.5rem',
+                  color: '#ffffff',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  transition: 'all 0.2s ease'
+                }}
                 placeholder="Enter your password"
                 disabled={isSubmitting}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                color: '#ffffff',
+                fontWeight: '600',
+                padding: '0.75rem 1rem',
+                borderRadius: '0.5rem',
+                border: 'none',
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                opacity: isSubmitting ? 0.5 : 1,
+                transition: 'all 0.2s ease',
+                fontSize: '1rem'
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  e.target.style.background = 'linear-gradient(135deg, #1d4ed8, #6d28d9)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSubmitting) {
+                  e.target.style.background = 'linear-gradient(135deg, #2563eb, #7c3aed)';
+                }
+              }}
             >
               {isSubmitting ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
           {/* Development Mode */}
-          <div className="mt-8 pt-6 border-t border-white/20">
-            <p className="text-center text-blue-200 text-sm mb-4">
+          <div style={{
+            paddingTop: '1.5rem',
+            borderTop: '1px solid rgba(255, 255, 255, 0.2)'
+          }}>
+            <p style={{
+              textAlign: 'center',
+              color: '#bfdbfe',
+              fontSize: '0.875rem',
+              marginBottom: '1rem'
+            }}>
               Development Mode
             </p>
             <button
               onClick={handleDevelopmentLogin}
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-green-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #059669, #0d9488)',
+                color: '#ffffff',
+                fontWeight: '600',
+                padding: '0.75rem 1rem',
+                borderRadius: '0.5rem',
+                border: 'none',
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                opacity: isSubmitting ? 0.5 : 1,
+                transition: 'all 0.2s ease',
+                fontSize: '1rem',
+                marginBottom: '0.5rem'
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  e.target.style.background = 'linear-gradient(135deg, #047857, #0f766e)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSubmitting) {
+                  e.target.style.background = 'linear-gradient(135deg, #059669, #0d9488)';
+                }
+              }}
             >
               {isSubmitting ? 'Connecting...' : 'Quick Start (Development)'}
             </button>
-            <p className="text-center text-blue-300 text-xs mt-2">
+            <p style={{
+              textAlign: 'center',
+              color: '#93c5fd',
+              fontSize: '0.75rem'
+            }}>
               Skip authentication for development and testing
             </p>
           </div>
 
           {/* Footer */}
-          <div className="mt-8 text-center">
-            <p className="text-blue-300 text-sm">
+          <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+            <p style={{ color: '#93c5fd', fontSize: '0.875rem' }}>
               Need an account?{' '}
-              <a href="#" className="text-blue-400 hover:text-blue-300 underline">
-                Contact your administrator
-              </a>
+              <button
+                onClick={() => router.push('/signup')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#60a5fa',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem'
+                }}
+                onMouseEnter={(e) => e.target.style.color = '#93c5fd'}
+                onMouseLeave={(e) => e.target.style.color = '#60a5fa'}
+              >
+                Sign up here
+              </button>
             </p>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

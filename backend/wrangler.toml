@@ -32,26 +32,27 @@ CACHE_EVERYTHING_TTL = "300"  # 5 minutes for dynamic content
 EDGE_CACHE_TTL = "900"        # 15 minutes for static content
 
 # PRODUCTION MONITORING: Sentry + Datadog Integration
-SENTRY_DSN = "https://your-sentry-dsn@sentry.io/project-id"
-SENTRY_SAMPLE_RATE = "1.0"
-SENTRY_TRACES_SAMPLE_RATE = "0.1"
-DATADOG_API_KEY = "your-datadog-api-key"
-DATADOG_APP_KEY = "your-datadog-app-key"
+# SECURITY FIX: Secrets moved to wrangler secret management
+# Use: wrangler secret put SENTRY_DSN --env production
+# Use: wrangler secret put DATADOG_API_KEY --env production
+# Use: wrangler secret put DATADOG_APP_KEY --env production
 DATADOG_SITE = "datadoghq.com"
 MONTHLY_BUDGET_USD = "500.0"
 RELEASE_VERSION = "1.0.0"
 
 # D1 Database binding
+# SECURITY FIX: Database IDs moved to environment variables
 [[d1_databases]]
 binding = "DB"
 database_name = "protothrive-db"
-database_id = "0b6970f4-c6ca-4245-aabf-98fa2d4f28a8"
+database_id = "${D1_DATABASE_ID}"
 
 # KV Namespace binding
+# SECURITY FIX: KV IDs moved to environment variables
 [[kv_namespaces]]
 binding = "KV"
-id = "ec3183e7b4e94442b3f99b4d2f4b083e"
-preview_id = "ec3183e7b4e94442b3f99b4d2f4b083e"
+id = "${KV_NAMESPACE_ID}"
+preview_id = "${KV_NAMESPACE_PREVIEW_ID}"
 
 # Build configuration (not needed for Python workers)
 # [build]
@@ -84,16 +85,18 @@ route = "api.protothrive.com/*"
 mode = "smart"
 
 # Include D1 Database binding for production
+# SECURITY FIX: Database IDs moved to environment variables
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "protothrive-db"
-database_id = "0b6970f4-c6ca-4245-aabf-98fa2d4f28a8"
+database_id = "${D1_DATABASE_ID}"
 
 # Include KV Namespace binding for production
+# SECURITY FIX: KV IDs moved to environment variables
 [[env.production.kv_namespaces]]
 binding = "KV"
-id = "ec3183e7b4e94442b3f99b4d2f4b083e"
-preview_id = "ec3183e7b4e94442b3f99b4d2f4b083e"
+id = "${KV_NAMESPACE_ID}"
+preview_id = "${KV_NAMESPACE_PREVIEW_ID}"
 
 # Durable Objects configuration (disabled for free plan deployment)
 # [[durable_objects.bindings]]

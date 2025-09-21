@@ -13,7 +13,10 @@ import ToastNotification, { useToast } from './ToastNotification';
 import AnalysisHistory from './AnalysisHistory';
 import AgentControlPanel from './AgentControlPanel';
 import AgentStatusMonitor from './AgentStatusMonitor';
-import { 
+import SmartProgressTracker from './SmartProgressTracker';
+import LiveInsightStream from './LiveInsightStream';
+import ProgressPredictionEngine from './ProgressPredictionEngine';
+import {
   ChevronDownIcon,
   ChevronUpIcon,
   ChartBarIcon,
@@ -24,7 +27,11 @@ import {
   ComputerDesktopIcon,
   XMarkIcon,
   PlayIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  SparklesIcon,
+  ArrowTrendingUpIcon,
+  WifiIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline';
 
 interface InsightsPanelProps {
@@ -246,6 +253,24 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ className = '', isMobile:
       color: 'neon-green'
     },
     {
+      id: 'live_insights' as const,
+      label: 'Live AI',
+      icon: <WifiIcon className="w-4 h-4" />,
+      color: 'neon-blue'
+    },
+    {
+      id: 'smart_progress' as const,
+      label: 'Progress',
+      icon: <ArrowTrendingUpIcon className="w-4 h-4" />,
+      color: 'neon-green'
+    },
+    {
+      id: 'predictions' as const,
+      label: 'Timeline',
+      icon: <CalendarIcon className="w-4 h-4" />,
+      color: 'neon-purple'
+    },
+    {
       id: 'chat' as const,
       label: 'AI Chat',
       icon: <ChatBubbleLeftRightIcon className="w-4 h-4" />,
@@ -262,12 +287,6 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ className = '', isMobile:
       label: 'Activity',
       icon: <ClockIcon className="w-4 h-4" />,
       color: 'neon-orange'
-    },
-    {
-      id: 'history' as const,
-      label: 'History',
-      icon: <ChartBarIcon className="w-4 h-4" />,
-      color: 'neon-blue'
     },
     {
       id: 'controls' as const,
@@ -438,6 +457,54 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ className = '', isMobile:
             onDeleteEntry={removeAnalysisHistoryEntry}
             onClearHistory={clearAnalysisHistory}
           />
+        );
+      case 'live_insights':
+        return (
+          <div className="space-y-4">
+            <div className="text-center">
+              <WifiIcon className="w-12 h-12 text-neon-blue-primary mx-auto mb-3" />
+              <h3 className="text-sm font-medium text-neon-blue-primary mb-2">Live AI Insights</h3>
+              <p className="text-xs text-text-muted">Real-time AI feedback and suggestions</p>
+            </div>
+            <LiveInsightStream
+              className="w-full"
+              maxVisibleInsights={6}
+              updateInterval={4000}
+              showMetrics={true}
+              autoScroll={true}
+            />
+          </div>
+        );
+      case 'smart_progress':
+        return (
+          <div className="space-y-4">
+            <div className="text-center">
+              <ArrowTrendingUpIcon className="w-12 h-12 text-neon-green-primary mx-auto mb-3" />
+              <h3 className="text-sm font-medium text-neon-green-primary mb-2">Smart Progress</h3>
+              <p className="text-xs text-text-muted">AI-powered progress tracking and milestones</p>
+            </div>
+            <SmartProgressTracker
+              className="w-full"
+              showDetails={true}
+              size="expanded"
+            />
+          </div>
+        );
+      case 'predictions':
+        return (
+          <div className="space-y-4">
+            <div className="text-center">
+              <CalendarIcon className="w-12 h-12 text-neon-purple mx-auto mb-3" />
+              <h3 className="text-sm font-medium text-neon-purple mb-2">Timeline Predictions</h3>
+              <p className="text-xs text-text-muted">AI predictions and completion estimates</p>
+            </div>
+            <ProgressPredictionEngine
+              className="w-full"
+              showDetails={true}
+              enableRealTimeUpdates={true}
+              predictionHorizon={48}
+            />
+          </div>
         );
       case 'controls':
         return (

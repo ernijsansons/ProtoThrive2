@@ -83,7 +83,10 @@
       "Bash(git commit:*)",
       "Bash(git checkout:*)",
       "Bash(git clean:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "WebFetch(domain:backend-thermo-staging.ernijs-ansons.workers.dev)",
+      "WebFetch(domain:localhost)",
+      "Bash(awk:*)"
     ],
     "defaultMode": "acceptEdits"
   }

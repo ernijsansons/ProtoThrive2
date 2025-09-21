@@ -1,5 +1,6 @@
 import { UserButton } from "@clerk/nextjs";
-import { Sparkles, Menu } from "lucide-react";
+import { Sparkles, Menu, Settings } from "lucide-react";
+import { useRouter } from "next/router";
 
 interface HeaderProps {
   isMobile: boolean;
@@ -8,6 +9,7 @@ interface HeaderProps {
 }
 
 export function Header({ isMobile, isTablet, onToggleSidebar }: HeaderProps) {
+  const router = useRouter();
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="flex items-center space-x-4">
@@ -39,6 +41,15 @@ export function Header({ isMobile, isTablet, onToggleSidebar }: HeaderProps) {
           </div>
           <span className="text-sm font-bold text-primary">70%</span>
         </div>
+        {/* Settings Button */}
+        <button
+          onClick={() => router.push('/settings')}
+          className="p-2 rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+          title="Settings"
+        >
+          <Settings className="h-5 w-5 text-muted-foreground hover:text-primary" />
+        </button>
+
         {/* Profile Dropdown (UserButton from Clerk) */}
         <UserButton afterSignOutUrl="/" />
       </div>

@@ -562,9 +562,173 @@ def mock_reset_mocks() -> None:
     print("🔄 THERMONUCLEAR MOCKS RESET")
 
 # Export all mock functions
+# Ref: CLAUDE.md Terminal 3 Phase 3 - MockPromptRouter Class
+class MockPromptRouter:
+    """
+    Mock implementation of PromptRouter for cost-optimized model selection
+    Implements the exact routing logic specified in CLAUDE.md Phase 3
+    """
+
+    def __init__(self):
+        """Initialize with model costs as specified in CLAUDE.md"""
+        self.models = {
+            'kimi': 0.001,
+            'claude': 0.015,
+            'uxpilot': 0.02
+        }
+        print("Thermonuclear PromptRouter initialized with cost models")
+
+    def estimate_cost(self, prompt_length, model):
+        """
+        Estimate cost for a prompt with given model
+
+        Args:
+            prompt_length: Length of prompt in characters
+            model: Model name ('kimi', 'claude', 'uxpilot')
+
+        Returns:
+            float: Estimated cost in USD
+        """
+        return prompt_length * self.models[model] / 1000
+
+    def route_task(self, task_type, complexity, prompt_length):
+        """
+        Route task to appropriate model based on CLAUDE.md logic
+
+        Args:
+            task_type: Type of task ('code', 'ui', 'other')
+            complexity: Complexity level ('low', 'high')
+            prompt_length: Length of prompt
+
+        Returns:
+            str: Selected model name
+        """
+        cost = self.estimate_cost(prompt_length, 'kimi')
+
+        if task_type == 'code' and complexity == 'low' and cost < 0.05:
+            return 'kimi'
+        elif task_type == 'ui':
+            return 'uxpilot'
+        else:
+            return 'claude'
+
+    def fallback(self, primary):
+        """
+        Get fallback model for failed primary
+
+        Args:
+            primary: Primary model that failed
+
+        Returns:
+            str: Fallback model name
+        """
+        if primary == 'kimi':
+            return 'claude'
+        return 'claude'
+
+
+# Ref: CLAUDE.md Terminal 3 Phase 3 - MockPinecone Class
+class MockPinecone:
+    """
+    Mock implementation of Pinecone vector database
+    Stores and retrieves code snippets using vector similarity
+    """
+
+    def __init__(self):
+        """Initialize with 50 dummy snippets as specified in CLAUDE.md"""
+        self.index = {}
+
+        # Generate 50 dummy snippets with alternating categories
+        self.dummy_snippets = []
+        for i in range(50):
+            snippet = {
+                'id': f'sn-{i}',
+                'vector': [0.1 * i] * 768,  # 768-dimensional vector
+                'meta': {
+                    'category': 'ui' if i % 2 else 'code',
+                    'snippet': f'console.log("Thermo Snippet {i}");'
+                }
+            }
+            self.dummy_snippets.append(snippet)
+
+        # Upsert all dummy snippets
+        for snippet in self.dummy_snippets:
+            self.upsert(snippet['id'], snippet['vector'], snippet['meta'])
+
+    def upsert(self, snippet_id, vector, metadata):
+        """Insert or update a vector in the index"""
+        print(f"Thermonuclear Upsert {snippet_id}")
+        self.index[snippet_id] = {
+            'vector': vector,
+            'meta': metadata
+        }
+
+    def query(self, query_vec, top_k=3, threshold=0.8):
+        """Query for similar vectors using cosine similarity"""
+        import numpy as np
+        matches = []
+
+        for k, v in self.index.items():
+            # Calculate cosine similarity
+            dot_product = np.dot(query_vec, v['vector'])
+            norm_query = np.linalg.norm(query_vec)
+            norm_vector = np.linalg.norm(v['vector'])
+
+            if norm_query > 0 and norm_vector > 0:
+                score = dot_product / (norm_query * norm_vector)
+            else:
+                score = 0
+
+            if score > threshold:
+                matches.append({
+                    'id': k,
+                    'score': score,
+                    'snippet': v['meta']['snippet']
+                })
+
+        return sorted(matches, key=lambda x: x['score'], reverse=True)[:top_k]
+
+
+# Ref: CLAUDE.md Terminal 3 Phase 3 - MockKV Class
+class MockKV:
+    """
+    Mock Key-Value cache with TTL (Time To Live) support
+    Simulates a distributed cache like Redis or Cloudflare KV
+    """
+
+    def __init__(self):
+        """Initialize empty cache store"""
+        self.store = {}
+
+    def get(self, key):
+        """Get value from cache if not expired"""
+        print(f"Thermonuclear Get {key}")
+        val = self.store.get(key)
+
+        if val and val['expire'] > time.time():
+            return val['data']
+        return None
+
+    def put(self, key, data, ttl=3600):
+        """Put value in cache with TTL"""
+        print(f"Thermonuclear Put {key} TTL {ttl}")
+        self.store[key] = {
+            'data': data,
+            'expire': time.time() + ttl
+        }
+
+
+# Dummy data as specified in CLAUDE.md
+DUMMY_ROADMAP = {
+    'id': 'rm-thermo-1',
+    'json_graph': '{"nodes":[{"id":"n1","label":"Start","status":"gray","position":{"x":0,"y":0,"z":0}},{"id":"n2","label":"Middle","status":"gray","position":{"x":100,"y":100,"z":0}},{"id":"n3","label":"End","status":"gray","position":{"x":200,"y":200,"z":0}}],"edges":[{"from":"n1","to":"n2"},{"from":"n2","to":"n3"}]}',
+    'vibe_mode': True,
+    'thrive_score': 0.45
+}
+
 __all__ = [
     "mock_api_call",
-    "mock_db_query", 
+    "mock_db_query",
     "mock_pinecone_upsert",
     "mock_pinecone_query",
     "mock_kv_get",
@@ -581,5 +745,9 @@ __all__ = [
     "mock_check_kill_switch",
     "mock_set_kill_switch",
     "mock_get_cost_summary",
-    "mock_reset_mocks"
+    "mock_reset_mocks",
+    "MockPromptRouter",
+    "MockPinecone",
+    "MockKV",
+    "DUMMY_ROADMAP"
 ]

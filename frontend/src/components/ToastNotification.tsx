@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -88,7 +88,7 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({ toast, onClose })
               onClick={onClose}
               className="flex-shrink-0 text-gray-400 hover:text-white transition-colors"
             >
-              <XCircleIcon className="w-5 h-5" />
+              <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
         </div>

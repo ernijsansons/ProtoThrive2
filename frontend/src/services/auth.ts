@@ -106,16 +106,55 @@ class AuthService {
   }
 
   async loginWithDevelopmentToken(): Promise<User> {
-    // For development/testing - use mock token
-    this.token = 'mock_token_for_development';
-    this.user = {
-      id: 'dev_user_' + Math.random().toString(36).substr(2, 9),
-      email: 'developer@protothrive.com',
-      role: 'vibe_coder'
-    };
+    try {
+      // Get demo token from backend
+      const response = await fetch(`${this.apiUrl}/auth/demo-token`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-    this.saveToStorage();
-    return this.user;
+      if (!response.ok) {
+        // Fallback to mock for local development
+        this.token = 'mock_token_for_development';
+        this.user = {
+          id: 'dev_user_' + Math.random().toString(36).substr(2, 9),
+          email: 'developer@protothrive.com',
+          role: 'vibe_coder'
+        };
+        this.saveToStorage();
+        return this.user;
+      }
+
+      const data = await response.json();
+      this.token = data.token;
+
+      // Decode JWT to get user info
+      if (this.token) {
+        const payload = JSON.parse(atob(this.token.split('.')[1]));
+        this.user = {
+          id: payload.id,
+          email: payload.email,
+          role: payload.role
+        };
+        this.saveToStorage();
+        return this.user;
+      }
+
+      throw new Error('Failed to get development token');
+    } catch (error) {
+      console.error('Development token error:', error);
+      // Fallback to mock
+      this.token = 'mock_token_for_development';
+      this.user = {
+        id: 'dev_user_' + Math.random().toString(36).substr(2, 9),
+        email: 'developer@protothrive.com',
+        role: 'vibe_coder'
+      };
+      this.saveToStorage();
+      return this.user;
+    }
   }
 
   async validateToken(): Promise<boolean> {

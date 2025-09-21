@@ -146,7 +146,7 @@ interface FooterState {
 interface InsightsPanelState {
   isExpanded: boolean;
   position: 'sidebar' | 'bottom';
-  activeTab: 'overview' | 'chat' | 'metrics' | 'activity' | 'history' | 'controls';
+  activeTab: 'overview' | 'chat' | 'metrics' | 'activity' | 'history' | 'controls' | 'live_insights' | 'smart_progress' | 'predictions';
   chatHistory: ChatMessage[];
   metrics: ProjectMetrics;
   isTyping: boolean;
@@ -170,7 +170,7 @@ interface State {
   fetchRoadmap: (id: string) => void;
   toggleInsightsPanel: () => void;
   setInsightsPanelPosition: (position: 'sidebar' | 'bottom') => void;
-  setInsightsPanelTab: (tab: 'overview' | 'chat' | 'metrics' | 'activity' | 'history' | 'controls') => void;
+  setInsightsPanelTab: (tab: 'overview' | 'chat' | 'metrics' | 'activity' | 'history' | 'controls' | 'live_insights' | 'smart_progress' | 'predictions') => void;
   addChatMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   setAgentTyping: (typing: boolean) => void;
   updateMetrics: (metrics: Partial<ProjectMetrics>) => void;

@@ -65,10 +65,46 @@ body {
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--dark-primary);
-  color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
+  /* Remove global dark theme - let pages control their own theme */
+}
+
+/* Theme-specific body styles */
+body[data-theme="dark"] {
+  background: var(--dark-primary);
+  color: var(--text-primary);
+}
+
+body[data-theme="light"] {
+  background: #ffffff;
+  color: #111827;
+}
+
+/* Theme-specific text color overrides */
+body[data-theme="light"] h1,
+body[data-theme="light"] h2,
+body[data-theme="light"] h3,
+body[data-theme="light"] h4,
+body[data-theme="light"] h5,
+body[data-theme="light"] h6,
+body[data-theme="light"] p,
+body[data-theme="light"] span,
+body[data-theme="light"] div {
+  color: #111827;
+}
+
+/* Ensure dark theme works for dashboard */
+body[data-theme="dark"] h1,
+body[data-theme="dark"] h2,
+body[data-theme="dark"] h3,
+body[data-theme="dark"] h4,
+body[data-theme="dark"] h5,
+body[data-theme="dark"] h6,
+body[data-theme="dark"] p,
+body[data-theme="dark"] span,
+body[data-theme="dark"] div {
+  color: var(--text-primary);
 }
 
 /* Neon Text Animations */
