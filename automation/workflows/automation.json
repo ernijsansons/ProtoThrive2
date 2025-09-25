@@ -86,14 +86,18 @@
       "id": "7",
       "name": "Update DB Mock",
       "parameters": {
-        "method": "POST",
-        "url": "mock_dashboard/update",
+        "method": "PUT",
+        "url": "http://localhost:8787/api/roadmaps/{{$node[\"Trigger\"].json[\"roadmap_id\"]}}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Content-Type",
               "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer mock_jwt_token_for_automation"
             }
           ]
         },
@@ -102,15 +106,11 @@
           "parameters": [
             {
               "name": "status",
-              "value": "={{$node[\"Calc Thrive\"].json[\"status\"]}}"
+              "value": "={{$node[\"Calc Thrive\"].json[\"status\"] === 'neon' ? 'active' : 'draft'}}"
             },
             {
-              "name": "score",
+              "name": "thrive_score",
               "value": "={{$node[\"Calc Thrive\"].json[\"score\"]}}"
-            },
-            {
-              "name": "roadmap_id",
-              "value": "={{$node[\"Trigger\"].json[\"roadmap_id\"]}}"
             }
           ]
         },
@@ -132,7 +132,7 @@
       "name": "Deploy Trigger Mock",
       "parameters": {
         "method": "POST",
-        "url": "mock_vercel/deploy",
+        "url": "http://localhost:8787/api/deployment/trigger",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -203,7 +203,7 @@
       "name": "HITL Escalate",
       "parameters": {
         "method": "POST",
-        "url": "mock_slack/hitl",
+        "url": "http://localhost:8787/api/notifications/hitl-escalation",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

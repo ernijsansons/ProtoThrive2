@@ -1,0 +1,260 @@
+# Enterprise Docker Registry Configuration for ProtoThrive
+# Implements secure, scalable container registry with monitoring
+
+version: '3.8'
+
+# =============================================================================
+# Networks Configuration
+# =============================================================================
+networks:
+  registry-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+    labels:
+      - "com.protothrive.network=registry"
+      - "com.protothrive.security=isolated"
+
+# =============================================================================
+# Volumes Configuration
+# =============================================================================
+volumes:
+  registry_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/docker/volumes/protothrive_registry_data
+    labels:
+      - "com.protothrive.volume=registry"
+      - "com.protothrive.backup=required"
+
+  registry_auth:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/docker/volumes/protothrive_registry_auth
+    labels:
+      - "com.protothrive.volume=registry-auth"
+      - "com.protothrive.backup=required"
+
+  registry_ssl:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/docker/volumes/protothrive_registry_ssl
+    labels:
+      - "com.protothrive.volume=registry-ssl"
+      - "com.protothrive.backup=required"
+
+# =============================================================================
+# Services Configuration
+# =============================================================================
+services:
+  # =============================================================================
+  # Docker Registry - Enterprise Configuration
+  # =============================================================================
+  registry:
+    image: registry:2
+    container_name: protothrive-registry
+    ports:
+      - "${REGISTRY_PORT:-5000}:5000"
+    environment:
+      - REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY=/var/lib/registry
+      - REGISTRY_AUTH=htpasswd
+      - REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd
+      - REGISTRY_AUTH_HTPASSWD_REALM=ProtoThrive Registry
+      - REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt
+      - REGISTRY_HTTP_TLS_KEY=/certs/domain.key
+      - REGISTRY_HTTP_SECRET=${REGISTRY_HTTP_SECRET}
+      - REGISTRY_STORAGE_DELETE_ENABLED=true
+      - REGISTRY_STORAGE_MAINTENANCE_UPLOADPURGING_ENABLED=true
+      - REGISTRY_STORAGE_MAINTENANCE_UPLOADPURGING_AGE=168h
+      - REGISTRY_STORAGE_MAINTENANCE_UPLOADPURGING_INTERVAL=24h
+      - REGISTRY_STORAGE_MAINTENANCE_UPLOADPURGING_DRYRUN=false
+    volumes:
+      - registry_data:/var/lib/registry
+      - registry_auth:/auth
+      - registry_ssl:/certs
+    networks:
+      - registry-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/v2/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "com.protothrive.service=registry"
+      - "com.protothrive.tier=infrastructure"
+      - "com.protothrive.monitoring=enabled"
+      - "com.protothrive.security=hardened"
+
+  # =============================================================================
+  # Registry UI - Enterprise Configuration
+  # =============================================================================
+  registry-ui:
+    image: joxit/docker-registry-ui:latest
+    container_name: protothrive-registry-ui
+    ports:
+      - "${REGISTRY_UI_PORT:-8080}:80"
+    environment:
+      - REGISTRY_TITLE=ProtoThrive Enterprise Registry
+      - REGISTRY_URL=http://registry:5000
+      - DELETE_IMAGES=true
+      - SHOW_CONTENT_DIGEST=true
+      - SHOW_CATALOG_NB_TAGS=true
+      - CATALOG_MIN_BRANCHES=1
+      - CATALOG_MAX_BRANCHES=1
+      - CATALOG_SORT_BY=name
+      - TAGLIST_PAGE_SIZE=100
+      - REGISTRY_SECURED=true
+      - REGISTRY_USERNAME=${REGISTRY_USERNAME}
+      - REGISTRY_PASSWORD=${REGISTRY_PASSWORD}
+    depends_on:
+      registry:
+        condition: service_healthy
+    networks:
+      - registry-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "com.protothrive.service=registry-ui"
+      - "com.protothrive.tier=infrastructure"
+      - "com.protothrive.monitoring=enabled"
+
+  # =============================================================================
+  # Registry Garbage Collection - Enterprise Configuration
+  # =============================================================================
+  registry-gc:
+    image: registry:2
+    container_name: protothrive-registry-gc
+    command: ["/bin/registry", "garbage-collect", "/etc/docker/registry/config.yml"]
+    environment:
+      - REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY=/var/lib/registry
+      - REGISTRY_STORAGE_DELETE_ENABLED=true
+    volumes:
+      - registry_data:/var/lib/registry
+      - ./docker/registry-config.yml:/etc/docker/registry/config.yml:ro
+    depends_on:
+      registry:
+        condition: service_healthy
+    networks:
+      - registry-network
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "com.protothrive.service=registry-gc"
+      - "com.protothrive.tier=maintenance"
+      - "com.protothrive.schedule=daily"
+
+  # =============================================================================
+  # Registry Backup - Enterprise Configuration
+  # =============================================================================
+  registry-backup:
+    image: alpine:latest
+    container_name: protothrive-registry-backup
+    command: |
+      sh -c '
+        apk add --no-cache rsync &&
+        while true; do
+          echo "Starting registry backup at $(date)"
+          rsync -av --delete /var/lib/registry/ /backup/registry-$(date +%Y%m%d-%H%M%S)/
+          find /backup -type d -name "registry-*" -mtime +7 -exec rm -rf {} \;
+          echo "Registry backup completed at $(date)"
+          sleep 86400
+        done
+      '
+    volumes:
+      - registry_data:/var/lib/registry:ro
+      - ./backups/registry:/backup
+    depends_on:
+      registry:
+        condition: service_healthy
+    networks:
+      - registry-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "com.protothrive.service=registry-backup"
+      - "com.protothrive.tier=backup"
+      - "com.protothrive.schedule=daily"
+
+  # =============================================================================
+  # Registry Monitoring - Enterprise Configuration
+  # =============================================================================
+  registry-monitor:
+    image: prom/registry-exporter:latest
+    container_name: protothrive-registry-monitor
+    ports:
+      - "${REGISTRY_MONITOR_PORT:-9091}:9091"
+    environment:
+      - REGISTRY_URL=http://registry:5000
+      - REGISTRY_USERNAME=${REGISTRY_USERNAME}
+      - REGISTRY_PASSWORD=${REGISTRY_PASSWORD}
+    depends_on:
+      registry:
+        condition: service_healthy
+    networks:
+      - registry-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "com.protothrive.service=registry-monitor"
+      - "com.protothrive.tier=monitoring"
+      - "com.protothrive.monitoring=enabled"

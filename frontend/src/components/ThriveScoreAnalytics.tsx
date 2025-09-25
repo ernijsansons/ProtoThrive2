@@ -10,7 +10,15 @@ import {
   SparklesIcon
 } from '@heroicons/react/24/outline';
 
-interface Node {
+// BUSINESS LOGIC FIX: Map store node format to analytics format
+interface StoreNode {
+  id: string;
+  label: string;
+  status: 'gray' | 'neon';
+  position: { x: number; y: number; z: number };
+}
+
+interface AnalyticsNode {
   id: string;
   data: {
     label: string;
@@ -21,6 +29,21 @@ interface Node {
     type: 'milestone' | 'epic' | 'task' | 'blocker';
   };
 }
+
+// Utility to map store nodes to analytics nodes
+const mapStoreToAnalyticsNode = (storeNode: StoreNode): AnalyticsNode => ({
+  id: storeNode.id,
+  data: {
+    label: storeNode.label,
+    status: storeNode.status === 'neon' ? 'completed' : 'pending',
+    estimatedDays: 3, // Default estimation
+    priority: 'medium',
+    type: 'task'
+  }
+});
+
+// Keep original interface for internal analytics
+interface Node extends AnalyticsNode {}
 
 interface ThriveScoreAnalyticsProps {
   nodes: Node[];

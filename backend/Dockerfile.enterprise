@@ -1,0 +1,161 @@
+# Enterprise-grade Multi-stage Dockerfile for ProtoThrive Backend
+# Implements security, performance, and maintainability best practices
+
+# =============================================================================
+# Stage 1: Base Image with Security Hardening
+# =============================================================================
+FROM node:20-alpine3.19 AS base
+
+# Security: Create non-root user early
+RUN addgroup --system --gid 1001 worker && \
+    adduser --system --uid 1001 worker
+
+# Security: Install security updates and required packages
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache \
+        libc6-compat \
+        curl \
+        dumb-init \
+        tini \
+        ca-certificates \
+        openssl && \
+    rm -rf /var/cache/apk/*
+
+# Security: Set proper permissions
+RUN chown -R worker:worker /home/worker
+
+# =============================================================================
+# Stage 2: Wrangler CLI Installation
+# =============================================================================
+FROM base AS wrangler-install
+
+# Install Wrangler CLI globally with specific version
+RUN npm install -g wrangler@latest --unsafe-perm=false
+
+# =============================================================================
+# Stage 3: Dependencies Installation with Security Scanning
+# =============================================================================
+FROM base AS deps
+
+WORKDIR /app
+
+# Security: Copy package files first for better layer caching
+COPY --chown=worker:worker package.json package-lock.json* ./
+
+# Security: Install dependencies with security audit
+RUN npm ci --only=production --audit --fund=false && \
+    npm audit --audit-level=moderate && \
+    npm cache clean --force
+
+# =============================================================================
+# Stage 4: Development Dependencies for Building
+# =============================================================================
+FROM base AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY --chown=worker:worker package.json package-lock.json* ./
+
+# Install all dependencies including dev dependencies
+RUN npm ci --audit --fund=false && \
+    npm audit --audit-level=moderate
+
+# Copy source code
+COPY --chown=worker:worker . .
+
+# Build arguments for Cloudflare configuration
+ARG CLOUDFLARE_ACCOUNT_ID
+ARG CLOUDFLARE_API_TOKEN
+ARG ENVIRONMENT=production
+
+# Set environment variables
+ENV CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID
+ENV CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN
+ENV ENVIRONMENT=$ENVIRONMENT
+ENV NODE_ENV=production
+
+# Security: Run as non-root user during build
+USER worker
+
+# Build the TypeScript worker
+RUN npm run build
+
+# =============================================================================
+# Stage 5: Production Image with Security Hardening
+# =============================================================================
+FROM base AS runner
+
+WORKDIR /app
+
+# Security: Set production environment
+ENV NODE_ENV=production
+ENV PORT=8787
+
+# Security: Create necessary directories with proper permissions
+RUN mkdir -p dist && \
+    chown -R worker:worker dist
+
+# Copy built application and configuration from builder stage
+COPY --from=builder --chown=worker:worker /app/dist ./dist
+COPY --from=builder --chown=worker:worker /app/wrangler.toml ./wrangler.toml
+COPY --from=builder --chown=worker:worker /app/package.json ./package.json
+COPY --from=builder --chown=worker:worker /app/node_modules ./node_modules
+
+# Copy Wrangler CLI from installation stage
+COPY --from=wrangler-install /usr/local/bin/wrangler /usr/local/bin/wrangler
+
+# Security: Switch to non-root user
+USER worker
+
+# Security: Expose port
+EXPOSE 8787
+
+# Security: Add comprehensive health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8787/health || exit 1
+
+# Security: Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["wrangler", "dev", "--port", "8787", "--host", "0.0.0.0", "--local"]
+
+# =============================================================================
+# Stage 6: Security Scanning Stage
+# =============================================================================
+FROM runner AS security-scan
+
+# Install security scanning tools
+USER root
+RUN apk add --no-cache \
+        trivy \
+        clamav \
+        clamav-libunrar
+
+# Copy security scanning script
+COPY --chown=worker:worker scripts/security-scan.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/security-scan.sh
+
+# Run security scan
+RUN /usr/local/bin/security-scan.sh
+
+# Switch back to non-root user
+USER worker
+
+# =============================================================================
+# Labels for Enterprise Compliance
+# =============================================================================
+LABEL maintainer="ProtoThrive Team <team@protothrive.com>"
+LABEL version="2.0.0"
+LABEL description="ProtoThrive Enterprise Backend API"
+LABEL org.opencontainers.image.title="ProtoThrive Backend"
+LABEL org.opencontainers.image.description="Enterprise-grade backend API for ProtoThrive platform"
+LABEL org.opencontainers.image.version="2.0.0"
+LABEL org.opencontainers.image.authors="ProtoThrive Team"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/ernijsansons/ProtoThrive2"
+LABEL security.scan="enabled"
+LABEL security.non-root="true"
+LABEL security.health-check="enabled"

@@ -1,0 +1,162 @@
+# Enterprise-grade Multi-stage Dockerfile for ProtoThrive Frontend
+# Implements security, performance, and maintainability best practices
+
+# =============================================================================
+# Stage 1: Base Image with Security Hardening
+# =============================================================================
+FROM node:20-alpine3.19 AS base
+
+# Security: Create non-root user early
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Security: Install security updates and required packages
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache \
+        libc6-compat \
+        curl \
+        dumb-init \
+        tini && \
+    rm -rf /var/cache/apk/*
+
+# Security: Set proper permissions
+RUN chown -R nextjs:nodejs /home/nextjs
+
+# =============================================================================
+# Stage 2: Dependencies Installation with Security Scanning
+# =============================================================================
+FROM base AS deps
+
+WORKDIR /app
+
+# Security: Copy package files first for better layer caching
+COPY --chown=nextjs:nodejs package.json package-lock.json* ./
+
+# Security: Install dependencies with security audit
+RUN npm ci --only=production --audit --fund=false && \
+    npm audit --audit-level=moderate && \
+    npm cache clean --force
+
+# =============================================================================
+# Stage 3: Development Dependencies for Building
+# =============================================================================
+FROM base AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY --chown=nextjs:nodejs package.json package-lock.json* ./
+
+# Install all dependencies including dev dependencies
+RUN npm ci --audit --fund=false && \
+    npm audit --audit-level=moderate
+
+# Copy source code
+COPY --chown=nextjs:nodejs . .
+
+# Build arguments for environment configuration
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_WS_URL
+ARG NEXT_PUBLIC_SPLINE_SCENE
+ARG NEXT_PUBLIC_FIREBASE_API_KEY
+ARG NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ARG NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ARG NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+ARG NEXT_PUBLIC_FIREBASE_APP_ID
+ARG NODE_ENV=production
+
+# Set environment variables
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
+ENV NEXT_PUBLIC_SPLINE_SCENE=$NEXT_PUBLIC_SPLINE_SCENE
+ENV NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY
+ENV NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ENV NEXT_PUBLIC_FIREBASE_PROJECT_ID=$NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ENV NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+ENV NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+ENV NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID
+ENV NODE_ENV=$NODE_ENV
+
+# Security: Run as non-root user during build
+USER nextjs
+
+# Build the application with optimizations
+RUN npm run build
+
+# =============================================================================
+# Stage 4: Production Image with Security Hardening
+# =============================================================================
+FROM base AS runner
+
+WORKDIR /app
+
+# Security: Set production environment
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Security: Create necessary directories with proper permissions
+RUN mkdir -p .next && \
+    chown -R nextjs:nodejs .next
+
+# Copy built application from builder stage
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Security: Switch to non-root user
+USER nextjs
+
+# Security: Expose port
+EXPOSE 3000
+
+# Security: Add comprehensive health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Security: Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["node", "server.js"]
+
+# =============================================================================
+# Stage 5: Security Scanning Stage
+# =============================================================================
+FROM runner AS security-scan
+
+# Install security scanning tools
+USER root
+RUN apk add --no-cache \
+        trivy \
+        clamav \
+        clamav-libunrar
+
+# Copy security scanning script
+COPY --chown=nextjs:nodejs scripts/security-scan.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/security-scan.sh
+
+# Run security scan
+RUN /usr/local/bin/security-scan.sh
+
+# Switch back to non-root user
+USER nextjs
+
+# =============================================================================
+# Labels for Enterprise Compliance
+# =============================================================================
+LABEL maintainer="ProtoThrive Team <team@protothrive.com>"
+LABEL version="1.0.0"
+LABEL description="ProtoThrive Enterprise Frontend Application"
+LABEL org.opencontainers.image.title="ProtoThrive Frontend"
+LABEL org.opencontainers.image.description="Enterprise-grade frontend application for ProtoThrive platform"
+LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.authors="ProtoThrive Team"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/ernijsansons/ProtoThrive2"
+LABEL security.scan="enabled"
+LABEL security.non-root="true"
+LABEL security.health-check="enabled"
