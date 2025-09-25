@@ -1,19 +1,161 @@
-# Ref: CLAUDE.md - Cloudflare Pages Configuration
-name = "protothrive-frontend"
-compatibility_date = "2024-08-23"
+# ProtoThrive Frontend - Cloudflare Pages Configuration
+# Optimized for Workers deployment with enterprise-grade performance
 
+name = "protothrive-frontend"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Account configuration
+account_id = "d2897bdebfa128919bd89b265e6a712e"
+workers_dev = false
+
+# Build configuration for Next.js
 [build]
 command = "npm run build"
+cwd = "."
+watch_dir = "src"
 
-[build.upload]
-format = "service-worker"
+# Environment variables
+[vars]
+NODE_ENV = "production"
+NEXT_TELEMETRY_DISABLED = "1"
+NEXT_PUBLIC_APP_URL = "https://protothrive-frontend.pages.dev"
+NEXT_PUBLIC_API_URL = "https://backend-thermo-staging.ernijs-ansons.workers.dev"
 
-[[build.upload.rules]]
-type = "CompiledWasm"
-globs = ["**/*.wasm"]
-fallthrough = true
+# Production environment
+[env.production]
+name = "protothrive-frontend-prod"
+vars = { 
+  NODE_ENV = "production",
+  NEXT_PUBLIC_APP_URL = "https://protothrive.com",
+  NEXT_PUBLIC_API_URL = "https://api.protothrive.com"
+}
 
-[[build.upload.rules]]
-type = "ESModule"
-globs = ["**/*.js", "**/*.mjs"]
-fallthrough = true
+[env.production.build]
+command = "npm run build:production"
+cwd = "."
+watch_dir = "src"
+
+# Staging environment
+[env.staging]
+name = "protothrive-frontend-staging"
+vars = { 
+  NODE_ENV = "staging",
+  NEXT_PUBLIC_APP_URL = "https://protothrive-frontend-staging.pages.dev",
+  NEXT_PUBLIC_API_URL = "https://backend-thermo-staging.ernijs-ansons.workers.dev"
+}
+
+[env.staging.build]
+command = "npm run build"
+cwd = "."
+watch_dir = "src"
+
+# Development environment
+[env.development]
+name = "protothrive-frontend-dev"
+vars = { 
+  NODE_ENV = "development",
+  NEXT_PUBLIC_APP_URL = "http://localhost:3000",
+  NEXT_PUBLIC_API_URL = "http://localhost:8787"
+}
+
+[env.development.build]
+command = "npm run build"
+cwd = "."
+watch_dir = "src"
+
+# Performance optimizations
+[[rules]]
+type = "transform"
+comment = "Static asset optimization"
+expression = "http.request.uri.path matches \"\\.(js|css|png|jpg|jpeg|gif|webp|svg|woff|woff2|ttf|eot)$\""
+actions = [
+  {
+    id = "cache_ttl_edge_override",
+    value = {
+      cache_ttl = {
+        default = 31536000  # 1 year for static assets
+      }
+    }
+  },
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set",
+      name = "Cache-Control",
+      value = "public, max-age=31536000, immutable"
+    }
+  }
+]
+
+# Security headers
+[[rules]]
+type = "transform"
+comment = "Security headers for all pages"
+expression = "true"
+actions = [
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set",
+      name = "X-Frame-Options",
+      value = "DENY"
+    }
+  },
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set",
+      name = "X-Content-Type-Options",
+      value = "nosniff"
+    }
+  },
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set",
+      name = "Referrer-Policy",
+      value = "strict-origin-when-cross-origin"
+    }
+  },
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set",
+      name = "Permissions-Policy",
+      value = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), vr=(), accelerometer=(), gyroscope=(), magnetometer=(), fullscreen=(self)"
+    }
+  }
+]
+
+# Image optimization
+[[rules]]
+type = "transform"
+comment = "Image optimization and WebP conversion"
+expression = "http.request.uri.path matches \"\\.(jpg|jpeg|png|gif|webp|avif|svg)$\""
+actions = [
+  {
+    id = "polish",
+    value = "lossy"
+  },
+  {
+    id = "webp",
+    value = true
+  }
+]
+
+# Font optimization
+[[rules]]
+type = "transform"
+comment = "Font optimization and caching"
+expression = "http.request.uri.path matches \"\\.(woff|woff2|ttf|otf|eot)$\""
+actions = [
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set",
+      name = "Access-Control-Allow-Origin",
+      value = "*"
+    }
+  }
+]

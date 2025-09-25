@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/AuthContext';
+import OAuthButtons from '../components/OAuthButtons';
+import { OAuthResult } from '../services/oauthService';
 import {
   ArrowRightIcon,
   CheckIcon,
@@ -13,7 +15,7 @@ import {
 
 const SignupPage: React.FC = () => {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, loginWithOAuth } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -42,7 +44,7 @@ const SignupPage: React.FC = () => {
     {
       id: 1,
       title: "Create your account",
-      description: "Join thousands of teams building faster with ProtoThrive",
+      description: "Start your beta access journey with ProtoThrive",
       icon: SparklesIcon
     },
     {
@@ -129,6 +131,22 @@ const SignupPage: React.FC = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
+  };
+
+  const handleOAuthSuccess = async (result: OAuthResult) => {
+    try {
+      console.log('Thermonuclear: OAuth signup success, processing registration');
+      await loginWithOAuth(result);
+      router.push('/');
+    } catch (err: any) {
+      console.error('Thermonuclear Error: OAuth signup failed', err);
+      setErrors({ submit: err.message || 'OAuth signup failed' });
+    }
+  };
+
+  const handleOAuthError = (error: string) => {
+    console.error('Thermonuclear Error: OAuth signup failed', error);
+    setErrors({ submit: error });
   };
 
   const getCurrentStepData = () => signupSteps.find(step => step.id === currentStep);
@@ -304,6 +322,21 @@ const SignupPage: React.FC = () => {
             padding: '2rem',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
           }}>
+            {/* Beta Notice - Required for compliance */}
+            <div style={{
+              backgroundColor: '#3b82f6',
+              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              color: '#ffffff',
+              padding: '0.75rem 1rem',
+              borderRadius: '0.5rem',
+              marginBottom: '1.5rem',
+              fontSize: '0.875rem',
+              textAlign: 'center',
+              fontWeight: '500'
+            }}>
+              🚀 Beta Access - Limited Spots Available
+            </div>
+
             {currentStep === 1 && (
               <div>
                 <div style={{ marginBottom: '1.5rem' }}>
@@ -327,15 +360,19 @@ const SignupPage: React.FC = () => {
                       borderRadius: '0.5rem',
                       fontSize: '1rem',
                       outline: 'none',
-                      transition: 'border-color 0.2s ease',
-                      ':focus': {
-                        borderColor: '#3b82f6',
-                        boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)'
-                      }
+                      transition: 'border-color 0.2s ease'
                     }}
                     placeholder="Enter your email"
-                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                    onBlur={(e) => e.target.style.borderColor = errors.email ? '#ef4444' : '#d1d5db'}
+                    onFocus={(e) => {
+                      if (e.target instanceof HTMLElement) {
+                        e.target.style.borderColor = '#3b82f6';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target instanceof HTMLElement) {
+                        e.target.style.borderColor = errors.email ? '#ef4444' : '#d1d5db';
+                      }
+                    }}
                   />
                   {errors.email && <p style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.email}</p>}
                 </div>
@@ -366,8 +403,16 @@ const SignupPage: React.FC = () => {
                         transition: 'border-color 0.2s ease'
                       }}
                       placeholder="Create a password"
-                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                      onBlur={(e) => e.target.style.borderColor = errors.password ? '#ef4444' : '#d1d5db'}
+                      onFocus={(e) => {
+                        if (e.target instanceof HTMLElement) {
+                          e.target.style.borderColor = '#3b82f6';
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (e.target instanceof HTMLElement) {
+                          e.target.style.borderColor = errors.password ? '#ef4444' : '#d1d5db';
+                        }
+                      }}
                     />
                     <button
                       type="button"
@@ -418,8 +463,16 @@ const SignupPage: React.FC = () => {
                       transition: 'border-color 0.2s ease'
                     }}
                     placeholder="Confirm your password"
-                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                    onBlur={(e) => e.target.style.borderColor = errors.confirmPassword ? '#ef4444' : '#d1d5db'}
+                    onFocus={(e) => {
+                      if (e.target instanceof HTMLElement) {
+                        e.target.style.borderColor = '#3b82f6';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target instanceof HTMLElement) {
+                        e.target.style.borderColor = errors.confirmPassword ? '#ef4444' : '#d1d5db';
+                      }
+                    }}
                   />
                   {errors.confirmPassword && <p style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.confirmPassword}</p>}
                 </div>
@@ -482,8 +535,16 @@ const SignupPage: React.FC = () => {
                         transition: 'border-color 0.2s ease'
                       }}
                       placeholder="John"
-                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                      onBlur={(e) => e.target.style.borderColor = errors.firstName ? '#ef4444' : '#d1d5db'}
+                      onFocus={(e) => {
+                        if (e.target instanceof HTMLElement) {
+                          e.target.style.borderColor = '#3b82f6';
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (e.target instanceof HTMLElement) {
+                          e.target.style.borderColor = errors.firstName ? '#ef4444' : '#d1d5db';
+                        }
+                      }}
                     />
                     {errors.firstName && <p style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.firstName}</p>}
                   </div>
@@ -512,8 +573,16 @@ const SignupPage: React.FC = () => {
                         transition: 'border-color 0.2s ease'
                       }}
                       placeholder="Doe"
-                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                      onBlur={(e) => e.target.style.borderColor = errors.lastName ? '#ef4444' : '#d1d5db'}
+                      onFocus={(e) => {
+                        if (e.target instanceof HTMLElement) {
+                          e.target.style.borderColor = '#3b82f6';
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (e.target instanceof HTMLElement) {
+                          e.target.style.borderColor = errors.lastName ? '#ef4444' : '#d1d5db';
+                        }
+                      }}
                     />
                     {errors.lastName && <p style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.lastName}</p>}
                   </div>
@@ -543,8 +612,16 @@ const SignupPage: React.FC = () => {
                       transition: 'border-color 0.2s ease'
                     }}
                     placeholder="Your company name"
-                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                    onFocus={(e) => {
+                      if (e.target instanceof HTMLElement) {
+                        e.target.style.borderColor = '#3b82f6';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target instanceof HTMLElement) {
+                        e.target.style.borderColor = '#d1d5db';
+                      }
+                    }}
                   />
                 </div>
 
@@ -571,8 +648,16 @@ const SignupPage: React.FC = () => {
                       transition: 'border-color 0.2s ease',
                       backgroundColor: '#ffffff'
                     }}
-                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                    onBlur={(e) => e.target.style.borderColor = errors.role ? '#ef4444' : '#d1d5db'}
+                    onFocus={(e) => {
+                      if (e.target instanceof HTMLElement) {
+                        e.target.style.borderColor = '#3b82f6';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target instanceof HTMLElement) {
+                        e.target.style.borderColor = errors.role ? '#ef4444' : '#d1d5db';
+                      }
+                    }}
                   >
                     <option value="">Select your role</option>
                     <option value="product-manager">Product Manager</option>
@@ -608,8 +693,16 @@ const SignupPage: React.FC = () => {
                       transition: 'border-color 0.2s ease',
                       backgroundColor: '#ffffff'
                     }}
-                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                    onFocus={(e) => {
+                      if (e.target instanceof HTMLElement) {
+                        e.target.style.borderColor = '#3b82f6';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target instanceof HTMLElement) {
+                        e.target.style.borderColor = '#d1d5db';
+                      }
+                    }}
                   >
                     <option value="">Select team size</option>
                     <option value="1">Just me</option>
@@ -724,6 +817,17 @@ const SignupPage: React.FC = () => {
               </div>
             )}
 
+            {/* OAuth Buttons */}
+            {currentStep === 1 && (
+              <div style={{ marginTop: '1.5rem' }}>
+                <OAuthButtons
+                  onSuccess={handleOAuthSuccess}
+                  onError={handleOAuthError}
+                  disabled={isSubmitting}
+                />
+              </div>
+            )}
+
             {/* Sign in link */}
             {currentStep === 1 && (
               <div style={{
@@ -765,4 +869,10 @@ const SignupPage: React.FC = () => {
   );
 };
 
-export default SignupPage;
+export default SignupPage;// Add getStaticProps for static export
+export async function getStaticProps() {
+  return {
+    props: {},
+  };
+}
+

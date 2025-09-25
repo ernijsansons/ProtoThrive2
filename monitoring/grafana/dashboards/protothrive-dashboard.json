@@ -1,0 +1,119 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "ProtoThrive Application Dashboard",
+    "tags": ["protothrive", "application"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Application Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"frontend\"}",
+            "legendFormat": "Frontend"
+          },
+          {
+            "expr": "up{job=\"backend\"}",
+            "legendFormat": "Backend"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": 0
+                },
+                {
+                  "color": "green",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "http_request_duration_seconds{job=\"frontend\"}",
+            "legendFormat": "Frontend Response Time"
+          },
+          {
+            "expr": "http_request_duration_seconds{job=\"backend\"}",
+            "legendFormat": "Backend Response Time"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{job=\"frontend\"}[5m])",
+            "legendFormat": "Frontend Requests/sec"
+          },
+          {
+            "expr": "rate(http_requests_total{job=\"backend\"}[5m])",
+            "legendFormat": "Backend Requests/sec"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 4,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{job=\"frontend\",status=~\"5..\"}[5m])",
+            "legendFormat": "Frontend 5xx Errors/sec"
+          },
+          {
+            "expr": "rate(http_requests_total{job=\"backend\",status=~\"5..\"}[5m])",
+            "legendFormat": "Backend 5xx Errors/sec"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}

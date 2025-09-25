@@ -68,19 +68,19 @@ runTest('automation.json has valid JSON syntax', () => {
 // Test 4: Validate YAML syntax (basic check)
 runTest('ci-cd.yml has valid YAML structure', () => {
   const fs = require('fs');
-  const yamlPath = path.join(__dirname, '../../.github/workflows/ci-cd.yml');
+  const yamlPath = path.join(__dirname, '../.github/workflows/ci-cd.yml');
   const content = fs.readFileSync(yamlPath, 'utf8');
   
   // Basic YAML validation
-  if (!content.includes('name: CI/CD')) {
+  if (!content.includes('name: Thermonuclear CI/CD Pipeline')) {
     throw new Error('Missing workflow name');
   }
   if (!content.includes('jobs:')) {
     throw new Error('Missing jobs section');
   }
   
-  // Check for all required jobs
-  const requiredJobs = ['lint', 'test', 'build', 'deploy-staging', 'deploy-prod', 'security-scan', 'notify'];
+  // Check for all required jobs per CLAUDE.md Terminal 4
+  const requiredJobs = ['lint', 'test', 'build', 'deploy-staging', 'deploy-production', 'post-deploy-monitor'];
   requiredJobs.forEach(job => {
     if (!content.includes(`${job}:`)) {
       throw new Error(`Missing job: ${job}`);

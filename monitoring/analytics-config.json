@@ -1,0 +1,539 @@
+{
+  "name": "ProtoThrive Enterprise Monitoring & Analytics",
+  "description": "Comprehensive monitoring, analytics, and observability configuration",
+  "version": "2.0.0",
+  "analytics_engine": {
+    "datasets": [
+      {
+        "name": "user_events",
+        "description": "User interaction and behavior tracking",
+        "retention_days": 90,
+        "sampling_rate": 1.0,
+        "blobs": [
+          "event_name",
+          "event_category",
+          "user_id",
+          "session_id",
+          "page_path",
+          "user_agent",
+          "referrer"
+        ],
+        "doubles": [
+          "timestamp",
+          "value",
+          "duration_ms",
+          "file_size",
+          "response_time"
+        ],
+        "indexes": [
+          "workspace_id",
+          "team_id",
+          "feature_flag",
+          "experiment_variant",
+          "device_type",
+          "geo_country"
+        ]
+      },
+      {
+        "name": "performance_metrics",
+        "description": "Application performance and Core Web Vitals",
+        "retention_days": 30,
+        "sampling_rate": 0.1,
+        "blobs": [
+          "metric_name",
+          "page_url",
+          "browser",
+          "device_type",
+          "connection_type"
+        ],
+        "doubles": [
+          "timestamp",
+          "value",
+          "cls_score",
+          "lcp_time",
+          "fid_time",
+          "ttfb_time",
+          "inp_score"
+        ],
+        "indexes": [
+          "user_id",
+          "session_id",
+          "workspace_id",
+          "geo_country",
+          "browser_version"
+        ]
+      },
+      {
+        "name": "security_events",
+        "description": "Security incidents and threat detection",
+        "retention_days": 365,
+        "sampling_rate": 1.0,
+        "blobs": [
+          "event_type",
+          "threat_category",
+          "source_ip",
+          "user_agent",
+          "attack_vector",
+          "waf_rule_id"
+        ],
+        "doubles": [
+          "timestamp",
+          "threat_score",
+          "confidence_level",
+          "blocked_requests",
+          "severity_level"
+        ],
+        "indexes": [
+          "user_id",
+          "workspace_id",
+          "geo_country",
+          "asn",
+          "rule_action"
+        ]
+      },
+      {
+        "name": "business_metrics",
+        "description": "Business KPIs and conversion tracking",
+        "retention_days": 730,
+        "sampling_rate": 1.0,
+        "blobs": [
+          "metric_type",
+          "conversion_funnel",
+          "subscription_plan",
+          "feature_used",
+          "integration_type"
+        ],
+        "doubles": [
+          "timestamp",
+          "revenue_usd",
+          "user_count",
+          "retention_rate",
+          "conversion_rate",
+          "churn_rate"
+        ],
+        "indexes": [
+          "workspace_id",
+          "team_id",
+          "plan_type",
+          "geo_region",
+          "acquisition_channel"
+        ]
+      },
+      {
+        "name": "collaboration_metrics",
+        "description": "Real-time collaboration usage and performance",
+        "retention_days": 60,
+        "sampling_rate": 1.0,
+        "blobs": [
+          "session_type",
+          "collaboration_action",
+          "roadmap_id",
+          "room_id",
+          "participant_role"
+        ],
+        "doubles": [
+          "timestamp",
+          "session_duration",
+          "participant_count",
+          "message_count",
+          "node_updates",
+          "edge_updates"
+        ],
+        "indexes": [
+          "workspace_id",
+          "team_id",
+          "user_id",
+          "geo_country",
+          "device_type"
+        ]
+      }
+    ]
+  },
+  "web_analytics": {
+    "enabled": true,
+    "auto_install": true,
+    "spa_mode": true,
+    "custom_dimensions": [
+      {
+        "name": "workspace_plan",
+        "scope": "session"
+      },
+      {
+        "name": "user_role",
+        "scope": "user"
+      },
+      {
+        "name": "feature_flags",
+        "scope": "session"
+      },
+      {
+        "name": "experiment_variant",
+        "scope": "session"
+      }
+    ],
+    "custom_events": [
+      {
+        "name": "roadmap_created",
+        "parameters": ["workspace_id", "template_used", "collaboration_enabled"]
+      },
+      {
+        "name": "collaboration_session_started",
+        "parameters": ["roadmap_id", "participant_count", "session_type"]
+      },
+      {
+        "name": "integration_connected",
+        "parameters": ["integration_type", "workspace_id", "success"]
+      },
+      {
+        "name": "subscription_upgraded",
+        "parameters": ["from_plan", "to_plan", "revenue_usd"]
+      }
+    ],
+    "conversion_goals": [
+      {
+        "name": "signup_completed",
+        "value": 10
+      },
+      {
+        "name": "first_roadmap_created",
+        "value": 25
+      },
+      {
+        "name": "collaboration_first_use",
+        "value": 50
+      },
+      {
+        "name": "subscription_purchased",
+        "value": 100
+      }
+    ]
+  },
+  "logpush": {
+    "enabled": true,
+    "destinations": [
+      {
+        "name": "application_logs",
+        "destination_conf": "https://logs.protothrive.com/workers",
+        "dataset": "workers_trace_events",
+        "filter": "ScriptName eq 'protothrive-backend' or ScriptName eq 'collaboration-handler'",
+        "format": "json",
+        "frequency": "high",
+        "fields": [
+          "timestamp",
+          "event_timestamp",
+          "outcome",
+          "script_name",
+          "script_version",
+          "script_tags",
+          "exceptions",
+          "logs",
+          "event_type",
+          "request_url",
+          "request_method",
+          "response_status",
+          "cpu_time",
+          "wall_time"
+        ]
+      },
+      {
+        "name": "security_logs",
+        "destination_conf": "https://logs.protothrive.com/security",
+        "dataset": "firewall_events",
+        "filter": "Action eq 'block' or Action eq 'challenge' or Action eq 'jschallenge'",
+        "format": "json",
+        "frequency": "high",
+        "fields": [
+          "timestamp",
+          "client_ip",
+          "client_country",
+          "client_asn",
+          "user_agent",
+          "request_uri",
+          "request_method",
+          "response_status",
+          "security_level",
+          "waf_action",
+          "waf_rule_id",
+          "waf_matched_var",
+          "rate_limit_action",
+          "bot_score",
+          "threat_score"
+        ]
+      },
+      {
+        "name": "performance_logs",
+        "destination_conf": "https://logs.protothrive.com/performance",
+        "dataset": "http_requests",
+        "filter": "EdgeResponseStatus ge 400 or OriginResponseTime gt 5000",
+        "format": "json",
+        "frequency": "high",
+        "fields": [
+          "timestamp",
+          "client_ip",
+          "client_country",
+          "request_uri",
+          "request_method",
+          "response_status",
+          "edge_response_status",
+          "origin_response_status",
+          "cache_status",
+          "edge_start_timestamp",
+          "edge_end_timestamp",
+          "origin_response_time",
+          "edge_response_bytes",
+          "origin_response_bytes"
+        ]
+      }
+    ]
+  },
+  "real_user_monitoring": {
+    "enabled": true,
+    "sampling_percentage": 10,
+    "metrics": [
+      {
+        "name": "largest_contentful_paint",
+        "threshold_good": 2500,
+        "threshold_poor": 4000
+      },
+      {
+        "name": "first_input_delay",
+        "threshold_good": 100,
+        "threshold_poor": 300
+      },
+      {
+        "name": "cumulative_layout_shift",
+        "threshold_good": 0.1,
+        "threshold_poor": 0.25
+      },
+      {
+        "name": "first_contentful_paint",
+        "threshold_good": 1800,
+        "threshold_poor": 3000
+      },
+      {
+        "name": "time_to_first_byte",
+        "threshold_good": 800,
+        "threshold_poor": 1800
+      }
+    ],
+    "custom_metrics": [
+      {
+        "name": "roadmap_load_time",
+        "description": "Time to load and render roadmap visualization"
+      },
+      {
+        "name": "collaboration_connect_time",
+        "description": "Time to establish WebSocket collaboration connection"
+      },
+      {
+        "name": "api_response_time",
+        "description": "API endpoint response times"
+      }
+    ]
+  },
+  "alerting": {
+    "enabled": true,
+    "notification_channels": [
+      {
+        "name": "slack_alerts",
+        "type": "slack",
+        "webhook_url": "$SLACK_WEBHOOK_URL",
+        "severity_levels": ["critical", "high"]
+      },
+      {
+        "name": "email_alerts",
+        "type": "email",
+        "addresses": ["ops@protothrive.com", "security@protothrive.com"],
+        "severity_levels": ["critical", "high", "medium"]
+      },
+      {
+        "name": "pagerduty_alerts",
+        "type": "pagerduty",
+        "integration_key": "$PAGERDUTY_INTEGRATION_KEY",
+        "severity_levels": ["critical"]
+      }
+    ],
+    "rules": [
+      {
+        "name": "high_error_rate",
+        "description": "Alert when error rate exceeds threshold",
+        "query": "sum(rate(http_requests{status=~'5..'}[5m])) / sum(rate(http_requests[5m])) > 0.05",
+        "severity": "critical",
+        "duration": "5m",
+        "channels": ["slack_alerts", "email_alerts", "pagerduty_alerts"]
+      },
+      {
+        "name": "high_response_time",
+        "description": "Alert when response time is consistently high",
+        "query": "avg(origin_response_time) > 5000",
+        "severity": "high",
+        "duration": "10m",
+        "channels": ["slack_alerts", "email_alerts"]
+      },
+      {
+        "name": "security_attack_detected",
+        "description": "Alert on security attacks",
+        "query": "sum(rate(firewall_events{action='block'}[1m])) > 100",
+        "severity": "critical",
+        "duration": "1m",
+        "channels": ["slack_alerts", "email_alerts", "pagerduty_alerts"]
+      },
+      {
+        "name": "collaboration_session_failures",
+        "description": "Alert on WebSocket connection failures",
+        "query": "sum(rate(websocket_connections{status='failed'}[5m])) > 10",
+        "severity": "high",
+        "duration": "5m",
+        "channels": ["slack_alerts", "email_alerts"]
+      },
+      {
+        "name": "database_connection_issues",
+        "description": "Alert on D1 database connection problems",
+        "query": "sum(rate(d1_queries{status='error'}[5m])) / sum(rate(d1_queries[5m])) > 0.1",
+        "severity": "critical",
+        "duration": "2m",
+        "channels": ["slack_alerts", "email_alerts", "pagerduty_alerts"]
+      }
+    ]
+  },
+  "dashboards": [
+    {
+      "name": "Application Overview",
+      "description": "High-level application metrics and KPIs",
+      "panels": [
+        {
+          "title": "Request Volume",
+          "type": "timeseries",
+          "query": "sum(rate(http_requests[1m]))",
+          "unit": "reqps"
+        },
+        {
+          "title": "Error Rate",
+          "type": "stat",
+          "query": "sum(rate(http_requests{status=~'5..'}[5m])) / sum(rate(http_requests[5m]))",
+          "unit": "percent",
+          "thresholds": [0.01, 0.05]
+        },
+        {
+          "title": "Response Time P95",
+          "type": "stat",
+          "query": "histogram_quantile(0.95, http_request_duration_seconds)",
+          "unit": "ms",
+          "thresholds": [1000, 3000]
+        },
+        {
+          "title": "Active Users",
+          "type": "stat",
+          "query": "count(unique(user_events{event_name='page_view'}))",
+          "unit": "users"
+        }
+      ]
+    },
+    {
+      "name": "Security Dashboard",
+      "description": "Security events and threat monitoring",
+      "panels": [
+        {
+          "title": "Blocked Requests",
+          "type": "timeseries",
+          "query": "sum(rate(firewall_events{action='block'}[1m]))",
+          "unit": "reqps"
+        },
+        {
+          "title": "Threat Score Distribution",
+          "type": "histogram",
+          "query": "histogram(firewall_events.threat_score)",
+          "unit": "score"
+        },
+        {
+          "title": "Top Attack Sources",
+          "type": "table",
+          "query": "topk(10, sum by (client_country) (rate(firewall_events{action='block'}[1h])))",
+          "unit": "requests"
+        }
+      ]
+    },
+    {
+      "name": "Collaboration Metrics",
+      "description": "Real-time collaboration usage and performance",
+      "panels": [
+        {
+          "title": "Active Collaboration Sessions",
+          "type": "stat",
+          "query": "count(collaboration_sessions{status='active'})",
+          "unit": "sessions"
+        },
+        {
+          "title": "Average Session Duration",
+          "type": "stat",
+          "query": "avg(collaboration_metrics.session_duration)",
+          "unit": "minutes"
+        },
+        {
+          "title": "Participants per Session",
+          "type": "histogram",
+          "query": "histogram(collaboration_metrics.participant_count)",
+          "unit": "participants"
+        }
+      ]
+    }
+  ],
+  "synthetic_monitoring": {
+    "enabled": true,
+    "checks": [
+      {
+        "name": "homepage_availability",
+        "url": "https://protothrive.com",
+        "method": "GET",
+        "frequency": "1m",
+        "locations": ["us-east-1", "eu-west-1", "ap-southeast-1"],
+        "timeout": 10,
+        "follow_redirects": true,
+        "assertions": [
+          {
+            "type": "status_code",
+            "value": 200
+          },
+          {
+            "type": "response_time",
+            "operator": "lt",
+            "value": 3000
+          }
+        ]
+      },
+      {
+        "name": "api_health_check",
+        "url": "https://api.protothrive.com/health",
+        "method": "GET",
+        "frequency": "30s",
+        "locations": ["us-east-1", "eu-west-1", "ap-southeast-1"],
+        "timeout": 5,
+        "assertions": [
+          {
+            "type": "status_code",
+            "value": 200
+          },
+          {
+            "type": "json_path",
+            "path": "$.status",
+            "value": "healthy"
+          }
+        ]
+      },
+      {
+        "name": "collaboration_websocket",
+        "url": "wss://api.protothrive.com/api/v1/collaboration/test/ws",
+        "method": "WEBSOCKET",
+        "frequency": "5m",
+        "locations": ["us-east-1", "eu-west-1"],
+        "timeout": 30,
+        "assertions": [
+          {
+            "type": "connection_success",
+            "value": true
+          }
+        ]
+      }
+    ]
+  }
+}

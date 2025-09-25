@@ -127,6 +127,7 @@ const AIFeedbackEngine: React.FC<AIFeedbackEngineProps> = ({
           lastAction: 'canvas_interaction' // Could be more specific
         },
         environment: {
+          mode: mode || 'standard',
           canvasMode: context.canvasMode as '2d' | '3d',
           activeTab: context.activeTab,
           screenSize: typeof window !== 'undefined' ?

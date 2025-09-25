@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../store';
 import { audioService, playNotificationSound } from '../services/audioService';
+import { InputValidator } from '../utils/security';
 import {
   BellIcon,
   ExclamationTriangleIcon,
@@ -110,6 +111,77 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
   const queueIntervalRef = useRef<NodeJS.Timeout>();
   const cleanupIntervalRef = useRef<NodeJS.Timeout>();
   const soundRef = useRef<HTMLAudioElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const firstFocusableRef = useRef<HTMLButtonElement>(null);
+  const lastFocusableRef = useRef<HTMLButtonElement>(null);
+
+  // Add notification to queue
+  const addNotification = useCallback((notification: Omit<SmartNotification, 'id' | 'timestamp' | 'read' | 'archived'>) => {
+    const newNotification: SmartNotification = {
+      id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date(),
+      read: false,
+      archived: false,
+      ...notification
+    };
+
+    setQueue(prev => ({
+      ...prev,
+      pending: [...prev.pending, newNotification]
+    }));
+
+    setNotifications(prev => [newNotification, ...prev]);
+
+    // Play sound if enabled using enhanced audio service
+    if (enableSound && newNotification.sound) {
+      const soundType = newNotification.type === 'ai_insight' ? 'ai_insight' :
+                       newNotification.type === 'milestone' ? 'milestone' :
+                       newNotification.type === 'success' ? 'success' :
+                       newNotification.type === 'warning' ? 'warning' :
+                       newNotification.type === 'error' ? 'error' : 'info';
+
+      playNotificationSound(soundType as any, 0.6).catch(() => {
+        // Ignore audio play errors
+      });
+    }
+
+    // Vibrate if enabled and supported
+    if (enableVibration && newNotification.vibration && 'vibrate' in navigator) {
+      navigator.vibrate([100, 50, 100]);
+    }
+  }, [enableSound, enableVibration]);
+
+  // Generate initial welcome notifications
+  const generateInitialNotifications = useCallback(() => {
+    const initialNotifications = [
+      {
+        type: 'success' as const,
+        title: 'Welcome to ProtoThrive!',
+        message: 'Your intelligent prototyping environment is ready.',
+        priority: 'medium' as const,
+        category: 'system' as const,
+        persistent: true,
+        sound: true,
+        vibration: enableVibration
+      },
+      {
+        type: 'info' as const,
+        title: 'Smart Features Enabled',
+        message: 'AI assistance, progress tracking, and real-time insights are active.',
+        priority: 'low' as const,
+        category: 'system' as const,
+        persistent: false,
+        vibration: enableVibration,
+        metadata: {
+          tags: ['features', 'ai']
+        }
+      }
+    ];
+
+    initialNotifications.forEach(notification => {
+      setTimeout(() => addNotification(notification), Math.random() * 2000);
+    });
+  }, [enableVibration, addNotification]);
 
   // Initialize notification system
   useEffect(() => {
@@ -130,7 +202,51 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
       if (queueIntervalRef.current) clearInterval(queueIntervalRef.current);
       if (cleanupIntervalRef.current) clearInterval(cleanupIntervalRef.current);
     };
-  }, []);
+  }, [generateInitialNotifications]);
+
+  // Focus management for accessibility
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isExpanded) return;
+
+      if (e.key === 'Escape') {
+        setIsExpanded(false);
+        return;
+      }
+
+      // Focus trap
+      if (e.key === 'Tab') {
+        const focusableElements = panelRef.current?.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        
+        if (focusableElements && focusableElements.length > 0) {
+          const firstElement = focusableElements[0] as HTMLElement;
+          const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+          if (e.shiftKey && document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          } else if (!e.shiftKey && document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    if (isExpanded) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Focus the first element when panel opens
+      setTimeout(() => {
+        firstFocusableRef.current?.focus();
+      }, 100);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isExpanded]);
 
   // Smart notification generation based on context
   const generateContextualNotifications = useCallback(() => {
@@ -142,7 +258,7 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
         id: `milestone_${Date.now()}`,
         type: 'milestone',
         title: 'Excellent Progress!',
-        message: `Your Thrive Score of ${Math.round(thriveScore * 100)}% indicates outstanding project health.`,
+        message: `Your Thrive Score of ${InputValidator.sanitizeInput(Math.round(thriveScore * 100).toString())}% indicates outstanding project health.`,
         timestamp: new Date(),
         priority: 'medium',
         category: 'progress',
@@ -275,72 +391,6 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
     return result;
   };
 
-  // Add notification to queue
-  const addNotification = useCallback((notification: Omit<SmartNotification, 'id' | 'timestamp' | 'read' | 'archived'>) => {
-    const newNotification: SmartNotification = {
-      id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date(),
-      read: false,
-      archived: false,
-      ...notification
-    };
-
-    setQueue(prev => ({
-      ...prev,
-      pending: [...prev.pending, newNotification]
-    }));
-
-    setNotifications(prev => [newNotification, ...prev]);
-
-    // Play sound if enabled using enhanced audio service
-    if (enableSound && newNotification.sound) {
-      const soundType = newNotification.type === 'ai_insight' ? 'ai_insight' :
-                       newNotification.type === 'milestone' ? 'milestone' :
-                       newNotification.type === 'success' ? 'success' :
-                       newNotification.type === 'warning' ? 'warning' :
-                       newNotification.type === 'error' ? 'error' : 'info';
-
-      playNotificationSound(soundType as any, 0.6).catch(() => {
-        // Ignore audio play errors
-      });
-    }
-
-    // Vibrate if enabled and supported
-    if (enableVibration && newNotification.vibration && 'vibrate' in navigator) {
-      navigator.vibrate([100, 50, 100]);
-    }
-  }, [enableSound, enableVibration]);
-
-  // Generate initial demo notifications
-  const generateInitialNotifications = () => {
-    const initialNotifications = [
-      {
-        type: 'success' as const,
-        title: 'Welcome to ProtoThrive!',
-        message: 'Your intelligent prototyping environment is ready.',
-        priority: 'medium' as const,
-        category: 'system' as const,
-        persistent: true,
-        sound: true
-      },
-      {
-        type: 'info' as const,
-        title: 'Smart Features Enabled',
-        message: 'AI assistance, progress tracking, and real-time insights are active.',
-        priority: 'low' as const,
-        category: 'system' as const,
-        persistent: false,
-        metadata: {
-          tags: ['features', 'ai']
-        }
-      }
-    ];
-
-    initialNotifications.forEach(notification => {
-      setTimeout(() => addNotification(notification), Math.random() * 2000);
-    });
-  };
-
   // Clean up expired notifications
   const cleanupExpiredNotifications = () => {
     const now = new Date();
@@ -415,19 +465,19 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
     }
   };
 
-  // Get notification color
+  // Get notification color - Updated for WCAG AA contrast compliance
   const getNotificationColor = (type: string, priority: string) => {
-    if (priority === 'critical') return 'neon-pink';
+    if (priority === 'critical') return 'red-400'; // High contrast for critical
 
     switch (type) {
       case 'success':
-      case 'milestone': return 'neon-green-primary';
-      case 'warning': return 'neon-orange';
-      case 'error': return 'neon-pink';
-      case 'ai_insight': return 'neon-purple';
+      case 'milestone': return 'green-400'; // High contrast green
+      case 'warning': return 'yellow-400'; // Enhanced contrast for warnings
+      case 'error': return 'red-400'; // High contrast red
+      case 'ai_insight': return 'purple-400'; // Enhanced purple
       case 'info':
       case 'reminder':
-      default: return 'neon-blue-primary';
+      default: return 'blue-400'; // High contrast blue
     }
   };
 
@@ -436,6 +486,16 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
 
   return (
     <div className={`${className}`}>
+      {/* ARIA Live Region for Screen Reader Announcements */}
+      <div 
+        aria-live="polite" 
+        aria-atomic="true" 
+        className="sr-only"
+        role="status"
+      >
+        {unreadCount > 0 && `${unreadCount} new notifications available`}
+      </div>
+
       {/* Notification Bell */}
       <motion.div
         className={`relative ${position.includes('right') ? 'ml-auto' : ''}`}
@@ -443,10 +503,12 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
       >
         <motion.button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="relative p-2 rounded-full bg-dark-tertiary/50 border border-neon-blue-primary/30 hover:border-neon-blue-primary/60 transition-all duration-300"
+          className="relative p-3 rounded-full bg-dark-tertiary/50 border border-neon-blue-primary/30 hover:border-neon-blue-primary/60 transition-all duration-300 min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-neon-blue-primary"
           whileTap={{ scale: 0.95 }}
+          aria-label={`${isExpanded ? 'Close' : 'Open'} notifications panel`}
+          aria-expanded={isExpanded}
         >
-          <BellIcon className="w-6 h-6 text-neon-blue-primary" />
+          <BellIcon className="w-7 h-7 text-neon-blue-primary" />
 
           {showBadge && unreadCount > 0 && (
             <motion.div
@@ -466,6 +528,7 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
       <AnimatePresence>
         {isExpanded && (
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, scale: 0.95, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -474,12 +537,15 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
             } ${
               position.includes('top') ? 'top-12' : 'bottom-12'
             }`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="notifications-title"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-neon-blue-primary/20">
               <div className="flex items-center space-x-2">
                 <BellIcon className="w-5 h-5 text-neon-blue-primary" />
-                <h3 className="text-sm font-bold text-neon-blue-primary">Smart Notifications</h3>
+                <h3 id="notifications-title" className="text-sm font-bold text-neon-blue-primary">Smart Notifications</h3>
                 {unreadCount > 0 && (
                   <span className="px-2 py-1 bg-neon-blue-primary/20 text-neon-blue-primary text-xs rounded-full">
                     {unreadCount} new
@@ -487,10 +553,12 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
                 )}
               </div>
               <button
+                ref={firstFocusableRef}
                 onClick={() => setIsExpanded(false)}
-                className="text-text-muted hover:text-text-primary transition-colors"
+                className="text-text-muted hover:text-text-primary transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded focus:outline-none focus:ring-2 focus:ring-neon-blue-primary"
+                aria-label="Close notifications panel"
               >
-                <XMarkIcon className="w-4 h-4" />
+                <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
 
@@ -507,8 +575,12 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
                     className="w-full pl-10 pr-3 py-2 bg-dark-tertiary/50 border border-neon-blue-primary/20 rounded-lg text-text-primary placeholder:text-text-muted text-sm focus:outline-none focus:border-neon-blue-primary/60"
                   />
                 </div>
-                <button className="p-2 bg-dark-tertiary/50 border border-neon-blue-primary/20 rounded-lg hover:border-neon-blue-primary/60 transition-colors">
-                  <FunnelIcon className="w-4 h-4 text-text-muted" />
+                <button 
+                  className="p-3 bg-dark-tertiary/50 border border-neon-blue-primary/20 rounded-lg hover:border-neon-blue-primary/60 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-neon-blue-primary"
+                  aria-label="Filter notifications"
+                  title="Filter notifications"
+                >
+                  <FunnelIcon className="w-5 h-5 text-text-muted" />
                 </button>
               </div>
             </div>
@@ -546,7 +618,7 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
                             <h4 className={`text-sm font-medium ${
                               notification.read ? 'text-text-muted' : 'text-text-primary'
                             }`}>
-                              {notification.title}
+                              {InputValidator.sanitizeInput(notification.title)}
                             </h4>
                             <span className="text-xs text-text-muted ml-2">
                               {notification.timestamp.toLocaleTimeString().slice(0, 5)}
@@ -556,7 +628,7 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
                           <p className={`text-xs ${
                             notification.read ? 'text-text-muted' : 'text-text-primary'
                           } mb-2`}>
-                            {notification.message}
+                            {InputValidator.sanitizeInput(notification.message)}
                           </p>
 
                           {notification.metadata?.tags && (
@@ -566,7 +638,7 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
                                   key={index}
                                   className="px-2 py-1 bg-text-muted/20 text-text-muted text-xs rounded-full"
                                 >
-                                  {tag}
+                                  {InputValidator.sanitizeInput(tag)}
                                 </span>
                               ))}
                             </div>
@@ -591,20 +663,22 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
                                   e.stopPropagation();
                                   archiveNotification(notification.id);
                                 }}
-                                className="p-1 hover:bg-text-muted/20 rounded transition-colors"
-                                title="Archive"
+                                className="p-3 hover:bg-text-muted/20 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-neon-blue-primary"
+                                title="Archive notification"
+                                aria-label={`Archive notification: ${notification.title}`}
                               >
-                                <ArchiveBoxIcon className="w-3 h-3 text-text-muted" />
+                                <ArchiveBoxIcon className="w-5 h-5 text-text-muted" />
                               </button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   deleteNotification(notification.id);
                                 }}
-                                className="p-1 hover:bg-neon-pink/20 rounded transition-colors"
-                                title="Delete"
+                                className="p-3 hover:bg-neon-pink/20 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-neon-blue-primary"
+                                title="Delete notification"
+                                aria-label={`Delete notification: ${notification.title}`}
                               >
-                                <TrashIcon className="w-3 h-3 text-text-muted hover:text-neon-pink" />
+                                <TrashIcon className="w-5 h-5 text-text-muted hover:text-neon-pink" />
                               </button>
                             </div>
                           </div>
@@ -630,10 +704,12 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
                     Mark all as read
                   </button>
                   <button
+                    ref={lastFocusableRef}
                     onClick={() => {
                       filteredNotifications.forEach(n => archiveNotification(n.id));
                     }}
-                    className="text-xs text-text-muted hover:text-text-primary transition-colors"
+                    className="text-xs text-text-muted hover:text-text-primary transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded focus:outline-none focus:ring-2 focus:ring-neon-blue-primary"
+                    aria-label="Archive all notifications"
                   >
                     Archive all
                   </button>
@@ -661,10 +737,10 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-medium text-text-primary mb-1">
-                    {notification.title}
+                    {InputValidator.sanitizeInput(notification.title)}
                   </h4>
                   <p className="text-xs text-text-muted">
-                    {notification.message}
+                    {InputValidator.sanitizeInput(notification.message)}
                   </p>
                   {notification.action && (
                     <button
@@ -677,9 +753,10 @@ const SmartNotificationCenter: React.FC<SmartNotificationCenterProps> = ({
                 </div>
                 <button
                   onClick={() => archiveNotification(notification.id)}
-                  className="text-text-muted hover:text-text-primary transition-colors"
+                  className="text-text-muted hover:text-text-primary transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded focus:outline-none focus:ring-2 focus:ring-neon-blue-primary"
+                  aria-label={`Dismiss notification: ${notification.title}`}
                 >
-                  <XMarkIcon className="w-4 h-4" />
+                  <XMarkIcon className="w-6 h-6" />
                 </button>
               </div>
             </motion.div>

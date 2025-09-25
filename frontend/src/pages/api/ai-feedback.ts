@@ -31,7 +31,7 @@ interface PaginatedResponse<T> {
 }
 
 // Mock database for demonstration
-let feedbackHistory: FeedbackHistoryEntry[] = [];
+const feedbackHistory: FeedbackHistoryEntry[] = [];
 
 export default async function handler(
   req: NextApiRequest,

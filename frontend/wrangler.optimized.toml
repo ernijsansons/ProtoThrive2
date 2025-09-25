@@ -1,0 +1,242 @@
+# Optimized Cloudflare Pages Configuration for ProtoThrive Frontend
+# Performance targets: <1.5s FCP, aggressive CDN caching, edge optimization
+
+name = "protothrive-frontend-optimized"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "out"
+
+[env.production]
+account_id = "${CLOUDFLARE_ACCOUNT_ID}"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Advanced caching rules for optimal performance
+[[env.production.rules]]
+type = "transform"
+comment = "Aggressive caching for static assets"
+expression = "http.request.uri.path matches \"^/(_next/static/|static/|images/|icons/|fonts/).*\""
+actions = [
+  {
+    id = "cache_ttl_edge_override",
+    value = {
+      cache_ttl = {
+        default = 31536000,  # 1 year
+        status_code_ttl = [
+          { status_code = 200, value = 31536000 },
+          { status_code = 206, value = 31536000 },
+          { status_code = 300, value = 86400 },    # 1 day
+          { status_code = 301, value = 86400 },
+          { status_code = 302, value = 3600 },     # 1 hour
+          { status_code = 404, value = 300 },      # 5 minutes
+        ]
+      }
+    }
+  },
+  {
+    id = "browser_cache_ttl_override",
+    value = {
+      browser_cache_ttl = 31536000  # 1 year for static assets
+    }
+  }
+]
+
+[[env.production.rules]]
+type = "transform"
+comment = "Medium caching for pages"
+expression = "http.request.uri.path matches \"^/(dashboard|login|signup|settings).*\""
+actions = [
+  {
+    id = "cache_ttl_edge_override",
+    value = {
+      cache_ttl = {
+        default = 3600,  # 1 hour
+        status_code_ttl = [
+          { status_code = 200, value = 3600 },
+          { status_code = 404, value = 300 },
+        ]
+      }
+    }
+  }
+]
+
+[[env.production.rules]]
+type = "transform"
+comment = "No caching for API routes"
+expression = "http.request.uri.path matches \"^/api/.*\""
+actions = [
+  {
+    id = "cache_ttl_edge_override", 
+    value = {
+      cache_ttl = {
+        default = 0  # No caching for API
+      }
+    }
+  }
+]
+
+# Performance optimizations
+[[env.production.rules]]
+type = "transform"
+comment = "Enable compression and optimization"
+expression = "true"
+actions = [
+  {
+    id = "compression",
+    value = "gzip"
+  },
+  {
+    id = "minify",
+    value = {
+      html = true,
+      css = true,
+      js = true
+    }
+  },
+  {
+    id = "automatic_https_rewrites",
+    value = true
+  },
+  {
+    id = "rocket_loader",
+    value = false  # Disable for SPA performance
+  },
+  {
+    id = "mirage",
+    value = true   # Enable image optimization
+  }
+]
+
+# Security headers
+[[env.production.rules]]
+type = "transform"
+comment = "Security and performance headers"
+expression = "true"
+actions = [
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set",
+      name = "Strict-Transport-Security",
+      value = "max-age=31536000; includeSubDomains; preload"
+    }
+  },
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set", 
+      name = "X-Frame-Options",
+      value = "DENY"
+    }
+  },
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set",
+      name = "X-Content-Type-Options", 
+      value = "nosniff"
+    }
+  },
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set",
+      name = "Referrer-Policy",
+      value = "strict-origin-when-cross-origin"
+    }
+  },
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set",
+      name = "Content-Security-Policy",
+      value = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.cloudflare.com *.spline.design; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' *.cloudflare.com *.protothrive.com wss:; frame-src 'self' *.spline.design;"
+    }
+  },
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set",
+      name = "Permissions-Policy",
+      value = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), vr=(), accelerometer=(), gyroscope=(), magnetometer=(), fullscreen=(self)"
+    }
+  }
+]
+
+# Image optimization for better performance
+[[env.production.rules]]
+type = "transform"
+comment = "Image optimization"
+expression = "http.request.uri.path matches \"\\.(jpg|jpeg|png|gif|webp|avif|svg)$\""
+actions = [
+  {
+    id = "polish",
+    value = "lossy"
+  },
+  {
+    id = "webp",
+    value = true
+  },
+  {
+    id = "cache_ttl_edge_override",
+    value = {
+      cache_ttl = {
+        default = 2592000  # 30 days for images
+      }
+    }
+  }
+]
+
+# Font optimization
+[[env.production.rules]]
+type = "transform"
+comment = "Font optimization and caching"
+expression = "http.request.uri.path matches \"\\.(woff|woff2|ttf|otf|eot)$\""
+actions = [
+  {
+    id = "cache_ttl_edge_override",
+    value = {
+      cache_ttl = {
+        default = 31536000  # 1 year for fonts
+      }
+    }
+  },
+  {
+    id = "modify_response_header",
+    value = {
+      operation = "set",
+      name = "Access-Control-Allow-Origin",
+      value = "*"
+    }
+  }
+]
+
+# Advanced performance features
+[env.production.build]
+command = "npm run build:production"
+cwd = "."
+watch_dir = "src"
+
+[env.production.vars]
+NODE_ENV = "production"
+NEXT_TELEMETRY_DISABLED = "1"
+SKIP_BUILD_STATIC_GENERATION = "false"
+
+# Development environment
+[env.development]
+compatibility_date = "2024-01-01"
+vars = { NODE_ENV = "development" }
+
+[env.development.build]
+command = "npm run build"
+cwd = "."
+watch_dir = "src"
+
+# Staging environment  
+[env.staging]
+compatibility_date = "2024-01-01"
+vars = { NODE_ENV = "staging" }
+
+[env.staging.build]
+command = "npm run build"
+cwd = "."
+watch_dir = "src"

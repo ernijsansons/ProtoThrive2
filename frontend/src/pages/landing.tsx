@@ -1,477 +1,522 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRightIcon, PlayIcon, CheckIcon, StarIcon, ChartBarIcon } from '@heroicons/react/24/outline';
-import { PaintBrushIcon, LightBulbIcon, UsersIcon, RocketLaunchIcon } from '@heroicons/react/24/outline';
+import React from 'react';
 import { useRouter } from 'next/router';
-import dynamic from 'next/dynamic';
-import styles from '../styles/landing.module.css';
+import { ArrowRightIcon, PlayIcon, CheckIcon, StarIcon, RocketLaunchIcon, BoltIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { useTheme } from '@/contexts/ThemeContext';
+import { motion } from 'framer-motion';
 
-// Dynamically import 3D components
-const SplineDemo = dynamic(() => import('@/components/SplineDemo'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl">
-      <div className="text-gray-500 animate-pulse">Loading 3D Scene...</div>
-    </div>
-  )
-});
-
-const LandingPage: React.FC = () => {
+const LandingRebuilt: React.FC = () => {
   const router = useRouter();
-  const [emailInput, setEmailInput] = useState('');
+  const { colors, isEliteMode } = useTheme();
 
   const handleGetStarted = () => {
     router.push('/signup');
   };
 
-  const handleEmailSignup = (e: React.FormEvent) => {
-    e.preventDefault();
-    router.push('/signup');
+  const handleSignIn = () => {
+    router.push('/login');
   };
 
   const features = [
     {
-      icon: PaintBrushIcon,
-      title: "AI-Powered Design",
-      description: "Transform ideas into stunning prototypes with intelligent design assistance."
+      icon: <RocketLaunchIcon className="w-8 h-8" />,
+      title: "AI-Powered Roadmaps",
+      description: "Generate intelligent project roadmaps with AI that adapts to your goals and constraints.",
+      color: "blue"
     },
     {
-      icon: LightBulbIcon,
-      title: "Smart Roadmapping",
-      description: "Visualize project timelines in 2D and 3D with automated task generation."
+      icon: <BoltIcon className="w-8 h-8" />,
+      title: "Real-Time Collaboration",
+      description: "Work together seamlessly with live updates, comments, and synchronized editing.",
+      color: "green"
     },
     {
-      icon: UsersIcon,
-      title: "Real-time Collaboration",
-      description: "Work seamlessly with your team using live cursors and instant sync."
-    },
-    {
-      icon: RocketLaunchIcon,
-      title: "Instant Deployment",
-      description: "Deploy prototypes to the cloud with one click and share demos instantly."
+      icon: <SparklesIcon className="w-8 h-8" />,
+      title: "Smart Analytics",
+      description: "Get insights into project progress, team performance, and bottleneck identification.",
+      color: "purple"
     }
   ];
 
-  const testimonials = [
-    {
-      name: "Sarah Chen",
-      role: "Head of Product",
-      company: "TechFlow Inc",
-      content: "ProtoThrive transformed our product development cycle. We're shipping 3x faster.",
-      rating: 5
-    },
-    {
-      name: "Marcus Rodriguez",
-      role: "Engineering Director",
-      company: "InnovateLabs",
-      content: "The AI assistance is mind-blowing. It's like having a senior designer on every project.",
-      rating: 5
-    },
-    {
-      name: "Emily Watson",
-      role: "Startup Founder",
-      company: "NextGen Ventures",
-      content: "We went from idea to investor demo in 48 hours. ProtoThrive is our secret weapon.",
-      rating: 5
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
     }
-  ];
+  };
 
-  const pricingTiers = [
-    {
-      name: "Starter",
-      price: "Free",
-      period: "forever",
-      description: "Perfect for individuals",
-      features: ["3 active projects", "Basic templates", "Community support", "2D visualization"],
-      cta: "Start Free"
-    },
-    {
-      name: "Pro",
-      price: "$29",
-      period: "per month",
-      description: "Ideal for growing teams",
-      features: ["Unlimited projects", "Premium templates", "Priority support", "3D visualization", "AI features", "Team collaboration"],
-      popular: true,
-      cta: "Start Trial"
-    },
-    {
-      name: "Enterprise",
-      price: "Custom",
-      period: "contact us",
-      description: "For large organizations",
-      features: ["Everything in Pro", "SSO integration", "Advanced security", "Dedicated support", "Custom integrations"],
-      cta: "Contact Sales"
-    }
-  ];
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
 
   return (
-    <div className={`${styles.landingContainer} min-h-screen`}>
-      {/* Fixed Navigation */}
-      <nav className="fixed top-0 left-0 right-0 w-full bg-white/95 backdrop-blur-sm border-b border-gray-200 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg"></div>
-              <span className="text-xl font-bold text-gray-900">ProtoThrive</span>
-            </div>
+    <div style={{
+      background: `linear-gradient(135deg, ${colors.bgPrimary}, ${colors.bgSecondary})`,
+      color: colors.textPrimary,
+      minHeight: '100vh',
+      width: '100%',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Background Effects */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `radial-gradient(circle at 20% 20%, ${colors.neonBluePrimary}20 0%, transparent 50%), radial-gradient(circle at 80% 80%, ${colors.neonPurple}20 0%, transparent 50%)`,
+        filter: 'blur(100px)',
+        zIndex: 0
+      }} />
 
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                Features
-              </a>
-              <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                Pricing
-              </a>
-              <button
-                onClick={() => router.push('/login')}
-                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={handleGetStarted}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:shadow-lg transition-all duration-200"
-              >
-                Get Started
-              </button>
-            </div>
+      {/* Animated Particles */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            style={{
+              position: 'absolute',
+              width: '2px',
+              height: '2px',
+              background: colors.neonBluePrimary,
+              borderRadius: '50%',
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              opacity: [0, 1, 0],
+              scale: [0, 1, 0],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              delay: Math.random() * 2,
+            }}
+          />
+        ))}
+      </div>
 
-            {/* Mobile menu button */}
-            <button className="md:hidden p-2">
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+      {/* Navigation */}
+      <motion.nav
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          background: colors.bgGlass,
+          backdropFilter: 'blur(16px)',
+          borderBottom: `1px solid ${colors.borderSecondary}`,
+          zIndex: 50,
+          padding: '0 2rem'
+        }}
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div style={{
+          maxWidth: '80rem',
+          margin: '0 auto',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          height: '4rem'
+        }}>
+          <motion.div
+            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <div style={{
+              width: '2rem',
+              height: '2rem',
+              background: `linear-gradient(135deg, ${colors.neonBluePrimary}, ${colors.neonPurple})`,
+              borderRadius: '0.5rem',
+              boxShadow: `0 0 20px ${colors.neonBluePrimary}40`
+            }} />
+            <span style={{
+              fontSize: '1.5rem',
+              fontWeight: '800',
+              background: `linear-gradient(135deg, ${colors.neonBluePrimary}, ${colors.neonPurple})`,
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent'
+            }}>
+              ProtoThrive
+            </span>
+          </motion.div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+            <button className="bg-transparent border border-white/20 text-white px-4 py-2 rounded-lg hover:bg-white/10" onClick={() => router.push('#features')}>
+              Features
+            </button>
+            <button className="bg-transparent border border-white/20 text-white px-4 py-2 rounded-lg hover:bg-white/10" onClick={() => router.push('#pricing')}>
+              Pricing
+            </button>
+            <button className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700" onClick={handleSignIn}>
+              Sign In
+            </button>
+            <button className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl" onClick={handleGetStarted}>
+              Get Started
             </button>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Hero Section */}
-      <section className="pt-24 pb-12 lg:pt-32 lg:pb-20 bg-gradient-to-br from-gray-50 via-white to-blue-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-center lg:text-left"
+      <section style={{
+        paddingTop: '8rem',
+        paddingBottom: '6rem',
+        paddingLeft: '2rem',
+        paddingRight: '2rem',
+        position: 'relative',
+        zIndex: 10
+      }}>
+        <motion.div
+          style={{
+            maxWidth: '80rem',
+            margin: '0 auto',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '2rem'
+          }}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div variants={itemVariants}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: colors.bgGlass,
+              backdropFilter: 'blur(8px)',
+              padding: '0.5rem 1rem',
+              borderRadius: '2rem',
+              border: `1px solid ${colors.borderSecondary}`,
+              marginBottom: '2rem'
+            }}>
+              <SparklesIcon className="w-4 h-4" style={{ color: colors.neonBluePrimary }} />
+              <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
+                🚀 Now with AI-powered roadmaps
+              </span>
+            </div>
+          </motion.div>
+
+          <motion.h1
+            variants={itemVariants}
+            style={{
+              fontSize: 'clamp(3rem, 8vw, 6rem)',
+              fontWeight: '900',
+              lineHeight: '1.1',
+              background: `linear-gradient(135deg, ${colors.textPrimary}, ${colors.neonBluePrimary}, ${colors.neonPurple})`,
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent',
+              marginBottom: '1.5rem',
+              maxWidth: '60rem'
+            }}
+          >
+            Build the Future with
+            <br />
+            <span style={{
+              background: `linear-gradient(135deg, ${colors.neonBluePrimary}, ${colors.neonGreenPrimary})`,
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent'
+            }}>
+              Elite Roadmaps
+            </span>
+          </motion.h1>
+
+          <motion.p
+            variants={itemVariants}
+            style={{
+              fontSize: '1.25rem',
+              lineHeight: '1.6',
+              color: colors.textSecondary,
+              maxWidth: '42rem',
+              marginBottom: '3rem'
+            }}
+          >
+            Transform your ideas into actionable plans with AI-powered roadmapping,
+            real-time collaboration, and intelligent project insights.
+            Be part of the exclusive beta program shaping the future of project management.
+          </motion.p>
+
+          <motion.div
+            variants={itemVariants}
+            style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}
+          >
+            <button
+              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-lg font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
+              onClick={handleGetStarted}
             >
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Transform Ideas Into
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 mt-2">
-                  Reality
-                </span>
-              </h1>
-
-              <p className="mt-6 text-lg sm:text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                The AI-powered platform that turns your wildest product ideas into stunning prototypes.
-                Visualize, collaborate, and ship faster than ever before.
-              </p>
-
-              <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleGetStarted}
-                  className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center hero-icons"
-                >
-                  Start Building Free
-                  <ArrowRightIcon className="w-5 h-5 ml-2" />
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold text-lg hover:border-gray-400 transition-all duration-200 flex items-center justify-center hero-icons"
-                >
-                  <PlayIcon className="w-5 h-5 mr-2" />
-                  Watch Demo
-                </motion.button>
-              </div>
-
-              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 text-sm text-gray-500">
-                <div className="flex items-center small-icons">
-                  <CheckIcon className="w-5 h-5 text-green-500 mr-2" />
-                  Free 14-day trial
-                </div>
-                <div className="flex items-center small-icons">
-                  <CheckIcon className="w-5 h-5 text-green-500 mr-2" />
-                  No credit card required
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Right Content - 3D Scene */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative"
+              <RocketLaunchIcon className="w-5 h-5" />
+              Start Your Journey
+            </button>
+            <button
+              className="bg-transparent border border-white/20 text-white px-8 py-4 rounded-lg hover:bg-white/10 flex items-center gap-2"
             >
-              <div className="relative mx-auto max-w-lg">
-                <div className="aspect-square bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl shadow-2xl overflow-hidden">
-                  <SplineDemo />
-                </div>
+              <PlayIcon className="w-5 h-5" />
+              Watch Demo
+            </button>
+          </motion.div>
 
-                {/* Floating stats */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1, duration: 0.6 }}
-                  className="absolute -top-4 -left-4 bg-white rounded-lg shadow-lg p-3 border border-gray-100"
-                >
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-xs font-semibold text-gray-700">2,847 active projects</span>
-                  </div>
-                </motion.div>
+          {/* Beta Disclaimer - Required for compliance */}
+          <motion.div
+            variants={itemVariants}
+            style={{
+              marginTop: '1.5rem',
+              fontSize: '0.75rem',
+              color: colors.textMuted,
+              textAlign: 'center',
+              opacity: 0.8
+            }}
+          >
+            *Beta software - features and pricing subject to change.{' '}
+            <a href="/terms" style={{ color: colors.bgPrimary, textDecoration: 'underline' }}>
+              Terms apply
+            </a>
+          </motion.div>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.2, duration: 0.6 }}
-                  className="absolute -bottom-4 -right-4 bg-white rounded-lg shadow-lg p-3 border border-gray-100"
-                >
-                  <div className="flex items-center space-x-2 small-icons">
-                    <ChartBarIcon className="w-4 h-4 text-blue-500" />
-                    <span className="text-xs font-semibold text-gray-700">87% faster shipping</span>
-                  </div>
-                </motion.div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
+          <motion.div
+            variants={itemVariants}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2rem',
+              marginTop: '3rem',
+              fontSize: '0.875rem',
+              color: colors.textMuted
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <CheckIcon className="w-4 h-4" style={{ color: colors.neonGreenPrimary }} />
+              Free 14-day trial
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <CheckIcon className="w-4 h-4" style={{ color: colors.neonGreenPrimary }} />
+              No credit card required
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <CheckIcon className="w-4 h-4" style={{ color: colors.neonGreenPrimary }} />
+              Cancel anytime
+            </div>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="features" style={{
+        paddingTop: '6rem',
+        paddingBottom: '6rem',
+        paddingLeft: '2rem',
+        paddingRight: '2rem',
+        position: 'relative',
+        zIndex: 10
+      }}>
+        <motion.div
+          style={{
+            maxWidth: '80rem',
+            margin: '0 auto'
+          }}
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
+            variants={itemVariants}
+            style={{ textAlign: 'center', marginBottom: '4rem' }}
           >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-              Everything you need to
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">
-                {" "}build faster
-              </span>
+            <h2 style={{
+              fontSize: '3rem',
+              fontWeight: '800',
+              background: `linear-gradient(135deg, ${colors.textPrimary}, ${colors.neonBluePrimary})`,
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent',
+              marginBottom: '1rem'
+            }}>
+              Elite Features
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              From concept to deployment, ProtoThrive provides all the tools you need.
+            <p style={{
+              fontSize: '1.125rem',
+              color: colors.textSecondary,
+              maxWidth: '32rem',
+              margin: '0 auto'
+            }}>
+              Everything you need to build exceptional roadmaps and drive your projects to success.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <motion.div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(20rem, 1fr))',
+              gap: '2rem'
+            }}
+            variants={containerVariants}
+          >
             {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.6 }}
-                viewport={{ once: true }}
-                className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300"
-              >
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4 feature-icons">
-                  <feature.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600 text-sm">{feature.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-              Loved by teams at
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">
-                {" "}leading companies
-              </span>
-            </h2>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.6 }}
-                viewport={{ once: true }}
-                className="bg-gray-50 rounded-xl p-6"
-              >
-                <div className="flex mb-4 small-icons">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <StarIcon key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-                <p className="text-gray-700 italic mb-4">"{testimonial.content}"</p>
-                <div>
-                  <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
-                  <p className="text-sm text-gray-500">{testimonial.role} at {testimonial.company}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-              Simple, transparent pricing
-            </h2>
-            <p className="text-xl text-gray-600">
-              Choose the plan that's right for your team
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {pricingTiers.map((tier, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.6 }}
-                viewport={{ once: true }}
-                whileHover={{ scale: 1.02 }}
-                className={`relative bg-white rounded-xl p-8 ${
-                  tier.popular
-                    ? 'shadow-xl border-2 border-blue-500'
-                    : 'shadow-sm border border-gray-200'
-                }`}
-              >
-                {tier.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{tier.name}</h3>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold text-gray-900">{tier.price}</span>
-                    {tier.period !== "contact us" && (
-                      <span className="text-gray-500 ml-2">/{tier.period}</span>
-                    )}
-                  </div>
-                  <p className="text-gray-600">{tier.description}</p>
-                </div>
-
-                <ul className="space-y-3 mb-8">
-                  {tier.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-center small-icons">
-                      <CheckIcon className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  onClick={handleGetStarted}
-                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200 ${
-                    tier.popular
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg'
-                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                  }`}
+              <motion.div key={index} variants={itemVariants}>
+                <div
+                  className="bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-lg p-6 h-full"
+                  style={{ height: '100%' }}
                 >
-                  {tier.cta}
-                </button>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '4rem',
+                      height: '4rem',
+                      borderRadius: '1rem',
+                      background: `linear-gradient(135deg, ${colors.neonBluePrimary}20, ${colors.neonPurple}20)`,
+                      border: `1px solid ${colors.neonBluePrimary}40`,
+                      marginBottom: '1.5rem',
+                      color: colors.neonBluePrimary
+                    }}>
+                      {feature.icon}
+                    </div>
+                    <h3 style={{
+                      fontSize: '1.25rem',
+                      fontWeight: '700',
+                      color: colors.textPrimary,
+                      marginBottom: '1rem'
+                    }}>
+                      {feature.title}
+                    </h3>
+                    <p style={{
+                      color: colors.textSecondary,
+                      lineHeight: '1.6'
+                    }}>
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
               </motion.div>
             ))}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-500 to-purple-600">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
+      <section style={{
+        paddingTop: '6rem',
+        paddingBottom: '6rem',
+        paddingLeft: '2rem',
+        paddingRight: '2rem',
+        position: 'relative',
+        zIndex: 10
+      }}>
+        <motion.div
+          style={{
+            maxWidth: '80rem',
+            margin: '0 auto'
+          }}
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <div
+            className="bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur-sm border border-blue-500/30 rounded-xl p-12"
+            style={{ textAlign: 'center' }}
           >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
-              Ready to transform your ideas?
+            <h2 style={{
+              fontSize: '2.5rem',
+              fontWeight: '800',
+              background: `linear-gradient(135deg, ${colors.textPrimary}, ${colors.neonBluePrimary})`,
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent',
+              marginBottom: '1rem'
+            }}>
+              Ready to Transform Your Projects?
             </h2>
-            <p className="text-xl text-white/90 mb-8">
-              Join thousands of teams building the future with ProtoThrive
+            <p style={{
+              fontSize: '1.125rem',
+              color: colors.textSecondary,
+              marginBottom: '2rem',
+              maxWidth: '32rem',
+              margin: '0 auto 2rem'
+            }}>
+              Join the elite tier of project managers and start building roadmaps that actually work.
             </p>
-
-            <form onSubmit={handleEmailSignup} className="max-w-md mx-auto mb-8">
-              <div className="flex gap-4">
-                <input
-                  type="email"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="Enter your email"
-                  className="flex-1 px-6 py-3 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-200"
-                >
-                  Get Started
-                </button>
-              </div>
-            </form>
-
-            <p className="text-white/80 text-sm">
-              Start your free 14-day trial. No credit card required.
-            </p>
-          </motion.div>
-        </div>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-lg font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
+                onClick={handleGetStarted}
+              >
+                <RocketLaunchIcon className="w-5 h-5" />
+                Start Free Trial
+              </button>
+              <button
+                className="bg-gray-600 text-white px-8 py-4 rounded-lg hover:bg-gray-700"
+                onClick={() => router.push('/demo')}
+              >
+                Book a Demo
+              </button>
+            </div>
+          </div>
+        </motion.div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg"></div>
-              <span className="text-xl font-bold text-white">ProtoThrive</span>
-            </div>
-
-            <div className="flex space-x-6 text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Contact</a>
-            </div>
+      <footer style={{
+        borderTop: `1px solid ${colors.borderSecondary}`,
+        paddingTop: '3rem',
+        paddingBottom: '3rem',
+        paddingLeft: '2rem',
+        paddingRight: '2rem',
+        position: 'relative',
+        zIndex: 10
+      }}>
+        <div style={{
+          maxWidth: '80rem',
+          margin: '0 auto',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.75rem',
+            marginBottom: '1rem'
+          }}>
+            <div style={{
+              width: '1.5rem',
+              height: '1.5rem',
+              background: `linear-gradient(135deg, ${colors.neonBluePrimary}, ${colors.neonPurple})`,
+              borderRadius: '0.375rem'
+            }} />
+            <span style={{
+              fontSize: '1.25rem',
+              fontWeight: '700',
+              background: `linear-gradient(135deg, ${colors.neonBluePrimary}, ${colors.neonPurple})`,
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent'
+            }}>
+              ProtoThrive
+            </span>
           </div>
-
-          <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
-            <p>&copy; 2025 ProtoThrive. All rights reserved.</p>
-          </div>
+          <p style={{
+            color: colors.textMuted,
+            fontSize: '0.875rem'
+          }}>
+            © 2024 ProtoThrive. All rights reserved. Building the future, one roadmap at a time.
+          </p>
         </div>
       </footer>
     </div>
   );
 };
 
-export default LandingPage;
+export default LandingRebuilt;
+
+console.log('Thermonuclear: Elite Landing Page loaded with complete neon redesign');

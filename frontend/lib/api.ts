@@ -150,14 +150,14 @@ class HttpClient {
 
       // Retry on network errors
       if (retryCount < API_CONFIG.retries &&
-          (error.name === 'AbortError' || error.name === 'TypeError')) {
+          ((error as Error).name === 'AbortError' || (error as Error).name === 'TypeError')) {
         console.warn(`Request failed, retrying... (${retryCount + 1}/${API_CONFIG.retries})`);
         await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
         return this.makeRequest(url, options, retryCount + 1);
       }
 
       throw new ApiError(
-        error.message || 'Network error',
+        (error as Error).message || 'Network error',
         0,
         'NETWORK_ERROR',
         error

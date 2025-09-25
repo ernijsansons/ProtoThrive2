@@ -54,6 +54,13 @@ module.exports = {
         'neon-cyan': '#00FFDD',
         'neon-pink': '#FF0088',
         'neon-orange': '#FF6600',
+        // Accessible alternatives
+        'neon-blue-accessible': '#00B8E6',
+        'neon-green-accessible': '#00E677',
+        'neon-purple-accessible': '#A600E6',
+        'neon-cyan-accessible': '#00E6CC',
+        'neon-pink-accessible': '#E6007A',
+        'neon-orange-accessible': '#E65C00',
       },
       backgroundImage: {
         'gradient-blue': 'linear-gradient(135deg, #00D2FF 0%, #0099CC 100%)',

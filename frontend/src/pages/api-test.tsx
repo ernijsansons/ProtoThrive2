@@ -11,6 +11,13 @@ import { AuthProvider } from '../../lib/auth-context';
 import DevLogin from '../components/DevLogin';
 import RoadmapManager from '../components/RoadmapManager';
 
+// Add getStaticProps for static export
+export async function getStaticProps() {
+  return {
+    props: {},
+  };
+}
+
 export default function ApiTestPage() {
   return (
     <AuthProvider>

@@ -29,6 +29,22 @@
   --neon-pink: #FF0088;
   --neon-orange: #FF6600;
   
+  /* Accessible alternatives for better contrast */
+  --neon-blue-accessible: #00B8E6;
+  --neon-green-accessible: #00E677;
+  --neon-purple-accessible: #A600E6;
+  --neon-cyan-accessible: #00E6CC;
+  --neon-pink-accessible: #E6007A;
+  --neon-orange-accessible: #E65C00;
+  
+  /* High contrast text alternatives */
+  --text-high-contrast: #FFFFFF;
+  --text-medium-contrast: #E0E0E0;
+  
+  /* Accessible background variations */
+  --bg-high-contrast: #000000;
+  --bg-medium-contrast: #1A1A1A;
+  
   /* Text Colors */
   --text-primary: #FFFFFF;
   --text-secondary: #CCCCCC;
@@ -507,6 +523,64 @@ h6 { font-size: 1rem; }
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Accessibility utility classes */
+.text-accessible {
+  color: var(--text-high-contrast);
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+.text-accessible-secondary {
+  color: var(--text-medium-contrast);
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+}
+
+.bg-accessible {
+  background: var(--bg-high-contrast);
+  border: 1px solid var(--neon-blue-accessible);
+}
+
+.bg-accessible-secondary {
+  background: var(--bg-medium-contrast);
+  border: 1px solid var(--neon-green-accessible);
+}
+
+/* Accessible neon text variants */
+.neon-text-accessible-blue {
+  color: var(--neon-blue-accessible);
+  text-shadow: 0 0 10px var(--neon-blue-accessible);
+}
+
+.neon-text-accessible-green {
+  color: var(--neon-green-accessible);
+  text-shadow: 0 0 10px var(--neon-green-accessible);
+}
+
+.neon-text-accessible-purple {
+  color: var(--neon-purple-accessible);
+  text-shadow: 0 0 10px var(--neon-purple-accessible);
+}
+
+/* High contrast focus states */
+.focus-accessible:focus {
+  outline: 3px solid var(--neon-blue-accessible);
+  outline-offset: 3px;
+  box-shadow: 0 0 15px var(--neon-blue-accessible);
+}
+
+/* Accessible button variants */
+.btn-accessible {
+  background: var(--bg-high-contrast);
+  border: 2px solid var(--neon-blue-accessible);
+  color: var(--neon-blue-accessible);
+  text-shadow: 0 0 5px var(--neon-blue-accessible);
+}
+
+.btn-accessible:hover {
+  background: var(--neon-blue-accessible);
+  color: var(--bg-high-contrast);
+  box-shadow: 0 0 20px var(--neon-blue-accessible);
 }
 
 /* Drag and drop visual feedback */

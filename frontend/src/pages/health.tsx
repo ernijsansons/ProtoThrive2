@@ -60,3 +60,10 @@ const HealthCheck = () => {
 };
 
 export default HealthCheck;
+// Add getStaticProps for static export
+export async function getStaticProps() {
+  return {
+    props: {},
+  };
+}
+

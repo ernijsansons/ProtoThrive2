@@ -291,8 +291,10 @@ const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
         'top-left': { x: 20, y: 20, anchor: 'top-left' as const }
       };
 
+      // Handle floating position or fallback to bottom-right
+      const fallbackPosition = defaultPosition === 'floating' ? 'bottom-right' : defaultPosition;
       newPosition = {
-        ...positions[defaultPosition],
+        ...positions[fallbackPosition as keyof typeof positions],
         offset: { x: 0, y: 0 }
       };
     }
@@ -363,6 +365,22 @@ const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
     }
   }, [autoActivate, messageQueue.length, maxMessages, generateContextualMessage]);
 
+  // Generate welcome message for autoActivate
+  const generateWelcomeMessage = useCallback(() => {
+    if (autoActivate) {
+      const welcomeMessage: AssistantMessage = {
+        id: `welcome-${Date.now()}`,
+        type: 'welcome',
+        title: 'Welcome to ProtoThrive!',
+        content: 'I\'m here to help you build amazing projects. Let me know if you need assistance!',
+        priority: 'medium',
+        persistent: false,
+        autoHide: 5000
+      };
+      setMessageQueue(prev => [...prev, welcomeMessage]);
+    }
+  }, [autoActivate]);
+
   // Update last interaction time
   useEffect(() => {
     lastInteractionRef.current = Date.now();
@@ -370,22 +388,35 @@ const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
 
   // Auto-generate messages
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (Math.random() > 0.7) { // 30% chance
-        generateMessage();
-      }
-    }, 10000); // Check every 10 seconds
+    if (autoActivate) {
+      // Initial welcome message after 1 second for autoActivate
+      const welcomeTimeout = setTimeout(() => {
+        generateWelcomeMessage();
+      }, 1000);
 
-    // Initial message after 3 seconds
-    const initialTimeout = setTimeout(() => {
-      generateMessage();
-    }, 3000);
+      const interval = setInterval(() => {
+        if (Math.random() > 0.7) { // 30% chance
+          generateMessage();
+        }
+      }, 10000); // Check every 10 seconds
 
-    return () => {
-      clearInterval(interval);
-      clearTimeout(initialTimeout);
-    };
-  }, [generateMessage]);
+      return () => {
+        clearInterval(interval);
+        clearTimeout(welcomeTimeout);
+      };
+    } else {
+      // Regular message generation for manual activation
+      const interval = setInterval(() => {
+        if (Math.random() > 0.7) { // 30% chance
+          generateMessage();
+        }
+      }, 10000); // Check every 10 seconds
+
+      return () => {
+        clearInterval(interval);
+      };
+    }
+  }, [generateMessage, generateWelcomeMessage, autoActivate]);
 
   // Process message queue
   useEffect(() => {
@@ -436,10 +467,66 @@ const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
     }
   };
 
-  if (!isVisible) return null;
-
   return (
     <div className={`fixed z-50 ${className}`}>
+      {/* Toggle Assistant Button */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        onClick={() => {
+          if (isVisible && currentMessage) {
+            // Close the panel
+            setIsVisible(false);
+            setCurrentMessage(null);
+            setIsExpanded(false);
+          } else {
+            // Open the panel
+            const assistantMessage: AssistantMessage = {
+              id: `assistant-panel-${Date.now()}`,
+              type: 'welcome',
+              title: 'AI Assistant',
+              content: 'How can I help you today? I can provide suggestions, tips, and guidance for your project.',
+              priority: 'high',
+              persistent: true,
+              actions: [
+                {
+                  label: 'Close',
+                  action: () => {
+                    setIsVisible(false);
+                    setCurrentMessage(null);
+                    setIsExpanded(false);
+                  }
+                }
+              ]
+            };
+            setCurrentMessage(assistantMessage);
+            setIsVisible(true);
+            setIsExpanded(true);
+          }
+        }}
+        className={`${
+          isVisible && currentMessage
+            ? 'bg-gray-800'
+            : 'bg-gradient-to-r from-purple-500 to-blue-500'
+        } text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300`}
+        style={{
+          position: 'fixed',
+          bottom: defaultPosition.includes('bottom') ? '20px' : 'auto',
+          top: defaultPosition.includes('top') ? '20px' : 'auto',
+          right: defaultPosition.includes('right') ? '20px' : 'auto',
+          left: defaultPosition.includes('left') ? '20px' : 'auto'
+        }}
+        aria-label={isVisible && currentMessage ? "Close AI Assistant" : "Open AI Assistant"}
+      >
+        {isVisible && currentMessage ? (
+          <XMarkIcon className="w-6 h-6" />
+        ) : (
+          <ChatBubbleLeftRightIcon className="w-6 h-6" />
+        )}
+      </motion.button>
+
+      {/* Contextual Messages */}
+      {isVisible && (
       <motion.div
         ref={assistantRef}
         initial={{ opacity: 0, scale: 0.8 }}
@@ -592,7 +679,7 @@ const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
         <motion.div
           className="absolute -top-2 -right-2 w-6 h-6 bg-dark-tertiary/80 rounded-full border border-neon-blue-primary/30 flex items-center justify-center cursor-move opacity-0 hover:opacity-100 transition-opacity"
           whileHover={{ scale: 1.1 }}
-          drag
+          drag={true}
           onDrag={(_, info) => {
             setPosition(prev => ({
               ...prev,
@@ -604,6 +691,7 @@ const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
           <ArrowsPointingOutIcon className="w-3 h-3 text-neon-blue-light" />
         </motion.div>
       </motion.div>
+      )}
     </div>
   );
 };

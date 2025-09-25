@@ -37,6 +37,24 @@ src/utils/           Shared validation utilities
 - AI agent orchestration validated
 - Security and performance frameworks ready
 
+## Enterprise Deployment Options 🏢
+
+### Option 1: Cloudflare Edge (Recommended)
+- **Global Performance**: <50ms latency worldwide via 200+ edge locations
+- **Built-in Security**: DDoS protection, WAF, and automatic SSL
+- **Auto-scaling**: Handles traffic spikes automatically
+- **Cost-effective**: Pay-per-request pricing model
+- **Quick Setup**: `./scripts/deploy-cloudflare.sh production`
+
+### Option 2: Traditional Docker Stack
+- **Full Control**: Complete infrastructure management
+- **Custom Monitoring**: Prometheus, Grafana, ELK stack
+- **On-premises**: Deploy anywhere with Docker
+- **Enterprise Features**: Advanced security and compliance
+- **Quick Setup**: `./scripts/deploy.sh production`
+
+**Choose your deployment**: `./scripts/choose-deployment.sh`
+
 ## Prerequisites
 - **Node.js 20+** (frontend build/tests)
 - **Python 3.12+** (backend tooling/tests)

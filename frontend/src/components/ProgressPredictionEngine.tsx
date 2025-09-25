@@ -157,6 +157,7 @@ const ProgressPredictionEngine: React.FC<ProgressPredictionEngineProps> = ({
           lastAction: 'timeline_analysis'
         },
         environment: {
+          mode: 'prediction',
           canvasMode: '2d', // Assuming 2D for now
           activeTab: 'prediction',
           screenSize: typeof window !== 'undefined' ?
@@ -195,7 +196,9 @@ const ProgressPredictionEngine: React.FC<ProgressPredictionEngineProps> = ({
       const velocityConfidence = Math.min(1, currentMetrics.currentVelocity / 2);
       const trendConfidence = 1 - Math.abs(currentMetrics.qualityTrend) * 0.3;
       const dataConfidence = Math.min(1, historicalData.length / 10);
-      const aiConfidence = aiInsights.timeline.reduce((acc, task) => acc + task.confidence, 0) / aiInsights.timeline.length;
+      const aiConfidence = Array.isArray(aiInsights.timeline)
+        ? aiInsights.timeline.reduce((acc: number, task: any) => acc + (task.confidence || 0.8), 0) / aiInsights.timeline.length
+        : aiInsights.confidence || 0.8;
 
       const confidence = (velocityConfidence + trendConfidence + dataConfidence + aiConfidence) / 4;
 
@@ -205,21 +208,21 @@ const ProgressPredictionEngine: React.FC<ProgressPredictionEngineProps> = ({
       const recommendations: string[] = [];
 
       // Add AI-generated opportunities as positive factors
-      aiInsights.opportunities.forEach(opportunity => {
+      aiInsights.opportunities.forEach((opportunity: any) => {
         if (opportunity.impact === 'High') {
           positiveFactors.push(`Opportunity: ${opportunity.opportunity}`);
         }
       });
 
       // Add AI-generated risks as negative factors
-      aiInsights.risks.forEach(risk => {
+      aiInsights.risks.forEach((risk: any) => {
         if (risk.probability > 0.3) {
           negativeFactors.push(`Risk: ${risk.risk}`);
         }
       });
 
       // Add AI-enhanced recommendations
-      aiInsights.timeline.forEach(task => {
+      aiInsights.timeline.forEach((task: any) => {
         if (task.confidence < 0.7) {
           recommendations.push(`Focus on ${task.task} - requires attention`);
         }
@@ -255,7 +258,7 @@ const ProgressPredictionEngine: React.FC<ProgressPredictionEngineProps> = ({
       }
 
       // AI-enhanced risk level assessment
-      const aiRiskScore = aiInsights.risks.reduce((acc, risk) => acc + risk.probability, 0) / aiInsights.risks.length;
+      const aiRiskScore = aiInsights.risks.reduce((acc: number, risk: any) => acc + risk.probability, 0) / aiInsights.risks.length;
       const riskLevel: 'low' | 'medium' | 'high' =
         aiRiskScore > 0.6 || currentMetrics.blockerProbability > 0.6 || currentMetrics.qualityTrend < -0.3 ? 'high' :
         aiRiskScore > 0.3 || currentMetrics.blockerProbability > 0.3 || adjustedHours > baseHours * 1.3 ? 'medium' : 'low';

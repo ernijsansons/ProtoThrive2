@@ -1,0 +1,103 @@
+// Ref: CLAUDE.md - Vitest Configuration for ProtoThrive Testing
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test-utils/testSetup.ts'],
+    globals: true,
+    css: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      exclude: [
+        'node_modules/',
+        'src/test-utils/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/coverage/**',
+        '**/dist/**',
+        '**/.next/**',
+        '**/build/**',
+        '**/__tests__/**',
+        '**/*.test.*',
+        '**/*.spec.*',
+        '**/mocks/**',
+      ],
+      include: ['src/**/*.{ts,tsx,js,jsx}'],
+      thresholds: {
+        global: {
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80,
+        },
+        'src/services/': {
+          branches: 90,
+          functions: 90,
+          lines: 90,
+          statements: 90,
+        },
+        'src/utils/': {
+          branches: 95,
+          functions: 95,
+          lines: 95,
+          statements: 95,
+        },
+      },
+    },
+    testTimeout: 15000,
+    hookTimeout: 10000,
+    teardownTimeout: 5000,
+    isolate: true,
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        minThreads: 1,
+        maxThreads: 4,
+      },
+    },
+    reporter: ['verbose', 'json', 'html'],
+    outputFile: {
+      json: './test-results/results.json',
+      html: './test-results/report.html',
+    },
+    watch: false,
+    includeSource: ['src/**/*.{js,ts,tsx}'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.next/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/*.config.*',
+    ],
+    deps: {
+      external: ['@next/env'],
+    },
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@/components': path.resolve(__dirname, './src/components'),
+      '@/services': path.resolve(__dirname, './src/services'),
+      '@/utils': path.resolve(__dirname, './src/utils'),
+      '@/hooks': path.resolve(__dirname, './src/hooks'),
+      '@/contexts': path.resolve(__dirname, './src/contexts'),
+      '@/test-utils': path.resolve(__dirname, './src/test-utils'),
+    },
+  },
+  define: {
+    'process.env.NODE_ENV': '"test"',
+    'process.env.NEXT_PUBLIC_USE_MOCK_AUTH': '"true"',
+    'process.env.NEXT_PUBLIC_WS_URL': '"ws://localhost:8080"',
+    'process.env.NEXT_PUBLIC_API_URL': '"http://localhost:3000/api"',
+  },
+  esbuild: {
+    target: 'node18',
+  },
+});

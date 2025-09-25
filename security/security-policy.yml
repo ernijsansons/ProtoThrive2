@@ -1,0 +1,236 @@
+# ProtoThrive Security Policy Configuration
+# This file defines security policies and configurations for the enterprise deployment
+
+# Network Security
+network_security:
+  # Firewall rules
+  firewall:
+    allowed_ports:
+      - 80    # HTTP
+      - 443   # HTTPS
+      - 3000  # Frontend
+      - 8787  # Backend API
+      - 5432  # PostgreSQL (internal only)
+      - 6379  # Redis (internal only)
+      - 9090  # Prometheus (internal only)
+      - 3001  # Grafana (internal only)
+      - 5601  # Kibana (internal only)
+      - 16686 # Jaeger (internal only)
+      - 9000  # MinIO (internal only)
+      - 9001  # MinIO Console (internal only)
+    
+    blocked_ports:
+      - 22    # SSH (use key-based auth only)
+      - 21    # FTP
+      - 23    # Telnet
+      - 25    # SMTP (use authenticated SMTP)
+      - 53    # DNS (use secure DNS)
+      - 110   # POP3
+      - 143   # IMAP
+      - 993   # IMAPS (use secure IMAP)
+      - 995   # POP3S (use secure POP3)
+
+  # SSL/TLS Configuration
+  ssl:
+    minimum_version: "TLSv1.2"
+    preferred_ciphers:
+      - "ECDHE-RSA-AES256-GCM-SHA512"
+      - "DHE-RSA-AES256-GCM-SHA512"
+      - "ECDHE-RSA-AES256-GCM-SHA384"
+      - "DHE-RSA-AES256-GCM-SHA384"
+    hsts:
+      max_age: 31536000
+      include_subdomains: true
+      preload: true
+
+# Application Security
+application_security:
+  # Authentication
+  authentication:
+    jwt:
+      secret_length: 256
+      expiration_time: "24h"
+      refresh_expiration: "7d"
+      algorithm: "HS256"
+    
+    password_policy:
+      min_length: 12
+      require_uppercase: true
+      require_lowercase: true
+      require_numbers: true
+      require_special_chars: true
+      max_age_days: 90
+      history_count: 5
+    
+    two_factor_auth:
+      enabled: true
+      required_for_admin: true
+      backup_codes_count: 10
+
+  # Authorization
+  authorization:
+    rbac:
+      roles:
+        - admin
+        - user
+        - viewer
+      permissions:
+        admin:
+          - "users:read"
+          - "users:write"
+          - "users:delete"
+          - "projects:read"
+          - "projects:write"
+          - "projects:delete"
+          - "system:admin"
+        user:
+          - "projects:read"
+          - "projects:write"
+          - "roadmaps:read"
+          - "roadmaps:write"
+          - "snippets:read"
+          - "snippets:write"
+        viewer:
+          - "projects:read"
+          - "roadmaps:read"
+          - "snippets:read"
+
+  # Input Validation
+  input_validation:
+    max_request_size: "10MB"
+    allowed_file_types:
+      - "image/jpeg"
+      - "image/png"
+      - "image/gif"
+      - "image/webp"
+      - "text/plain"
+      - "application/json"
+    max_file_size: "5MB"
+    sanitization:
+      html: true
+      sql: true
+      xss: true
+
+  # Rate Limiting
+  rate_limiting:
+    api:
+      window_ms: 900000  # 15 minutes
+      max_requests: 100
+    auth:
+      window_ms: 900000  # 15 minutes
+      max_requests: 5
+    upload:
+      window_ms: 3600000  # 1 hour
+      max_requests: 10
+
+# Data Security
+data_security:
+  # Encryption
+  encryption:
+    algorithm: "AES-256-GCM"
+    key_rotation_days: 90
+    encrypt_at_rest: true
+    encrypt_in_transit: true
+  
+  # Database Security
+  database:
+    connection_encryption: true
+    query_logging: false
+    backup_encryption: true
+    access_logging: true
+  
+  # File Storage
+  file_storage:
+    encryption: true
+    access_control: true
+    virus_scanning: true
+    backup_retention_days: 30
+
+# Monitoring and Logging
+monitoring:
+  # Security Monitoring
+  security_monitoring:
+    failed_login_threshold: 5
+    lockout_duration_minutes: 30
+    suspicious_activity_alerts: true
+    ip_whitelist: []
+    ip_blacklist: []
+  
+  # Audit Logging
+  audit_logging:
+    enabled: true
+    log_levels:
+      - "authentication"
+      - "authorization"
+      - "data_access"
+      - "configuration_changes"
+      - "security_events"
+    retention_days: 365
+    real_time_alerts: true
+
+# Compliance
+compliance:
+  # GDPR Compliance
+  gdpr:
+    data_retention_days: 2555  # 7 years
+    right_to_erasure: true
+    data_portability: true
+    consent_management: true
+  
+  # SOC 2 Compliance
+  soc2:
+    access_controls: true
+    availability_monitoring: true
+    processing_integrity: true
+    confidentiality: true
+    privacy: true
+
+# Incident Response
+incident_response:
+  # Security Incident Response
+  security_incidents:
+    notification_channels:
+      - "email"
+      - "slack"
+      - "pagerduty"
+    escalation_matrix:
+      level1:
+        response_time_minutes: 15
+        contacts: ["security-team@protothrive.com"]
+      level2:
+        response_time_minutes: 5
+        contacts: ["security-lead@protothrive.com", "cto@protothrive.com"]
+      level3:
+        response_time_minutes: 1
+        contacts: ["ciso@protothrive.com", "ceo@protothrive.com"]
+  
+  # Backup and Recovery
+  backup_recovery:
+    backup_frequency: "daily"
+    backup_retention_days: 30
+    recovery_time_objective: "4 hours"
+    recovery_point_objective: "1 hour"
+    disaster_recovery_site: "secondary-datacenter"
+
+# Security Headers
+security_headers:
+  content_security_policy: |
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data: https:;
+    connect-src 'self' https://api.protothrive.com wss://api.protothrive.com;
+    frame-ancestors 'none';
+    base-uri 'self';
+    form-action 'self';
+  
+  permissions_policy: |
+    camera=(),
+    microphone=(),
+    geolocation=(),
+    payment=(),
+    usb=(),
+    magnetometer=(),
+    gyroscope=(),
+    accelerometer=()

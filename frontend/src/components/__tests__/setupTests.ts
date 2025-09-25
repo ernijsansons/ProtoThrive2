@@ -2,6 +2,10 @@ import '@testing-library/jest-dom';
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
+  root: Element | null = null;
+  rootMargin: string = '';
+  thresholds: ReadonlyArray<number> = [];
+
   constructor() {}
   observe() {
     return null;
@@ -12,7 +16,10 @@ global.IntersectionObserver = class IntersectionObserver {
   unobserve() {
     return null;
   }
-};
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+} as any;
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
@@ -49,11 +56,13 @@ const localStorageMock = {
   setItem: jest.fn(),
   removeItem: jest.fn(),
   clear: jest.fn(),
+  length: 0,
+  key: jest.fn(),
 };
-global.localStorage = localStorageMock;
+global.localStorage = localStorageMock as any;
 
 // Mock sessionStorage
-global.sessionStorage = localStorageMock;
+global.sessionStorage = localStorageMock as any;
 
 // Mock fetch
 global.fetch = jest.fn();

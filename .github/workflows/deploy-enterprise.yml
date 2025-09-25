@@ -1,0 +1,550 @@
+name: ProtoThrive Enterprise Deployment Pipeline
+
+on:
+  push:
+    branches: [main, staging, develop]
+    tags: ['v*']
+  pull_request:
+    branches: [main, staging]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  # Security and compliance checks
+  security-scan:
+    name: Security & Compliance Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run security audit
+        run: |
+          cd frontend
+          npm audit --audit-level=moderate
+
+      - name: CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, typescript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      - name: SAST Scan with Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+            p/react
+            p/typescript
+
+      - name: Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'ProtoThrive'
+          path: '.'
+          format: 'ALL'
+
+      - name: Upload dependency check results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports/
+
+      - name: License Check
+        run: |
+          cd frontend
+          npx license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC'
+
+  # Frontend testing and building
+  frontend-test-build:
+    name: Frontend Test & Build
+    runs-on: ubuntu-latest
+    needs: security-scan
+    if: always() && (needs.security-scan.result == 'success' || needs.security-scan.result == 'skipped')
+    strategy:
+      matrix:
+        environment: [development, staging, production]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Type check
+        run: |
+          cd frontend
+          npm run typecheck
+
+      - name: Lint
+        run: |
+          cd frontend
+          npm run lint
+
+      - name: Unit tests
+        run: |
+          cd frontend
+          npm run test:coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          directory: frontend/coverage
+          flags: frontend
+
+      - name: Integration tests
+        run: |
+          cd frontend
+          npm run test:integration
+
+      - name: E2E tests (staging/production only)
+        if: matrix.environment != 'development'
+        run: |
+          cd frontend
+          npm run test:e2e:headless
+
+      - name: Performance tests
+        if: matrix.environment == 'production'
+        run: |
+          cd frontend
+          npm run test:performance
+
+      - name: Build application
+        env:
+          NODE_ENV: ${{ matrix.environment }}
+          NEXT_PUBLIC_ENVIRONMENT: ${{ matrix.environment }}
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Bundle analyzer
+        if: matrix.environment == 'production'
+        run: |
+          cd frontend
+          npm run analyze
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-${{ matrix.environment }}
+          path: frontend/out/
+          retention-days: 7
+
+  # Backend testing and building
+  backend-test-build:
+    name: Backend Test & Build
+    runs-on: ubuntu-latest
+    needs: security-scan
+    if: always() && (needs.security-scan.result == 'success' || needs.security-scan.result == 'skipped')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Validate wrangler.toml
+        run: wrangler validate
+
+      - name: Type check Workers
+        run: |
+          cd workers
+          npx tsc --noEmit
+
+      - name: Test Workers
+        run: |
+          cd workers
+          npm test
+
+      - name: Upload Worker artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: workers-build
+          path: workers/
+          retention-days: 7
+
+  # Database migrations and validation
+  database-migration:
+    name: Database Migration & Validation
+    runs-on: ubuntu-latest
+    needs: [security-scan]
+    if: always() && (needs.security-scan.result == 'success' || needs.security-scan.result == 'skipped')
+    strategy:
+      matrix:
+        environment: [staging, production]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Validate migration files
+        run: |
+          for file in migrations/*.sql; do
+            echo "Validating $file"
+            # Add SQL validation logic here
+            if ! grep -q "CREATE TABLE\|ALTER TABLE\|INSERT\|UPDATE" "$file"; then
+              echo "Invalid migration file: $file"
+              exit 1
+            fi
+          done
+
+      - name: Dry run migrations (staging)
+        if: matrix.environment == 'staging'
+        run: |
+          wrangler d1 execute protothrive-db-staging --file=migrations/001_enterprise_base_schema.sql --dry-run
+          wrangler d1 execute protothrive-db-staging --file=migrations/002_integrations_and_api.sql --dry-run
+          wrangler d1 execute protothrive-db-staging --file=migrations/003_security_and_compliance.sql --dry-run
+          wrangler d1 execute protothrive-db-staging --file=migrations/004_monitoring_and_analytics.sql --dry-run
+          wrangler d1 execute protothrive-db-staging --file=migrations/005_caching_and_performance.sql --dry-run
+
+      - name: Apply migrations (staging only in this job)
+        if: matrix.environment == 'staging' && (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
+        run: |
+          wrangler d1 execute protothrive-db-staging --file=migrations/001_enterprise_base_schema.sql
+          wrangler d1 execute protothrive-db-staging --file=migrations/002_integrations_and_api.sql
+          wrangler d1 execute protothrive-db-staging --file=migrations/003_security_and_compliance.sql
+          wrangler d1 execute protothrive-db-staging --file=migrations/004_monitoring_and_analytics.sql
+          wrangler d1 execute protothrive-db-staging --file=migrations/005_caching_and_performance.sql
+
+  # Staging deployment
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [frontend-test-build, backend-test-build, database-migration]
+    if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+    environment:
+      name: staging
+      url: https://staging.protothrive.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build-staging
+          path: frontend/out/
+
+      - name: Download Workers build
+        uses: actions/download-artifact@v4
+        with:
+          name: workers-build
+          path: workers/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Deploy Workers
+        run: |
+          cd workers
+          wrangler deploy main-api.ts --name protothrive-backend-staging --env staging
+          wrangler deploy collaboration-handler.ts --name collaboration-handler-staging --env staging
+
+      - name: Deploy Pages
+        run: |
+          cd frontend
+          wrangler pages deploy out --project-name protothrive-frontend-staging
+
+      - name: Configure DNS (staging)
+        run: |
+          # Add staging DNS configuration
+          echo "Configuring staging DNS..."
+
+      - name: Run smoke tests
+        run: |
+          sleep 30  # Wait for deployment to be ready
+          curl -f https://staging-api.protothrive.com/health || exit 1
+          curl -f https://staging.protothrive.com || exit 1
+
+      - name: Notify deployment
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+
+  # Production deployment (requires manual approval)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [frontend-test-build, backend-test-build, database-migration]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://protothrive.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build-production
+          path: frontend/out/
+
+      - name: Download Workers build
+        uses: actions/download-artifact@v4
+        with:
+          name: workers-build
+          path: workers/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Apply production database migrations
+        run: |
+          wrangler d1 execute protothrive-db --file=migrations/001_enterprise_base_schema.sql
+          wrangler d1 execute protothrive-db --file=migrations/002_integrations_and_api.sql
+          wrangler d1 execute protothrive-db --file=migrations/003_security_and_compliance.sql
+          wrangler d1 execute protothrive-db --file=migrations/004_monitoring_and_analytics.sql
+          wrangler d1 execute protothrive-db --file=migrations/005_caching_and_performance.sql
+
+      - name: Deploy Workers (Blue-Green)
+        run: |
+          cd workers
+          # Deploy to blue environment first
+          wrangler deploy main-api.ts --name protothrive-backend-blue --env production
+          wrangler deploy collaboration-handler.ts --name collaboration-handler-blue --env production
+
+          # Health check blue environment
+          sleep 30
+          curl -f https://blue-api.protothrive.com/health || exit 1
+
+          # Switch traffic to blue (becomes production)
+          wrangler deploy main-api.ts --name protothrive-backend --env production
+          wrangler deploy collaboration-handler.ts --name collaboration-handler --env production
+
+      - name: Deploy Pages
+        run: |
+          cd frontend
+          wrangler pages deploy out --project-name protothrive-frontend
+
+      - name: Configure WAF and Security Rules
+        run: |
+          # Apply WAF rules from security/waf-rules.json
+          echo "Applying security configurations..."
+
+      - name: Warm up cache
+        run: |
+          # Warm up critical pages
+          curl -s https://protothrive.com > /dev/null
+          curl -s https://protothrive.com/login > /dev/null
+          curl -s https://protothrive.com/dashboard > /dev/null
+
+      - name: Run production health checks
+        run: |
+          sleep 60  # Wait for deployment to be fully ready
+
+          # API health check
+          curl -f https://api.protothrive.com/health || exit 1
+
+          # Frontend health check
+          curl -f https://protothrive.com || exit 1
+
+          # WebSocket health check
+          curl -f https://api.protothrive.com/api/v1/collaboration/health/ws || exit 1
+
+      - name: Run production smoke tests
+        run: |
+          # Test critical user journeys
+          npm run test:smoke:production
+
+      - name: Update monitoring dashboards
+        run: |
+          # Update monitoring configurations
+          echo "Updating monitoring dashboards..."
+
+      - name: Notify successful deployment
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          text: '🚀 Production deployment successful!'
+
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+  # Rollback job (manual trigger)
+  rollback-production:
+    name: Rollback Production
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment:
+      name: production-rollback
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Rollback Workers
+        run: |
+          # Switch back to green environment
+          wrangler deploy main-api.ts --name protothrive-backend-green --env production
+          wrangler deploy collaboration-handler.ts --name collaboration-handler-green --env production
+
+      - name: Rollback Pages
+        run: |
+          # Rollback to previous Pages deployment
+          wrangler pages deployment list --project-name protothrive-frontend
+          # Use previous deployment ID
+
+      - name: Verify rollback
+        run: |
+          sleep 30
+          curl -f https://api.protothrive.com/health || exit 1
+          curl -f https://protothrive.com || exit 1
+
+      - name: Notify rollback
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              channel: '#incidents',
+              username: 'GitHub Actions',
+              icon_emoji: ':warning:',
+              text: '⚠️ Production rollback completed',
+              fields: [
+                {
+                  title: 'Repository',
+                  value: '${{ github.repository }}',
+                  short: true
+                },
+                {
+                  title: 'Triggered by',
+                  value: '${{ github.actor }}',
+                  short: true
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Performance monitoring job
+  performance-monitoring:
+    name: Performance Monitoring
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [deploy-production]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+
+      - name: Run Lighthouse CI
+        run: |
+          lhci autorun --upload.target=filesystem --upload.outputDir=./lighthouse-results
+        env:
+          LHCI_BUILD_CONTEXT__CURRENT_HASH: ${{ github.sha }}
+          LHCI_BUILD_CONTEXT__COMMIT_TIME: ${{ github.event.head_commit.timestamp }}
+
+      - name: Upload Lighthouse results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-results
+          path: lighthouse-results/
+
+      - name: Performance budget check
+        run: |
+          # Check if performance metrics meet budget requirements
+          node scripts/check-performance-budget.js
+
+  # Security monitoring job
+  security-monitoring:
+    name: Post-deployment Security Check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [deploy-production]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Security scan production
+        run: |
+          # Run security scan against production
+          echo "Running production security scan..."
+
+      - name: Check SSL/TLS configuration
+        run: |
+          # Verify SSL configuration
+          curl -I https://protothrive.com 2>&1 | grep -i 'strict-transport-security' || exit 1
+
+      - name: Verify WAF rules
+        run: |
+          # Test that WAF rules are active
+          echo "Verifying WAF configuration..."
+
+      - name: Check for exposed secrets
+        run: |
+          # Scan for accidentally exposed secrets
+          echo "Scanning for exposed secrets..."

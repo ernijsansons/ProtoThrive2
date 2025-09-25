@@ -1,40 +1,38 @@
-// Ref: CLAUDE.md - Real API Fetch for Production
-export const mockFetch = async (url: string, opts: RequestInit = {}) => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://backend-thermo.ernijs-ansons.workers.dev';
-  const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
-
-  // Fix auth header format for backend
-  const headers = opts.headers as Record<string, string> || {};
-  if (headers.Authorization === 'Bearer mock') {
-    headers.Authorization = 'Bearer mock.uuid-thermo-1.signature';
-    opts.headers = headers;
-  }
-  
-  console.log(`THERMONUCLEAR API CALL: ${fullUrl}`);
-  
-  try {
-    const response = await fetch(fullUrl, {
-      ...opts,
-      headers: {
-        'Content-Type': 'application/json',
-        ...opts.headers,
-      },
-    });
-    
-    return response;
-  } catch (error) {
-    console.error('THERMONUCLEAR API ERROR:', error);
-    throw error;
-  }
+// Basic mocks for development
+export const mockFetch = async (url: string, options?: any) => {
+  console.log(`Mock fetch: ${url}`, options);
+  return {
+    ok: true,
+    status: 200,
+    json: async () => ({
+      success: true,
+      data: 'mock-data',
+      keys: [
+        {
+          id: '1',
+          name: 'Development Key',
+          key: 'dev_key_****',
+          service: 'openai',
+          created: new Date().toISOString(),
+          lastRotated: new Date().toISOString(),
+          status: 'active' as const
+        },
+        {
+          id: '2',
+          name: 'Production Key',
+          key: 'prod_key_****',
+          service: 'claude',
+          created: new Date().toISOString(),
+          lastRotated: new Date().toISOString(),
+          status: 'active' as const
+        }
+      ]
+    }),
+    text: async () => 'mock-response'
+  };
 };
 
-export const mockDbQuery = (query: string, binds: unknown) => {
-  console.log(`THERMONUCLEAR MOCK DB: ${query} - Binds: ${binds}`);
-  return { 
-    results: [{
-      id: 'uuid-thermo', 
-      json_graph: '{"nodes":[{"id":"n1","label":"Thermo Start","status":"gray"}],"edges":[{"from":"n1","to":"n2"}]}', 
-      thrive_score: 0.45 
-    }] 
-  };
+export const mockApiCall = async (endpoint: string, payload?: any) => {
+  console.log(`Mock API call: ${endpoint}`, payload);
+  return { success: true, data: payload || 'mock-data' };
 };

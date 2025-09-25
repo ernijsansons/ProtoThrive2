@@ -1,0 +1,37 @@
+Feature,Subfeature,User Persona,Job-to-be-Done,Inputs,Outputs,Dependencies,Key Endpoints/Routes,Flags/Configs,Limits/Quotas,Evidence
+Roadmap Management,Create Roadmap,vibe_coder/engineer,Plan and visualize project milestones,JSON graph structure with nodes/edges,Roadmap ID and confirmation,Backend API + D1 database,POST /api/roadmaps,vibe_mode flag,100 roadmaps per user,backend/src/main.py:386-420
+Roadmap Management,View Roadmap,All users,Track progress and understand project flow,Roadmap ID,JSON graph with thrive score,Authentication + D1 query,GET /api/roadmaps/:id,None,Read-only access,backend/src/main.py:329-348
+Roadmap Management,Update Roadmap,vibe_coder/engineer,Modify milestones and connections,Roadmap ID + updated JSON,Success confirmation,User ownership validation,PUT /api/roadmaps/:id,None,Owner-only access,backend/src/main.py:422-460
+Roadmap Management,Delete Roadmap,vibe_coder/engineer,Remove outdated or incorrect roadmaps,Roadmap ID,Soft delete confirmation,User ownership validation,DELETE /api/roadmaps/:id,None,Soft delete only,backend/src/main.py:462-493
+Roadmap Management,List Roadmaps,All users,Browse all user roadmaps,Pagination params,Paginated roadmap list,User context,GET /api/roadmaps,limit/offset params,Max 100 per page,backend/src/main.py:350-384
+Living ERP Graph,2D Visualization,All users,See roadmap as interactive flowchart,Roadmap JSON,React Flow canvas,React Flow library,/dashboard,mode=2d,None,frontend/src/components/MagicCanvas.tsx
+Living ERP Graph,3D Visualization,All users,Experience immersive roadmap view,Roadmap JSON + positions,Spline 3D scene,Spline integration,/dashboard,mode=3d,WebGL required,frontend/src/components/MagicCanvas.tsx
+Living ERP Graph,Node Interaction,All users,Drill into milestone details,Node click/hover,Node details popup,Canvas state management,/dashboard,None,None,frontend/src/components/canvas-3d/NodeTypeSystem.tsx
+Thrive Score,Calculate Score,All users,Measure project health,Agent logs + task status,Score 0-1 + status color,Thrive formula logic,Backend calculation,None,None,CLAUDE.md:84
+Thrive Score,Display Gauge,All users,Visualize progress at a glance,Thrive score value,Gradient bar visualization,InsightsPanel component,/dashboard,None,None,frontend/src/components/InsightsPanel.tsx
+AI Agent Orchestration,Run Task,engineer/exec,Automate code generation and analysis,Task description + context,Generated code/analysis,Enterprise Agent v3.4,POST /api/agent/run,AGENT_MODE,Budget $0.10-$1.00,backend/src/agent_coordinator.py
+AI Agent Orchestration,Cost Control,All users,Stay within budget limits,Task + budget params,Cost tracking + limits,Budget validation,X-Agent-Budget header,AGENT_BUDGET_MAX,$1.00 hard limit,README.md:72-78
+AI Agent Orchestration,Fallback Logic,System,Ensure task completion,Primary agent failure,Fallback agent result,Dual agent pipeline,Internal routing,AGENT_MODE=fallback,Min $0.05 budget,README.md:95-99
+Code Snippets,Browse Templates,vibe_coder,Find reusable code patterns,Category filter,Snippet list,D1 snippets table,GET /api/snippets,None,None,backend/src/main.py:495+
+Code Snippets,Create Snippet,engineer,Share code solutions,Code + category,Snippet ID,Validation + storage,POST /api/snippets,None,None,backend/src/main.py:495+
+Authentication,JWT Login,All users,Secure access to platform,Email + password,JWT token,Auth service,POST /auth/login,None,Token expiry 24h,backend/src/main.py:123-143
+Authentication,Token Validation,System,Verify user identity,Bearer token,User claims,JWT validation,All API calls,JWT_SECRET,None,backend/src/main.py:123-143
+Authentication,Role Check,System,Enforce permissions,User role,Permission grant/deny,RBAC logic,All protected routes,Roles: vibe_coder/engineer/exec,None,backend/src/utils/auth.py
+Admin Dashboard,User Management,exec,Manage platform users,User actions,User list/details,Admin role required,/admin,Role=exec,Admin only,frontend/src/components/AdminDashboard.tsx
+Admin Dashboard,System Monitoring,exec,Track platform health,None,Metrics + logs,Monitoring integration,/admin,Role=exec,Admin only,frontend/src/components/AdminDashboard.tsx
+Analytics,Usage Metrics,All users,Understand platform usage,Time range,Charts + statistics,Analytics service,/analytics,None,None,frontend/src/components/AnalyticsDashboard.tsx
+Analytics,Thrive Trends,All users,Track progress over time,Historical data,Trend visualizations,Time series data,/analytics,None,None,frontend/src/components/ThriveScoreAnalytics.tsx
+Real-time Collaboration,Live Updates,All users,See changes instantly,WebSocket connection,Real-time events,WebSocket service,ws://backend/ws,None,100 concurrent,frontend/src/components/RealTimeCollaboration.tsx
+Real-time Collaboration,Presence Awareness,All users,See who's online,User status,Active user list,WebSocket broadcasts,ws://backend/ws,None,None,frontend/src/components/collaboration-engine/CollaborationProvider.tsx
+AI Vision Input,Image Analysis,engineer,Extract requirements from mockups,Image upload,Parsed requirements,AI vision models,/api/ai/vision,None,5MB image limit,frontend/src/components/AIVisionInput.tsx
+AI Vision Input,Diagram Import,engineer,Convert diagrams to roadmaps,Diagram image,JSON graph structure,Vision + parsing,/api/ai/vision,None,None,frontend/src/components/AIVisionInput.tsx
+Template Matching,Find Similar,vibe_coder,Discover relevant patterns,Current context,Matched templates,RAG/vector search,/api/templates/match,None,Top 10 matches,frontend/src/components/TemplateMatching.tsx
+Git Integration,Import Project,engineer,Analyze existing codebase,Git URL,Project analysis,Git service,/api/git/import,None,Public repos only,frontend/src/components/GitImport.tsx
+Enterprise Features,SSO Login,enterprise users,Single sign-on access,SAML/OAuth,User session,SSO provider,/auth/sso,Enterprise license,None,frontend/src/components/EnterpriseLogin.tsx
+Enterprise Features,Advanced Analytics,enterprise users,Deep insights,Complex queries,Detailed reports,Analytics engine,/enterprise/analytics,Enterprise license,None,frontend/src/pages/enterprise.tsx
+Two-Factor Auth,Enable 2FA,All users,Enhanced security,TOTP setup,QR code + backup codes,Auth service,/settings/2fa,None,None,frontend/src/components/TwoFactorAuth.tsx
+Onboarding,Interactive Tutorial,New users,Learn platform features,User interactions,Progress tracking,Tutorial engine,/onboarding,First login flag,One-time,frontend/src/components/OnboardingTutorial.tsx
+Marketplace,Browse Components,All users,Find community solutions,Search/filter,Component list,Marketplace service,/marketplace,None,None,frontend/src/components/marketplace/*
+Smart Notifications,Activity Alerts,All users,Stay informed,User preferences,Push/email notifications,Notification service,/api/notifications,Notification settings,100/day limit,frontend/src/components/SmartNotificationCenter.tsx
+Progress Prediction,AI Forecasting,All users,Predict completion dates,Historical data,Predicted timeline,ML models,/api/predict,None,None,frontend/src/components/ProgressPredictionEngine.tsx
+Health Monitoring,System Status,All users,Check platform availability,None,Health metrics,All services,/health,None,Public endpoint,backend/src/main.py:248+

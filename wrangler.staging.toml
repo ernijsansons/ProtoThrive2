@@ -1,0 +1,64 @@
+# ProtoThrive Staging Environment Configuration
+# Ref: CLAUDE.md DevOps Terminal - Staging Environment Setup
+
+name = "protothrive-staging"
+compatibility_date = "2024-12-01"
+
+# Staging Account Configuration
+account_id = "d2897bdebfa128919bd89b265e6a712e"
+workers_dev = true
+
+# Staging Environment Variables
+[vars]
+ENVIRONMENT = "staging"
+NODE_ENV = "staging"
+API_URL = "https://staging-api.protothrive.com"
+FRONTEND_URL = "https://staging.protothrive.com"
+NEXT_PUBLIC_API_URL = "https://staging-api.protothrive.com"
+
+# Performance Configuration
+PERFORMANCE_TARGET_MS = "50"
+CACHE_TTL = "180"
+RATE_LIMIT_PER_MIN = "200"
+
+# Debugging and Monitoring
+LOG_LEVEL = "debug"
+ENABLE_DEBUG_LOGS = "true"
+SENTRY_ENVIRONMENT = "staging"
+DATADOG_ENV = "staging"
+
+# Security Configuration
+ENABLE_SECURITY_HEADERS = "true"
+CORS_ORIGINS = "https://staging.protothrive.com,http://localhost:3000"
+JWT_ISSUER = "https://staging-api.protothrive.com"
+
+# AI Agent Configuration (Staging Budget)
+AGENT_MODE = "fallback"
+AGENT_BUDGET_DEFAULT = "0.20"
+AGENT_BUDGET_MAX = "0.50"
+AGENT_CONFIDENCE_THRESHOLD = "0.75"
+
+# Database Configuration
+[d1_databases]
+binding = "DB"
+database_name = "protothrive-staging-db"
+database_id = "staging-db-placeholder"
+
+# KV Store Configuration
+[kv_namespaces]
+binding = "KV"
+id = "staging-kv-placeholder"
+preview_id = "staging-kv-placeholder"
+
+# Staging Secrets (Set via wrangler secret put --env staging)
+# MONGODB_URI - External MongoDB connection
+# JWT_SECRET - JWT signing secret
+# STRIPE_KEY - Stripe test key
+# CLERK_SECRET - Clerk staging secret
+# CLOUDFLARE_API_TOKEN - Cloudflare API access
+# SENTRY_DSN - Error tracking
+# DATADOG_API_KEY - Performance monitoring
+
+# Resource Limits for Staging
+[limits]
+cpu_ms = 100

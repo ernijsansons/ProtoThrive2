@@ -165,6 +165,7 @@ interface State {
   agentConfig: AgentConfig;
   agentStatus: AgentStatus;
   loadGraph: (nodes: Node[], edges: Edge[]) => void;
+  updateNodeData: (nodeId: string, data: Partial<Node>) => void;
   toggleMode: () => void;
   updateScore: (score: number) => void;
   fetchRoadmap: (id: string) => void;
@@ -313,6 +314,14 @@ export const useStore = create<State>((set, get) => ({
     console.log('Thermonuclear LoadGraph - Nodes:', nodes.length, 'Edges:', edges.length);
     set({ nodes, edges });
   },
+  updateNodeData: (nodeId, data) => {
+    console.log('Thermonuclear UpdateNodeData - Node:', nodeId, 'Data:', data);
+    set((state) => ({
+      nodes: state.nodes.map(node =>
+        node.id === nodeId ? { ...node, ...data } : node
+      )
+    }));
+  },
   toggleMode: () => {
     console.log('Thermonuclear Mode Toggled');
     set((state) => ({ mode: state.mode === '2d' ? '3d' : '2d' }));
@@ -323,7 +332,7 @@ export const useStore = create<State>((set, get) => ({
   },
   fetchRoadmap: async (roadmapId: string, token?: string) => {
     set({ isLoading: true, error: null, currentRoadmapId: roadmapId });
-    console.log('Thermonuclear Fetching Roadmap:', roadmapId);
+    console.log('Thermonuclear Fetching Roadmap:', roadmapId || 'uuid-thermo-1');
     try {
       // Use authentication service for API calls
       const response = await authService.makeAuthenticatedRequest(

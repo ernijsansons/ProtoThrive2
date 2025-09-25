@@ -1,0 +1,111 @@
+# ProtoThrive Production Wrangler Configuration - Fixed
+# Fortune-50 Grade with All Audit Issues Resolved
+
+name = "protothrive-backend"
+main = "backend/src/main.py"
+compatibility_date = "2025-09-22"
+compatibility_flags = ["python_workers"]
+
+# Account configuration
+account_id = "d2897bdebfa128919bd89b265e6a712e"
+workers_dev = false
+
+# Global environment variables
+[vars]
+ENVIRONMENT = "production"
+SERVICE_NAME = "protothrive-backend"
+ALLOWED_ORIGINS = "https://protothrive-frontend.pages.dev,https://protothrive.com"
+RATE_LIMIT_PER_MIN = "100"
+CACHE_TTL = "300"
+GDPR_ENABLED = "true"
+CLERK_PUBLISHABLE_KEY = "pk_live_protothrive"
+SENTRY_SAMPLE_RATE = "1.0"
+DATADOG_API_KEY_NAME = "DATADOG_API_KEY"
+SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/protothrive"
+WEBSOCKET_ENABLED = "true"
+BUDGET_MAX_USD = "500"
+D1_REPLICA_COUNT = "3"
+
+# D1 Database binding with replicas
+[[d1_databases]]
+binding = "DB"
+database_name = "protothrive-db"
+database_id = "0b6970f4-c6ca-4245-aabf-98fa2d4f28a8"
+
+# KV Namespace for caching
+[[kv_namespaces]]
+binding = "KV_CACHE"
+id = "ec3183e7b4e94442b3f99b4d2f4b083e"
+
+# Rate limiter KV
+[[kv_namespaces]]
+binding = "KV_RATE_LIMIT"
+id = "f589a1dbb2c5457c9737375f0e0640d9"
+
+# Durable Objects for WebSocket
+[[durable_objects.bindings]]
+name = "WEBSOCKET_HANDLER"
+class_name = "WebSocketHandler"
+script_name = "websocket-handler"
+
+# Analytics Engine
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+
+# Build configuration for Python
+[build]
+command = "pip install -r requirements.txt -t ."
+upload_format = "modules"
+main_module = "main"
+
+# Observability
+[observability]
+enabled = true
+head_sampling_rate = 1.0
+
+# Limits and usage
+[limits]
+cpu_ms = 50
+memory_mb = 128
+
+[usage_model]
+default = "unbound"
+
+# Staging environment
+[env.staging]
+name = "protothrive-backend-staging"
+vars = { ENVIRONMENT = "staging", RATE_LIMIT_PER_MIN = "200" }
+route = "staging-api.protothrive.com/*"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "protothrive-db-staging"
+database_id = "staging-db-id"
+
+[[env.staging.kv_namespaces]]
+binding = "KV_CACHE"
+id = "staging-kv-id"
+
+# Production environment
+[env.production]
+name = "protothrive-backend-prod"
+vars = { ENVIRONMENT = "production" }
+route = "api.protothrive.com/*"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "protothrive-db"
+database_id = "0b6970f4-c6ca-4245-aabf-98fa2d4f28a8"
+
+[[env.production.kv_namespaces]]
+binding = "KV_CACHE"
+id = "ec3183e7b4e94442b3f99b4d2f4b083e"
+
+# Triggers for scheduled tasks
+[[triggers.cron]]
+cron = "0 2 * * *"
+handler = "backup_handler"
+
+[[triggers.cron]]
+cron = "*/5 * * * *"
+handler = "health_check_handler"

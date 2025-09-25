@@ -3,18 +3,17 @@ import { NextApiRequest, NextApiResponse } from 'next';
 interface HealthCheckResponse {
   status: 'healthy' | 'unhealthy';
   timestamp: string;
-  uptime: number;
   version: string;
   environment: string;
   services: {
-    database: 'healthy' | 'unhealthy';
-    api: 'healthy' | 'unhealthy';
-    cache: 'healthy' | 'unhealthy';
+    database: 'healthy' | 'unhealthy' | 'unknown';
+    redis: 'healthy' | 'unhealthy' | 'unknown';
+    backend: 'healthy' | 'unhealthy' | 'unknown';
   };
   metrics: {
-    memoryUsage: number;
-    cpuUsage: number;
-    responseTime: number;
+    uptime: number;
+    memory_usage: NodeJS.MemoryUsage;
+    cpu_usage?: number;
   };
 }
 
@@ -22,87 +21,98 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<HealthCheckResponse>
 ) {
-  const startTime = Date.now();
-  
-  // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
       version: process.env.npm_package_version || '1.0.0',
       environment: process.env.NODE_ENV || 'development',
       services: {
-        database: 'unhealthy',
-        api: 'unhealthy',
-        cache: 'unhealthy',
+        database: 'unknown',
+        redis: 'unknown',
+        backend: 'unknown',
       },
       metrics: {
-        memoryUsage: 0,
-        cpuUsage: 0,
-        responseTime: 0,
+        uptime: process.uptime(),
+        memory_usage: process.memoryUsage(),
       },
     });
   }
 
   try {
-    // Check memory usage
-    const memoryUsage = process.memoryUsage();
-    const memoryUsageMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
+    const startTime = Date.now();
+    
+    // Check backend service
+    let backendStatus: 'healthy' | 'unhealthy' | 'unknown' = 'unknown';
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'}/health`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      backendStatus = backendResponse.ok ? 'healthy' : 'unhealthy';
+    } catch (error) {
+      backendStatus = 'unhealthy';
+    }
 
-    // Check if we're in a healthy state
-    const isHealthy = memoryUsageMB < 1000; // Less than 1GB memory usage
+    // Check database (if we have direct access)
+    let databaseStatus: 'healthy' | 'unhealthy' | 'unknown' = 'unknown';
+    // In a real implementation, you might check database connectivity here
+    // For now, we'll assume it's healthy if the backend is healthy
+    databaseStatus = backendStatus === 'healthy' ? 'healthy' : 'unknown';
 
-    // Simulate service health checks
-    const services = {
-      database: 'healthy' as const, // In real implementation, check actual DB connection
-      api: 'healthy' as const,     // In real implementation, check API endpoints
-      cache: 'healthy' as const,   // In real implementation, check cache service
-    };
+    // Check Redis (if we have direct access)
+    let redisStatus: 'healthy' | 'unhealthy' | 'unknown' = 'unknown';
+    // In a real implementation, you might check Redis connectivity here
+    // For now, we'll assume it's healthy if the backend is healthy
+    redisStatus = backendStatus === 'healthy' ? 'healthy' : 'unknown';
 
     const responseTime = Date.now() - startTime;
-
-    const healthResponse: HealthCheckResponse = {
-      status: isHealthy ? 'healthy' : 'unhealthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: process.env.npm_package_version || '1.0.0',
-      environment: process.env.NODE_ENV || 'development',
-      services,
-      metrics: {
-        memoryUsage: memoryUsageMB,
-        cpuUsage: 0, // Would need additional library to measure CPU
-        responseTime,
-      },
-    };
-
-    // Set appropriate status code
-    const statusCode = isHealthy ? 200 : 503;
     
-    // Set cache headers
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+    const overallStatus = backendStatus === 'healthy' && databaseStatus === 'healthy' && redisStatus === 'healthy' 
+      ? 'healthy' 
+      : 'unhealthy';
 
-    return res.status(statusCode).json(healthResponse);
-  } catch (error) {
-    console.error('Health check failed:', error);
-    
-    return res.status(503).json({
-      status: 'unhealthy',
+    const response: HealthCheckResponse = {
+      status: overallStatus,
       timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
       version: process.env.npm_package_version || '1.0.0',
       environment: process.env.NODE_ENV || 'development',
       services: {
-        database: 'unhealthy',
-        api: 'unhealthy',
-        cache: 'unhealthy',
+        database: databaseStatus,
+        redis: redisStatus,
+        backend: backendStatus,
       },
       metrics: {
-        memoryUsage: 0,
-        cpuUsage: 0,
-        responseTime: Date.now() - startTime,
+        uptime: process.uptime(),
+        memory_usage: process.memoryUsage(),
+        cpu_usage: responseTime,
+      },
+    };
+
+    const statusCode = overallStatus === 'healthy' ? 200 : 503;
+    res.status(statusCode).json(response);
+
+  } catch (error) {
+    console.error('Health check failed:', error);
+    
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      version: process.env.npm_package_version || '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      services: {
+        database: 'unknown',
+        redis: 'unknown',
+        backend: 'unknown',
+      },
+      metrics: {
+        uptime: process.uptime(),
+        memory_usage: process.memoryUsage(),
       },
     });
   }

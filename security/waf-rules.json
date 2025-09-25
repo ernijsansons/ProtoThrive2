@@ -1,0 +1,316 @@
+{
+  "name": "ProtoThrive Enterprise Security Rules",
+  "description": "Comprehensive WAF and security configuration for ProtoThrive enterprise platform",
+  "version": "2.0.0",
+  "rules": [
+    {
+      "id": "protothrive_rate_limit_api",
+      "name": "API Rate Limiting",
+      "description": "Rate limit API endpoints to prevent abuse",
+      "expression": "(http.request.uri.path matches \"^/api/.*\")",
+      "action": "challenge",
+      "priority": 100,
+      "rate_limit": {
+        "threshold": 1000,
+        "period": 3600,
+        "key": "ip.src",
+        "action": "block",
+        "duration": 600
+      },
+      "enabled": true
+    },
+    {
+      "id": "protothrive_block_malicious_ips",
+      "name": "Block Known Malicious IPs",
+      "description": "Block traffic from known malicious IP addresses",
+      "expression": "(ip.src in $malicious_ips) or (cf.threat_score gt 50)",
+      "action": "block",
+      "priority": 1,
+      "enabled": true
+    },
+    {
+      "id": "protothrive_sql_injection_protection",
+      "name": "SQL Injection Protection",
+      "description": "Detect and block SQL injection attempts",
+      "expression": "(any(http.request.body.form.values[*] contains \"' OR 1=1\")) or (any(http.request.body.form.values[*] contains \"UNION SELECT\")) or (any(http.request.body.form.values[*] contains \"DROP TABLE\")) or (any(http.request.body.form.values[*] contains \"INSERT INTO\")) or (any(http.request.uri.query contains \"' OR 1=1\")) or (any(http.request.uri.query contains \"UNION SELECT\"))",
+      "action": "block",
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "protothrive_xss_protection",
+      "name": "XSS Protection",
+      "description": "Detect and block cross-site scripting attempts",
+      "expression": "(any(http.request.body.form.values[*] contains \"<script\")) or (any(http.request.body.form.values[*] contains \"javascript:\")) or (any(http.request.uri.query contains \"<script\")) or (any(http.request.uri.query contains \"javascript:\")) or (any(http.request.headers[\"user-agent\"][*] contains \"<script\"))",
+      "action": "block",
+      "priority": 15,
+      "enabled": true
+    },
+    {
+      "id": "protothrive_file_upload_protection",
+      "name": "File Upload Protection",
+      "description": "Protect against malicious file uploads",
+      "expression": "(http.request.uri.path matches \"^/api/.*/upload.*\") and ((http.request.body contains \"<?php\") or (http.request.body contains \"<%\") or (http.request.body contains \"<script\"))",
+      "action": "block",
+      "priority": 20,
+      "enabled": true
+    },
+    {
+      "id": "protothrive_auth_bruteforce_protection",
+      "name": "Authentication Brute Force Protection",
+      "description": "Protect against brute force attacks on authentication endpoints",
+      "expression": "(http.request.uri.path eq \"/api/v1/auth/login\" or http.request.uri.path eq \"/api/v1/auth/register\")",
+      "action": "managed_challenge",
+      "priority": 50,
+      "rate_limit": {
+        "threshold": 10,
+        "period": 300,
+        "key": "ip.src",
+        "action": "block",
+        "duration": 1800
+      },
+      "enabled": true
+    },
+    {
+      "id": "protothrive_admin_protection",
+      "name": "Admin Panel Protection",
+      "description": "Enhanced protection for admin endpoints",
+      "expression": "(http.request.uri.path matches \"^/admin.*\" or http.request.uri.path matches \"^/api/.*/admin.*\")",
+      "action": "js_challenge",
+      "priority": 30,
+      "enabled": true
+    },
+    {
+      "id": "protothrive_websocket_protection",
+      "name": "WebSocket Connection Protection",
+      "description": "Protect WebSocket endpoints from abuse",
+      "expression": "(http.request.uri.path matches \"^/api/.*/ws.*\" or http.request.headers[\"upgrade\"][0] eq \"websocket\")",
+      "action": "managed_challenge",
+      "priority": 40,
+      "rate_limit": {
+        "threshold": 100,
+        "period": 3600,
+        "key": "ip.src",
+        "action": "block",
+        "duration": 300
+      },
+      "enabled": true
+    },
+    {
+      "id": "protothrive_collaboration_protection",
+      "name": "Collaboration Endpoint Protection",
+      "description": "Protect real-time collaboration endpoints",
+      "expression": "(http.request.uri.path matches \"^/api/.*/collaboration.*\")",
+      "action": "challenge",
+      "priority": 45,
+      "rate_limit": {
+        "threshold": 500,
+        "period": 3600,
+        "key": "ip.src",
+        "action": "block",
+        "duration": 600
+      },
+      "enabled": true
+    },
+    {
+      "id": "protothrive_bot_protection",
+      "name": "Bot Protection",
+      "description": "Challenge suspected bot traffic",
+      "expression": "(cf.bot_management.score lt 30) and not (cf.bot_management.verified_bot)",
+      "action": "managed_challenge",
+      "priority": 60,
+      "enabled": true
+    },
+    {
+      "id": "protothrive_geo_blocking",
+      "name": "Geographic Blocking",
+      "description": "Block traffic from high-risk countries",
+      "expression": "(ip.geoip.country in {\"CN\" \"RU\" \"IR\" \"KP\"})",
+      "action": "block",
+      "priority": 5,
+      "enabled": false
+    },
+    {
+      "id": "protothrive_hotlinking_protection",
+      "name": "Hotlinking Protection",
+      "description": "Prevent unauthorized hotlinking of resources",
+      "expression": "(http.request.uri.path matches \"\\.(jpg|jpeg|png|gif|pdf|doc|docx)$\") and not (http.referer matches \".*protothrive\\.com.*\" or http.referer eq \"\")",
+      "action": "block",
+      "priority": 70,
+      "enabled": true
+    },
+    {
+      "id": "protothrive_user_agent_blocking",
+      "name": "Malicious User Agent Blocking",
+      "description": "Block requests with malicious or suspicious user agents",
+      "expression": "(any(http.request.headers[\"user-agent\"][*] contains \"sqlmap\")) or (any(http.request.headers[\"user-agent\"][*] contains \"nikto\")) or (any(http.request.headers[\"user-agent\"][*] contains \"nmap\")) or (any(http.request.headers[\"user-agent\"][*] contains \"masscan\")) or (http.request.headers[\"user-agent\"][0] eq \"\")",
+      "action": "block",
+      "priority": 25,
+      "enabled": true
+    },
+    {
+      "id": "protothrive_api_key_validation",
+      "name": "API Key Validation",
+      "description": "Validate API keys for programmatic access",
+      "expression": "(http.request.uri.path matches \"^/api/.*\") and (http.request.headers[\"x-api-key\"][0] ne \"\" and not http.request.headers[\"authorization\"][0] contains \"Bearer\")",
+      "action": "block",
+      "priority": 80,
+      "enabled": true
+    },
+    {
+      "id": "protothrive_csrf_protection",
+      "name": "CSRF Protection",
+      "description": "Protect against Cross-Site Request Forgery",
+      "expression": "(http.request.method in {\"POST\" \"PUT\" \"DELETE\" \"PATCH\"}) and (http.request.uri.path matches \"^/api/.*\") and not (http.request.headers[\"x-csrf-token\"][0] ne \"\" or http.request.headers[\"content-type\"][0] contains \"application/json\")",
+      "action": "block",
+      "priority": 35,
+      "enabled": true
+    }
+  ],
+  "ip_lists": {
+    "malicious_ips": {
+      "name": "Known Malicious IPs",
+      "description": "List of known malicious IP addresses",
+      "ips": []
+    },
+    "trusted_ips": {
+      "name": "Trusted IP Addresses",
+      "description": "Whitelist of trusted IP addresses (admin access, CI/CD, etc.)",
+      "ips": []
+    }
+  },
+  "custom_rules": {
+    "ddos_protection": {
+      "enabled": true,
+      "sensitivity": "high",
+      "challenge_timeout": 5,
+      "failure_action": "simulate"
+    },
+    "managed_rules": {
+      "cloudflare_managed_ruleset": {
+        "enabled": true,
+        "action": "challenge"
+      },
+      "cloudflare_owasp_core_ruleset": {
+        "enabled": true,
+        "action": "block",
+        "sensitivity": "medium"
+      },
+      "cloudflare_exposed_credentials_check": {
+        "enabled": true,
+        "action": "managed_challenge"
+      }
+    },
+    "zone_lockdown": {
+      "enabled": false,
+      "urls": [
+        "/admin/*",
+        "/api/v1/admin/*"
+      ],
+      "configurations": [
+        {
+          "target": "ip",
+          "value": "192.168.1.0/24"
+        }
+      ]
+    }
+  },
+  "ssl_tls": {
+    "mode": "strict",
+    "min_tls_version": "1.2",
+    "opportunistic_encryption": true,
+    "onion_routing": false,
+    "authenticated_origin_pulls": true,
+    "certificate_transparency_monitoring": true
+  },
+  "page_rules": [
+    {
+      "targets": [
+        {
+          "target": "url",
+          "constraint": {
+            "operator": "matches",
+            "value": "protothrive.com/api/*"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "id": "cache_level",
+          "value": "bypass"
+        },
+        {
+          "id": "security_level",
+          "value": "high"
+        },
+        {
+          "id": "waf",
+          "value": "on"
+        }
+      ],
+      "priority": 1,
+      "status": "active"
+    },
+    {
+      "targets": [
+        {
+          "target": "url",
+          "constraint": {
+            "operator": "matches",
+            "value": "protothrive.com/admin/*"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "id": "security_level",
+          "value": "under_attack"
+        },
+        {
+          "id": "browser_integrity_check",
+          "value": "on"
+        }
+      ],
+      "priority": 2,
+      "status": "active"
+    }
+  ],
+  "firewall_settings": {
+    "security_level": "medium",
+    "challenge_passage": 1800,
+    "browser_integrity_check": true,
+    "privacy_pass": true,
+    "security_header": true
+  },
+  "monitoring": {
+    "log_pushed_fields": [
+      "timestamp",
+      "client_ip",
+      "client_country",
+      "user_agent",
+      "request_uri",
+      "request_method",
+      "response_status",
+      "edge_response_status",
+      "origin_response_status",
+      "cache_status",
+      "security_level",
+      "waf_action",
+      "waf_rule_id",
+      "waf_matched_var",
+      "edge_start_timestamp",
+      "edge_end_timestamp",
+      "origin_response_time",
+      "edge_response_bytes",
+      "visitor_id"
+    ],
+    "logpush_destinations": [
+      {
+        "name": "security_logs",
+        "destination": "https://logs.protothrive.com/security",
+        "dataset": "firewall_events",
+        "filter": "SecurityLevel gt 'medium' or Action eq 'block'"
+      }
+    ]
+  }
+}

@@ -48,7 +48,7 @@ function calcThrive(logs) {
 
     // Calculate risk component (10% weight)
     const failCount = logs.filter(log => log.status === 'fail').length;
-    const risk = 1 - (failCount / logs.length) * 0.1;
+    const risk = (1 - (failCount / logs.length)) * 0.1;
     console.log(`Risk Factor: ${failCount}/${logs.length} failures = ${risk.toFixed(3)}`);
 
     // Calculate final score

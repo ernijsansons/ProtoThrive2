@@ -1,0 +1,11 @@
+email,password,projectType,vision
+test1@protothrive.com,test123,web_platform,"Build a project management web application with real-time collaboration features"
+test2@protothrive.com,test123,mobile_app,"Create a fitness tracking mobile app with social sharing capabilities"
+test3@protothrive.com,test123,api_service,"Develop a RESTful API service for data analytics and reporting"
+test4@protothrive.com,test123,e_commerce,"Build an e-commerce platform with AI-powered product recommendations"
+test5@protothrive.com,test123,saas_mvp,"Create a SaaS tool for team communication and project management"
+test6@protothrive.com,test123,web_platform,"Develop a content management system with multi-user support"
+test7@protothrive.com,test123,mobile_app,"Build a social media app with real-time messaging features"
+test8@protothrive.com,test123,api_service,"Create a microservices architecture for scalable applications"
+test9@protothrive.com,test123,e_commerce,"Develop a marketplace platform with vendor management"
+test10@protothrive.com,test123,saas_mvp,"Build a customer relationship management system"

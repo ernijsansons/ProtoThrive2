@@ -1,0 +1,397 @@
+# ProtoThrive CI/CD Pipeline - Fortune-50 Grade
+# Complete test, security scan, and deploy pipeline
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, staging, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * *'  # Daily security scan
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.12'
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: d2897bdebfa128919bd89b265e6a712e
+
+jobs:
+  # Frontend Tests
+  frontend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint -- --max-warnings 0
+
+      - name: Type checking
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test -- --coverage --watchAll=false
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: frontend
+
+      - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://api.protothrive.com
+
+      - name: Bundle size check
+        run: |
+          npm install -g bundlesize
+          bundlesize -f "out/**/*.js" -s 500KB
+
+  # Backend Tests
+  backend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run pylint
+        run: poetry run pylint src/*.py --score=y --fail-under=9.0
+
+      - name: Run security scan
+        run: |
+          poetry add bandit --dev
+          poetry run bandit -r src/ -f json -o bandit-report.json
+
+      - name: Run tests
+        run: |
+          poetry run pytest tests/ \
+            --cov=src \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=90
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: backend
+
+  # Security Scanning
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'ProtoThrive'
+          path: '.'
+          format: 'HTML'
+          args: >
+            --enableRetired
+            --enableExperimental
+
+      - name: Upload OWASP results
+        uses: actions/upload-artifact@v3
+        with:
+          name: dependency-check-report
+          path: reports/
+
+  # Performance Testing
+  performance-test:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install k6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gnupg software-properties-common
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run load tests
+        run: |
+          k6 run --out json=k6-results.json tests/load-test.js
+
+      - name: Upload k6 results
+        uses: actions/upload-artifact@v3
+        with:
+          name: k6-results
+          path: k6-results.json
+
+  # Database Migration Check
+  db-migration-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate migration files
+        run: |
+          for file in migrations/*.sql; do
+            echo "Validating $file"
+            # Check for DROP statements (dangerous)
+            if grep -i "DROP TABLE\|DROP DATABASE" "$file"; then
+              echo "ERROR: Dangerous DROP statement found in $file"
+              exit 1
+            fi
+            # Check for proper transaction handling
+            if ! grep -i "BEGIN TRANSACTION\|COMMIT" "$file"; then
+              echo "WARNING: No transaction handling in $file"
+            fi
+          done
+
+  # Deploy to Staging
+  deploy-staging:
+    needs: [frontend-test, backend-test, security-scan, db-migration-check]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging'
+    environment:
+      name: staging
+      url: https://staging.protothrive.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Deploy Backend to Workers
+        working-directory: backend
+        run: |
+          wrangler deploy --env staging \
+            --var ENVIRONMENT=staging \
+            --var RATE_LIMIT_PER_MIN=200
+
+      - name: Run Database Migrations
+        working-directory: backend
+        run: |
+          for file in ../migrations/*.sql; do
+            echo "Running migration: $file"
+            wrangler d1 execute protothrive-db-staging \
+              --file="$file" \
+              --env=staging
+          done
+
+      - name: Deploy Frontend to Pages
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          wrangler pages deploy out \
+            --project-name=protothrive-frontend \
+            --branch=staging \
+            --commit-hash=${{ github.sha }}
+
+      - name: Smoke Tests
+        run: |
+          sleep 30  # Wait for deployment
+          curl -f https://staging-api.protothrive.com/health || exit 1
+          curl -f https://staging.protothrive.com || exit 1
+
+  # Deploy to Production
+  deploy-production:
+    needs: [frontend-test, backend-test, security-scan, db-migration-check, performance-test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://protothrive.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Create Database Backup
+        run: |
+          BACKUP_NAME="backup-$(date +%Y%m%d-%H%M%S)"
+          wrangler d1 backup create protothrive-db \
+            --output-file="$BACKUP_NAME.sql"
+
+          # Upload backup to R2
+          wrangler r2 object put protothrive-backups/"$BACKUP_NAME.sql" \
+            --file="$BACKUP_NAME.sql"
+
+      - name: Deploy Backend to Workers (Blue-Green)
+        working-directory: backend
+        run: |
+          # Deploy to green environment first
+          wrangler deploy --env production-green \
+            --var ENVIRONMENT=production-green
+
+          # Run health checks on green
+          for i in {1..10}; do
+            if curl -f https://api-green.protothrive.com/health; then
+              echo "Green environment healthy"
+              break
+            fi
+            if [ $i -eq 10 ]; then
+              echo "Green environment unhealthy, aborting"
+              exit 1
+            fi
+            sleep 5
+          done
+
+          # Switch traffic to green (becomes new blue)
+          wrangler deploy --env production \
+            --var ENVIRONMENT=production
+
+      - name: Run Database Migrations
+        working-directory: backend
+        run: |
+          for file in ../migrations/*.sql; do
+            echo "Running migration: $file"
+            wrangler d1 execute protothrive-db \
+              --file="$file" \
+              --env=production
+          done
+
+      - name: Deploy Frontend to Pages
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build:production
+          wrangler pages deploy out \
+            --project-name=protothrive-frontend \
+            --branch=main \
+            --commit-hash=${{ github.sha }}
+
+      - name: Verify Deployment
+        run: |
+          sleep 30
+          # Health checks
+          curl -f https://api.protothrive.com/health || exit 1
+          curl -f https://protothrive.com || exit 1
+
+          # Performance check
+          response_time=$(curl -o /dev/null -s -w "%{time_total}" https://api.protothrive.com/health)
+          if (( $(echo "$response_time > 2" | bc -l) )); then
+            echo "WARNING: API response time > 2s: ${response_time}s"
+          fi
+
+      - name: Notify Deployment
+        if: success()
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "text": "✅ Production deployment successful",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Production Deployment Complete*\n• Commit: `${{ github.sha }}`\n• Actor: ${{ github.actor }}\n• URL: https://protothrive.com"
+                }
+              }]
+            }'
+
+      - name: Rollback on Failure
+        if: failure()
+        run: |
+          echo "Deployment failed, initiating rollback"
+          wrangler rollback --env production
+
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "text": "🚨 Production deployment failed - rollback initiated",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Deployment Rollback*\n• Commit: `${{ github.sha }}`\n• Actor: ${{ github.actor }}\n• Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                }
+              }]
+            }'
+
+  # Post-deployment monitoring
+  post-deploy-monitor:
+    needs: [deploy-production]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Monitor Error Rates
+        run: |
+          # Check Sentry for new errors
+          curl -H "Authorization: Bearer ${{ secrets.SENTRY_AUTH_TOKEN }}" \
+            "https://sentry.io/api/0/projects/protothrive/protothrive-prod/issues/?statsPeriod=1h&query=is:unresolved" \
+            -o sentry-issues.json
+
+          error_count=$(jq length sentry-issues.json)
+          if [ "$error_count" -gt 5 ]; then
+            echo "ERROR: High error rate detected: $error_count new issues"
+            exit 1
+          fi
+
+      - name: Check Metrics
+        run: |
+          # Query Datadog for metrics
+          curl -X GET "https://api.datadoghq.com/api/v1/query" \
+            -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" \
+            -H "DD-APPLICATION-KEY: ${{ secrets.DATADOG_APP_KEY }}" \
+            -d "from=$(date -u -d '1 hour ago' +%s)" \
+            -d "to=$(date +%s)" \
+            -d "query=avg:protothrive.api.latency{env:production}"

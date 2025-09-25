@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "build": "echo 'Automation build complete - no compilation needed for JavaScript files'",
     "test": "node tests/test-automation.js",
     "lint": "echo 'Thermonuclear Lint: No linter configured for automation scripts'",
     "validate:workflow": "node tests/validate-workflow.js",

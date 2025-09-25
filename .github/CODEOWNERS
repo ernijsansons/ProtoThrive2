@@ -1,0 +1,38 @@
+# Global code owners
+* @ernijsansons
+
+# Frontend specific
+/frontend/ @ernijsansons
+/frontend/src/ @ernijsansons
+/frontend/package.json @ernijsansons
+/frontend/next.config.js @ernijsansons
+/frontend/tailwind.config.js @ernijsansons
+
+# Backend specific
+/backend/ @ernijsansons
+/backend/src/ @ernijsansons
+/backend/package.json @ernijsansons
+/backend/wrangler.toml @ernijsansons
+
+# Infrastructure and deployment
+/docker-compose.yml @ernijsansons
+/docker-compose.prod.yml @ernijsansons
+/nginx/ @ernijsansons
+/monitoring/ @ernijsansons
+/security/ @ernijsansons
+/scripts/ @ernijsansons
+
+# CI/CD and workflows
+/.github/ @ernijsansons
+/.github/workflows/ @ernijsansons
+
+# Documentation
+/README.md @ernijsansons
+/ENTERPRISE_SETUP.md @ernijsansons
+/cloudflare-deployment.md @ernijsansons
+/DEPLOYMENT_CHECKLIST.md @ernijsansons
+
+# Configuration files
+/.gitignore @ernijsansons
+/package.json @ernijsansons
+/env.example @ernijsansons

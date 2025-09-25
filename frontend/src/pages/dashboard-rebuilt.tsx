@@ -652,4 +652,10 @@ const DashboardRebuilt: React.FC = () => {
   );
 };
 
-export default DashboardRebuilt;
+export default DashboardRebuilt;// Add getStaticProps for static export
+export async function getStaticProps() {
+  return {
+    props: {},
+  };
+}
+

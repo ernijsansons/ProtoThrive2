@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
+import OAuthButtons from '../components/OAuthButtons';
+import { OAuthResult } from '../services/oauthService';
+import { environmentSecurityService } from '../utils/security';
 
 const LoginPage: React.FC = () => {
   const router = useRouter();
-  const { login, loginDevelopment, isAuthenticated, isLoading } = useAuth();
+  const { login, loginDevelopment, loginWithOAuth, isAuthenticated, isLoading } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,6 +37,12 @@ const LoginPage: React.FC = () => {
   };
 
   const handleDevelopmentLogin = async () => {
+    // CRITICAL P0 SECURITY FIX: Block development login in production
+    if (!environmentSecurityService.isDevelopmentFeatureEnabled('developmentLogin')) {
+      setError('Development login is disabled in production environment');
+      return;
+    }
+
     setIsSubmitting(true);
     setError('');
 
@@ -45,6 +54,22 @@ const LoginPage: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleOAuthSuccess = async (result: OAuthResult) => {
+    try {
+      console.log('Thermonuclear: OAuth success, processing login');
+      await loginWithOAuth(result);
+      router.push('/');
+    } catch (err: any) {
+      console.error('Thermonuclear Error: OAuth login failed', err);
+      setError(err.message || 'OAuth login failed');
+    }
+  };
+
+  const handleOAuthError = (error: string) => {
+    console.error('Thermonuclear Error: OAuth failed', error);
+    setError(error);
   };
 
   if (isLoading) {
@@ -147,12 +172,16 @@ const LoginPage: React.FC = () => {
                 placeholder="Enter your email"
                 disabled={isSubmitting}
                 onFocus={(e) => {
-                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                  if (e.target instanceof HTMLElement) {
+                    e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                  }
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                  e.target.style.boxShadow = 'none';
+                  if (e.target instanceof HTMLElement) {
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    e.target.style.boxShadow = 'none';
+                  }
                 }}
               />
             </div>
@@ -187,12 +216,16 @@ const LoginPage: React.FC = () => {
                 placeholder="Enter your password"
                 disabled={isSubmitting}
                 onFocus={(e) => {
-                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                  if (e.target instanceof HTMLElement) {
+                    e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                  }
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                  e.target.style.boxShadow = 'none';
+                  if (e.target instanceof HTMLElement) {
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    e.target.style.boxShadow = 'none';
+                  }
                 }}
               />
             </div>
@@ -214,12 +247,12 @@ const LoginPage: React.FC = () => {
                 fontSize: '1rem'
               }}
               onMouseEnter={(e) => {
-                if (!isSubmitting) {
+                if (!isSubmitting && e.target instanceof HTMLElement) {
                   e.target.style.background = 'linear-gradient(135deg, #1d4ed8, #6d28d9)';
                 }
               }}
               onMouseLeave={(e) => {
-                if (!isSubmitting) {
+                if (!isSubmitting && e.target instanceof HTMLElement) {
                   e.target.style.background = 'linear-gradient(135deg, #2563eb, #7c3aed)';
                 }
               }}
@@ -228,57 +261,86 @@ const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Development Mode */}
+          {/* OAuth Buttons */}
+          <OAuthButtons
+            onSuccess={handleOAuthSuccess}
+            onError={handleOAuthError}
+            disabled={isSubmitting}
+          />
+
+          {/* Beta Disclaimer - Required for compliance */}
           <div style={{
-            paddingTop: '1.5rem',
-            borderTop: '1px solid rgba(255, 255, 255, 0.2)'
+            marginTop: '1rem',
+            paddingTop: '1rem',
+            borderTop: '1px solid #e5e7eb',
+            textAlign: 'center',
+            fontSize: '0.75rem',
+            color: '#6b7280'
           }}>
-            <p style={{
-              textAlign: 'center',
-              color: '#bfdbfe',
-              fontSize: '0.875rem',
-              marginBottom: '1rem'
-            }}>
-              Development Mode
-            </p>
-            <button
-              onClick={handleDevelopmentLogin}
-              disabled={isSubmitting}
-              style={{
-                width: '100%',
-                background: 'linear-gradient(135deg, #059669, #0d9488)',
-                color: '#ffffff',
-                fontWeight: '600',
-                padding: '0.75rem 1rem',
-                borderRadius: '0.5rem',
-                border: 'none',
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                opacity: isSubmitting ? 0.5 : 1,
-                transition: 'all 0.2s ease',
-                fontSize: '1rem',
-                marginBottom: '0.5rem'
-              }}
-              onMouseEnter={(e) => {
-                if (!isSubmitting) {
-                  e.target.style.background = 'linear-gradient(135deg, #047857, #0f766e)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isSubmitting) {
-                  e.target.style.background = 'linear-gradient(135deg, #059669, #0d9488)';
-                }
-              }}
-            >
-              {isSubmitting ? 'Connecting...' : 'Quick Start (Development)'}
-            </button>
-            <p style={{
-              textAlign: 'center',
-              color: '#93c5fd',
-              fontSize: '0.75rem'
-            }}>
-              Skip authentication for development and testing
-            </p>
+            *Beta software - features and pricing subject to change.
+            <br />
+            <a href="/terms" style={{ color: '#3b82f6', textDecoration: 'underline' }}>
+              Terms of Service
+            </a>
+            {' • '}
+            <a href="/privacy" style={{ color: '#3b82f6', textDecoration: 'underline' }}>
+              Privacy Policy
+            </a>
           </div>
+
+          {/* Development Mode - SECURED: Only show in development environment */}
+          {environmentSecurityService.isDevelopmentFeatureEnabled('developmentLogin') && (
+            <div style={{
+              paddingTop: '1.5rem',
+              borderTop: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <p style={{
+                textAlign: 'center',
+                color: '#bfdbfe',
+                fontSize: '0.875rem',
+                marginBottom: '1rem'
+              }}>
+                Development Mode
+              </p>
+              <button
+                onClick={handleDevelopmentLogin}
+                disabled={isSubmitting}
+                style={{
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #059669, #0d9488)',
+                  color: '#ffffff',
+                  fontWeight: '600',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  opacity: isSubmitting ? 0.5 : 1,
+                  transition: 'all 0.2s ease',
+                  fontSize: '1rem',
+                  marginBottom: '0.5rem'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSubmitting && e.target instanceof HTMLElement) {
+                    e.target.style.background = 'linear-gradient(135deg, #047857, #0f766e)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSubmitting && e.target instanceof HTMLElement) {
+                    e.target.style.background = 'linear-gradient(135deg, #059669, #0d9488)';
+                  }
+                }}
+              >
+                {isSubmitting ? 'Connecting...' : 'Quick Start (Development)'}
+              </button>
+              <p style={{
+                textAlign: 'center',
+                color: '#93c5fd',
+                fontSize: '0.75rem'
+              }}>
+                Skip authentication for development and testing
+              </p>
+            </div>
+          )}
 
           {/* Footer */}
           <div style={{ marginTop: '2rem', textAlign: 'center' }}>
@@ -294,8 +356,16 @@ const LoginPage: React.FC = () => {
                   cursor: 'pointer',
                   fontSize: '0.875rem'
                 }}
-                onMouseEnter={(e) => e.target.style.color = '#93c5fd'}
-                onMouseLeave={(e) => e.target.style.color = '#60a5fa'}
+                onMouseEnter={(e) => {
+                  if (e.target instanceof HTMLElement) {
+                    e.target.style.color = '#93c5fd';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (e.target instanceof HTMLElement) {
+                    e.target.style.color = '#60a5fa';
+                  }
+                }}
               >
                 Sign up here
               </button>
@@ -307,4 +377,10 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage;
+export default LoginPage;// Add getStaticProps for static export
+export async function getStaticProps() {
+  return {
+    props: {},
+  };
+}
+

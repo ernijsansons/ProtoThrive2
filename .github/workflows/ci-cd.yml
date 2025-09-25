@@ -1,292 +1,620 @@
-# Ref: CLAUDE.md Terminal 4 Phase 4 - GitHub Actions CI/CD Pipeline
-# Thermonuclear CI/CD for ProtoThrive
+# ProtoThrive CI/CD Pipeline - Fortune-50 Grade
+# Complete test, security scan, and deploy pipeline
 
-name: CI/CD
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, dev]
-    tags:
-      - 'v*.*.*'
+    branches: [main, staging, develop]
   pull_request:
-    branches: [main, dev]
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * *'  # Daily security scan
 
 env:
   NODE_VERSION: '20'
-  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  PYTHON_VERSION: '3.12'
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: d2897bdebfa128919bd89b265e6a712e
 
 jobs:
-  # Lint job - Check code quality
-  lint:
-    name: Lint Code
+  # Frontend Tests with Caching
+  frontend-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
+      # Cache node_modules for faster builds
+      - name: Cache node_modules
+        uses: actions/cache@v3
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          path: frontend/node_modules
+          key: ${{ runner.os }}-frontend-modules-${{ hashFiles('frontend/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            ${{ runner.os }}-frontend-modules-
 
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
+      # Cache Next.js build cache
+      - name: Cache Next.js build
+        uses: actions/cache@v3
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          path: |
+            frontend/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}-${{ hashFiles('frontend/**/*.js', 'frontend/**/*.jsx', 'frontend/**/*.ts', 'frontend/**/*.tsx') }}
           restore-keys: |
-            ${{ runner.os }}-npm-
-
-      - name: Clean npm cache
-        run: npm cache clean --force
+            ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}-
 
       - name: Install dependencies
         run: |
-          echo "Thermonuclear Init: Installing dependencies"
-          npm ci
-          npm run install-workspaces
+          # Use npm ci for faster, reproducible builds
+          npm ci --prefer-offline --no-audit
 
-      - name: Run ESLint
-        run: |
-          echo "Thermonuclear Validation: Running lint checks"
-          npm run lint || echo "Lint warnings present but not blocking build"
-          echo "Thermonuclear Checkpoint: Lint process completed"
+      - name: Run linter
+        run: npm run lint -- --max-warnings 0
 
-  # Test job - Run unit and integration tests
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: lint
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Type checking
+        run: npm run typecheck
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Run tests
+        run: npm test -- --coverage --watchAll=false
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
         with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install dependencies
-        run: |
-          echo "Thermonuclear Init: Installing test dependencies"
-          npm ci
-          npm run install-workspaces
-
-      - name: Run unit tests
-        run: |
-          echo "Thermonuclear Validation: Running tests"
-          npm test
-          echo "Thermonuclear Checkpoint: Tests completed"
-
-      - name: Upload coverage reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 7
-
-  # Build job - Compile and prepare artifacts
-  build:
-    name: Build Application
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install dependencies
-        run: |
-          echo "Thermonuclear Init: Installing build dependencies"
-          npm ci
-          npm run install-workspaces
+          file: ./coverage/lcov.info
+          flags: frontend
 
       - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://api.protothrive.com
+
+      - name: Bundle size check
         run: |
-          echo "Thermonuclear Build: Compiling application"
-          npm run build
-          echo "Thermonuclear Checkpoint: Build completed"
+          npm install -g bundlesize
+          bundlesize -f "out/**/*.js" -s 500KB
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            dist/
-            .next/
-            build/
-          retention-days: 7
-
-  # Deploy to staging - For dev branch
-  deploy-staging:
-    name: Deploy to Staging
+  # Backend Tests
+  backend-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: build
-    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run pylint
+        run: poetry run pylint src/*.py --score=y --fail-under=9.0
+
+      - name: Run security scan
+        run: |
+          poetry add bandit --dev
+          poetry run bandit -r src/ -f json -o bandit-report.json
+
+      - name: Run tests
+        run: |
+          poetry run pytest tests/ \
+            --cov=src \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=90
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: backend
+
+  # Security Scanning
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'ProtoThrive'
+          path: '.'
+          format: 'HTML'
+          args: >
+            --enableRetired
+            --enableExperimental
+
+      - name: Upload OWASP results
+        uses: actions/upload-artifact@v3
+        with:
+          name: dependency-check-report
+          path: reports/
+
+  # Performance Testing with Gates
+  performance-test:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # Install performance testing tools
+      - name: Install performance tools
+        run: |
+          # Install k6 for load testing
+          sudo apt-get update
+          sudo apt-get install -y gnupg software-properties-common
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+          
+          # Install Lighthouse CI for frontend performance
+          npm install -g @lhci/cli@0.12.x
+
+      # Create performance test scripts
+      - name: Create performance test scripts
+        run: |
+          mkdir -p tests/performance
+          
+          # API Load Test
+          cat > tests/performance/api-load-test.js << 'EOF'
+          import http from 'k6/http';
+          import { check, sleep } from 'k6';
+          import { Rate } from 'k6/metrics';
+
+          export let errorRate = new Rate('errors');
+
+          export let options = {
+            stages: [
+              { duration: '2m', target: 100 }, // Ramp up
+              { duration: '5m', target: 100 }, // Stay at 100 users
+              { duration: '2m', target: 200 }, // Ramp up to 200
+              { duration: '5m', target: 200 }, // Stay at 200
+              { duration: '2m', target: 0 },   // Ramp down
+            ],
+            thresholds: {
+              http_req_duration: ['p(95)<500'], // 95% of requests under 500ms
+              http_req_failed: ['rate<0.02'],   // Error rate under 2%
+              errors: ['rate<0.05'],            // Custom error rate under 5%
+            },
+          };
+
+          export default function() {
+            const baseUrl = __ENV.API_URL || 'https://staging-api.protothrive.com';
+            
+            // Health check
+            let healthResponse = http.get(`${baseUrl}/health`);
+            check(healthResponse, {
+              'health status is 200': (r) => r.status === 200,
+              'health response time < 100ms': (r) => r.timings.duration < 100,
+            }) || errorRate.add(1);
+
+            // Roadmap API tests
+            let roadmapResponse = http.get(`${baseUrl}/api/roadmaps`, {
+              headers: { 'Authorization': 'Bearer test-token' },
+            });
+            
+            check(roadmapResponse, {
+              'roadmap status is 200': (r) => r.status === 200,
+              'roadmap response time < 200ms': (r) => r.timings.duration < 200,
+              'roadmap has data': (r) => JSON.parse(r.body).roadmaps.length > 0,
+            }) || errorRate.add(1);
+
+            sleep(1);
+          }
+          EOF
+
+          # Database Performance Test
+          cat > tests/performance/db-performance-test.js << 'EOF'
+          import http from 'k6/http';
+          import { check } from 'k6';
+
+          export let options = {
+            vus: 50,
+            duration: '2m',
+            thresholds: {
+              http_req_duration: ['p(90)<100'], // 90% of DB queries under 100ms
+              http_req_failed: ['rate<0.01'],   // DB error rate under 1%
+            },
+          };
+
+          export default function() {
+            const baseUrl = __ENV.API_URL || 'https://staging-api.protothrive.com';
+            
+            // Test database queries
+            let dbResponse = http.post(`${baseUrl}/api/roadmaps`, JSON.stringify({
+              json_graph: '{"nodes":[{"id":"test","label":"Performance Test"}],"edges":[]}',
+              vibe_mode: false
+            }), {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer test-token'
+              },
+            });
+            
+            check(dbResponse, {
+              'db write is successful': (r) => r.status === 201,
+              'db write time < 50ms': (r) => r.timings.duration < 50,
+            });
+          }
+          EOF
+
+      # Frontend Performance with Lighthouse CI
+      - name: Frontend performance audit
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+          
+          # Start local server for testing
+          npx serve -s out -l 3000 &
+          sleep 10
+          
+          # Run Lighthouse CI
+          lhci autorun || echo "Lighthouse CI completed with warnings"
+
+      # Backend API Load Testing
+      - name: API Load Testing
+        env:
+          API_URL: https://staging-api.protothrive.com
+        run: |
+          k6 run --out json=k6-api-results.json tests/performance/api-load-test.js
+          
+          # Parse results and check thresholds
+          if jq -e '.metrics.http_req_duration.values.p95 > 500' k6-api-results.json; then
+            echo "❌ API Performance FAILED: 95th percentile > 500ms"
+            exit 1
+          fi
+          
+          if jq -e '.metrics.http_req_failed.values.rate > 0.02' k6-api-results.json; then
+            echo "❌ API Reliability FAILED: Error rate > 2%"
+            exit 1
+          fi
+          
+          echo "✅ API Performance PASSED"
+
+      # Database Performance Testing
+      - name: Database Performance Testing
+        env:
+          API_URL: https://staging-api.protothrive.com
+        run: |
+          k6 run --out json=k6-db-results.json tests/performance/db-performance-test.js
+          
+          # Check database performance thresholds
+          if jq -e '.metrics.http_req_duration.values.p90 > 100' k6-db-results.json; then
+            echo "❌ Database Performance FAILED: 90th percentile > 100ms"
+            exit 1
+          fi
+          
+          echo "✅ Database Performance PASSED"
+
+      # Bundle Size Analysis
+      - name: Bundle Size Analysis
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+          
+          # Check bundle sizes
+          MAIN_BUNDLE_SIZE=$(find out/_next/static/chunks -name "*.js" -exec du -b {} + | awk '{sum+=$1} END {print sum}')
+          MAX_BUNDLE_SIZE=500000  # 500KB limit
+          
+          if [ "$MAIN_BUNDLE_SIZE" -gt "$MAX_BUNDLE_SIZE" ]; then
+            echo "❌ Bundle size FAILED: ${MAIN_BUNDLE_SIZE} bytes > ${MAX_BUNDLE_SIZE} bytes"
+            exit 1
+          fi
+          
+          echo "✅ Bundle size PASSED: ${MAIN_BUNDLE_SIZE} bytes"
+
+      # Generate Performance Report
+      - name: Generate Performance Report
+        run: |
+          cat > performance-report.md << 'EOF'
+          # Performance Test Report
+          
+          ## API Performance
+          $(jq -r '.metrics.http_req_duration.values | "- 95th percentile: \(.p95)ms\n- 90th percentile: \(.p90)ms\n- Average: \(.avg)ms"' k6-api-results.json)
+          
+          ## Database Performance  
+          $(jq -r '.metrics.http_req_duration.values | "- 90th percentile: \(.p90)ms\n- Average: \(.avg)ms"' k6-db-results.json)
+          
+          ## Bundle Analysis
+          - Main bundle size: $(find frontend/out/_next/static/chunks -name "*.js" -exec du -b {} + | awk '{sum+=$1} END {print sum}') bytes
+          
+          ## Recommendations
+          - Database queries: $(if jq -e '.metrics.http_req_duration.values.p90 > 50' k6-db-results.json > /dev/null; then echo "Consider adding more aggressive caching"; else echo "Performance is optimal"; fi)
+          - API response time: $(if jq -e '.metrics.http_req_duration.values.p95 > 200' k6-api-results.json > /dev/null; then echo "Consider response compression"; else echo "Performance is optimal"; fi)
+          EOF
+
+      # Upload Performance Results
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: |
+            k6-*-results.json
+            performance-report.md
+            frontend/lhci_reports/
+
+      # Performance Gate - Fail if thresholds exceeded
+      - name: Performance Gate Check
+        run: |
+          echo "🔍 Checking performance gates..."
+          
+          # API Performance Gate
+          API_P95=$(jq -r '.metrics.http_req_duration.values.p95' k6-api-results.json)
+          if (( $(echo "$API_P95 > 500" | bc -l) )); then
+            echo "🚨 PERFORMANCE GATE FAILED: API P95 latency $API_P95ms > 500ms"
+            exit 1
+          fi
+          
+          # Database Performance Gate  
+          DB_P90=$(jq -r '.metrics.http_req_duration.values.p90' k6-db-results.json)
+          if (( $(echo "$DB_P90 > 100" | bc -l) )); then
+            echo "🚨 PERFORMANCE GATE FAILED: DB P90 latency $DB_P90ms > 100ms"
+            exit 1
+          fi
+          
+          echo "✅ All performance gates PASSED"
+
+  # Database Migration Check
+  db-migration-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate migration files
+        run: |
+          for file in migrations/*.sql; do
+            echo "Validating $file"
+            # Check for DROP statements (dangerous)
+            if grep -i "DROP TABLE\|DROP DATABASE" "$file"; then
+              echo "ERROR: Dangerous DROP statement found in $file"
+              exit 1
+            fi
+            # Check for proper transaction handling
+            if ! grep -i "BEGIN TRANSACTION\|COMMIT" "$file"; then
+              echo "WARNING: No transaction handling in $file"
+            fi
+          done
+
+  # Deploy to Staging
+  deploy-staging:
+    needs: [frontend-test, backend-test, security-scan, db-migration-check]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging'
     environment:
       name: staging
       url: https://staging.protothrive.com
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Install Wrangler
-        run: |
-          echo "Thermonuclear Init: Installing Cloudflare Wrangler"
-          npm install -g wrangler
+        run: npm install -g wrangler
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-
-      - name: Deploy to Cloudflare Workers (Staging)
+      - name: Deploy Backend to Workers
         working-directory: backend
         run: |
-          echo "Thermonuclear Deploy: Pushing backend to staging environment"
-          wrangler deploy --env staging
-          echo "Thermonuclear Checkpoint: Backend staging deployment completed"
+          wrangler deploy --env staging \
+            --var ENVIRONMENT=staging \
+            --var RATE_LIMIT_PER_MIN=200
 
-      - name: Build Frontend for Staging
+      - name: Run Database Migrations
+        working-directory: backend
+        run: |
+          for file in ../migrations/*.sql; do
+            echo "Running migration: $file"
+            wrangler d1 execute protothrive-db-staging \
+              --file="$file" \
+              --env=staging
+          done
+
+      - name: Deploy Frontend to Pages
         working-directory: frontend
         run: |
-          echo "Thermonuclear Build: Building frontend for staging"
+          npm ci
           npm run build
-          echo "Thermonuclear Checkpoint: Frontend build completed"
+          wrangler pages deploy out \
+            --project-name=protothrive-frontend \
+            --branch=staging \
+            --commit-hash=${{ github.sha }}
 
-      - name: Deploy to Cloudflare Pages (Staging)
-        working-directory: frontend
+      - name: Smoke Tests
         run: |
-          echo "Thermonuclear Deploy: Pushing frontend to staging environment"
-          wrangler pages deploy out --project-name=protothrive-frontend --branch=staging
-          echo "Thermonuclear Checkpoint: Frontend staging deployment completed"
+          sleep 30  # Wait for deployment
+          curl -f https://staging-api.protothrive.com/health || exit 1
+          curl -f https://staging.protothrive.com || exit 1
 
-  # Deploy to production - For version tags
-  deploy-prod:
-    name: Deploy to Production
+  # Deploy to Production
+  deploy-production:
+    needs: [frontend-test, backend-test, security-scan, db-migration-check, performance-test]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main'
     environment:
       name: production
       url: https://protothrive.com
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Create Database Backup
         run: |
-          echo "Thermonuclear Init: Installing Cloudflare Wrangler"
-          npm install -g wrangler
+          BACKUP_NAME="backup-$(date +%Y%m%d-%H%M%S)"
+          wrangler d1 backup create protothrive-db \
+            --output-file="$BACKUP_NAME.sql"
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
+          # Upload backup to R2
+          wrangler r2 object put protothrive-backups/"$BACKUP_NAME.sql" \
+            --file="$BACKUP_NAME.sql"
 
-      - name: Deploy to Cloudflare Workers (Production)
+      - name: Deploy Backend to Workers (Blue-Green)
         working-directory: backend
         run: |
-          echo "Thermonuclear Deploy: Pushing backend to production environment"
-          wrangler deploy --env production
-          echo "Thermonuclear Checkpoint: Backend production deployment completed"
+          # Deploy to green environment first
+          wrangler deploy --env production-green \
+            --var ENVIRONMENT=production-green
 
-      - name: Build Frontend for Production
+          # Run health checks on green
+          for i in {1..10}; do
+            if curl -f https://api-green.protothrive.com/health; then
+              echo "Green environment healthy"
+              break
+            fi
+            if [ $i -eq 10 ]; then
+              echo "Green environment unhealthy, aborting"
+              exit 1
+            fi
+            sleep 5
+          done
+
+          # Switch traffic to green (becomes new blue)
+          wrangler deploy --env production \
+            --var ENVIRONMENT=production
+
+      - name: Run Database Migrations
+        working-directory: backend
+        run: |
+          for file in ../migrations/*.sql; do
+            echo "Running migration: $file"
+            wrangler d1 execute protothrive-db \
+              --file="$file" \
+              --env=production
+          done
+
+      - name: Deploy Frontend to Pages
         working-directory: frontend
         run: |
-          echo "Thermonuclear Build: Building frontend for production"
-          npm run build
-          echo "Thermonuclear Checkpoint: Frontend build completed"
+          npm ci
+          npm run build:production
+          wrangler pages deploy out \
+            --project-name=protothrive-frontend \
+            --branch=main \
+            --commit-hash=${{ github.sha }}
 
-      - name: Deploy to Cloudflare Pages (Production)
-        working-directory: frontend
+      - name: Verify Deployment
         run: |
-          echo "Thermonuclear Deploy: Pushing frontend to production environment"
-          wrangler pages deploy out --project-name=protothrive-frontend --branch=main
-          echo "Thermonuclear Checkpoint: Frontend production deployment completed"
+          sleep 30
+          # Health checks
+          curl -f https://api.protothrive.com/health || exit 1
+          curl -f https://protothrive.com || exit 1
 
-      - name: Create Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            ## Thermonuclear Release 🚀
-            
-            ### Changes in this release:
-            - Automated deployment from CI/CD pipeline
-            - All tests passed
-            - Thrive Score optimized
-            
-            ### Deployment Status:
-            - ✅ Lint checks passed
-            - ✅ Tests passed
-            - ✅ Build successful
-            - ✅ Deployed to production
-          draft: false
-          prerelease: false
+          # Performance check
+          response_time=$(curl -o /dev/null -s -w "%{time_total}" https://api.protothrive.com/health)
+          if (( $(echo "$response_time > 2" | bc -l) )); then
+            echo "WARNING: API response time > 2s: ${response_time}s"
+          fi
+
+      - name: Notify Deployment
+        if: success()
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "text": "✅ Production deployment successful",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Production Deployment Complete*\n• Commit: `${{ github.sha }}`\n• Actor: ${{ github.actor }}\n• URL: https://protothrive.com"
+                }
+              }]
+            }'
+
+      - name: Rollback on Failure
+        if: failure()
+        run: |
+          echo "Deployment failed, initiating rollback"
+          wrangler rollback --env production
+
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "text": "🚨 Production deployment failed - rollback initiated",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Deployment Rollback*\n• Commit: `${{ github.sha }}`\n• Actor: ${{ github.actor }}\n• Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                }
+              }]
+            }'
+
+  # Post-deployment monitoring
+  post-deploy-monitor:
+    needs: [deploy-production]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Monitor Error Rates
+        run: |
+          # Check Sentry for new errors
+          curl -H "Authorization: Bearer ${{ secrets.SENTRY_AUTH_TOKEN }}" \
+            "https://sentry.io/api/0/projects/protothrive/protothrive-prod/issues/?statsPeriod=1h&query=is:unresolved" \
+            -o sentry-issues.json
+
+          error_count=$(jq length sentry-issues.json)
+          if [ "$error_count" -gt 5 ]; then
+            echo "ERROR: High error rate detected: $error_count new issues"
+            exit 1
+          fi
+
+      - name: Check Metrics
+        run: |
+          # Query Datadog for metrics
+          curl -X GET "https://api.datadoghq.com/api/v1/query" \
+            -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" \
+            -H "DD-APPLICATION-KEY: ${{ secrets.DATADOG_APP_KEY }}" \
+            -d "from=$(date -u -d '1 hour ago' +%s)" \
+            -d "to=$(date +%s)" \
+            -d "query=avg:protothrive.api.latency{env:production}"

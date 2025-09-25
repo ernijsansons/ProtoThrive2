@@ -1,0 +1,262 @@
+# ProtoThrive Datadog Monitoring Configuration
+# Ref: CLAUDE.md DevOps Terminal - Monitoring Setup
+
+# Application Performance Monitoring
+service: protothrive
+version: 1.0.0
+env: production
+
+# Log Configuration
+logs:
+  - type: http
+    port: 8080
+    service: protothrive-api
+    source: cloudflare-workers
+    
+  - type: http
+    port: 3000
+    service: protothrive-frontend
+    source: nextjs
+
+# Metrics Configuration
+metrics:
+  # Application Metrics
+  - name: protothrive.api.requests_total
+    type: counter
+    description: Total number of API requests
+    tags:
+      - method
+      - status_code
+      - endpoint
+      
+  - name: protothrive.api.request_duration
+    type: histogram
+    description: API request duration in milliseconds
+    tags:
+      - method
+      - endpoint
+      
+  - name: protothrive.api.error_rate
+    type: gauge
+    description: API error rate percentage
+    tags:
+      - service
+      - environment
+      
+  # Performance Metrics (Validating Performance Optimizer work)
+  - name: protothrive.performance.bundle_size
+    type: gauge
+    description: Frontend bundle size in bytes
+    target: 1200000  # 1.2MB target achieved by Performance Optimizer
+    
+  - name: protothrive.performance.first_contentful_paint
+    type: histogram
+    description: First Contentful Paint time in milliseconds
+    target: 1200  # 1.2s target achieved by Performance Optimizer
+    
+  - name: protothrive.performance.memory_usage
+    type: gauge
+    description: Memory usage in MB
+    target: 50  # 50MB target achieved by Performance Optimizer
+    
+  # Security Metrics (Validating Security Engineer work)
+  - name: protothrive.security.xss_attempts
+    type: counter
+    description: XSS attack attempts blocked
+    tags:
+      - source_ip
+      - user_agent
+      
+  - name: protothrive.security.csrf_failures
+    type: counter
+    description: CSRF token validation failures
+    
+  - name: protothrive.security.auth_failures
+    type: counter
+    description: Authentication failures
+    tags:
+      - reason
+      - user_id
+      
+  # Accessibility Metrics (Validating Accessibility Specialist work)
+  - name: protothrive.accessibility.wcag_compliance_score
+    type: gauge
+    description: WCAG compliance score percentage
+    target: 95  # 95% target achieved by Accessibility Specialist
+    
+  - name: protothrive.accessibility.keyboard_navigation_success
+    type: gauge
+    description: Keyboard navigation success rate
+    target: 98  # 98% target achieved by Accessibility Specialist
+    
+  # User Experience Metrics
+  - name: protothrive.ux.task_completion_rate
+    type: gauge
+    description: Task completion rate percentage
+    
+  - name: protothrive.ux.page_load_time
+    type: histogram
+    description: Page load time in milliseconds
+    
+  - name: protothrive.ux.bounce_rate
+    type: gauge
+    description: User bounce rate percentage
+
+# Alerts Configuration
+alerts:
+  # Performance Alerts
+  - name: High API Latency
+    query: avg(last_5m):avg:protothrive.api.request_duration{*} > 500
+    message: |
+      🚨 API latency is above 500ms threshold
+      Performance Optimizer target: <200ms
+      Current: {{value}}ms
+      @channel
+    tags:
+      - performance
+      - critical
+      
+  - name: Bundle Size Exceeded
+    query: last_value:protothrive.performance.bundle_size{*} > 1200000
+    message: |
+      📦 Bundle size exceeded Performance Optimizer target
+      Target: 1.2MB
+      Current: {{value}} bytes
+      @performance-team
+    tags:
+      - performance
+      - warning
+      
+  # Security Alerts
+  - name: XSS Attack Detected
+    query: sum(last_15m):sum:protothrive.security.xss_attempts{*} > 10
+    message: |
+      🛡️ Multiple XSS attempts detected
+      Security Engineer protections active
+      Attempts: {{value}} in 15 minutes
+      @security-team
+    tags:
+      - security
+      - critical
+      
+  - name: CSRF Attack Detected
+    query: sum(last_15m):sum:protothrive.security.csrf_failures{*} > 5
+    message: |
+      🔒 CSRF attack attempts detected
+      CSRF protection working as expected
+      Failures: {{value}} in 15 minutes
+      @security-team
+    tags:
+      - security
+      - high
+      
+  # Accessibility Alerts
+  - name: Accessibility Compliance Drop
+    query: last_value:protothrive.accessibility.wcag_compliance_score{*} < 90
+    message: |
+      ♿ WCAG compliance score dropped below threshold
+      Target: 95% (Accessibility Specialist)
+      Current: {{value}}%
+      @accessibility-team
+    tags:
+      - accessibility
+      - warning
+      
+  # Application Health Alerts
+  - name: High Error Rate
+    query: avg(last_10m):avg:protothrive.api.error_rate{*} > 5
+    message: |
+      ❌ High error rate detected
+      Error rate: {{value}}%
+      Threshold: 5%
+      @on-call
+    tags:
+      - reliability
+      - critical
+      
+  - name: Service Down
+    query: avg(last_5m):avg:protothrive.api.requests_total{*}.as_rate() < 1
+    message: |
+      🚨 Service appears to be down
+      No requests in last 5 minutes
+      @on-call @channel
+    tags:
+      - availability
+      - critical
+
+# Dashboard Configuration
+dashboards:
+  - name: ProtoThrive Application Overview
+    widgets:
+      - title: API Request Rate
+        type: timeseries
+        query: sum:protothrive.api.requests_total{*}.as_rate()
+        
+      - title: API Latency (P95)
+        type: timeseries
+        query: p95:protothrive.api.request_duration{*}
+        
+      - title: Error Rate
+        type: timeseries
+        query: avg:protothrive.api.error_rate{*}
+        
+      - title: Bundle Size Trend
+        type: timeseries
+        query: avg:protothrive.performance.bundle_size{*}
+        
+      - title: Security Events
+        type: timeseries
+        query: sum:protothrive.security.xss_attempts{*}.as_rate()
+        
+      - title: WCAG Compliance Score
+        type: gauge
+        query: last_value:protothrive.accessibility.wcag_compliance_score{*}
+
+# SLO Configuration
+slos:
+  - name: API Availability
+    description: API should be available 99.9% of the time
+    target: 99.9
+    query: sum:protothrive.api.requests_total{status_code:200}.as_rate() / sum:protothrive.api.requests_total{*}.as_rate() * 100
+    
+  - name: API Latency
+    description: 95% of API requests should complete within 200ms
+    target: 95
+    query: p95:protothrive.api.request_duration{*} < 200
+    
+  - name: Performance Budget
+    description: Bundle size should stay under 1.2MB
+    target: 100
+    query: last_value:protothrive.performance.bundle_size{*} < 1200000
+    
+  - name: Security Protection
+    description: XSS and CSRF attacks should be blocked
+    target: 99.9
+    query: (sum:protothrive.security.xss_attempts{*} + sum:protothrive.security.csrf_failures{*}) / sum:protothrive.api.requests_total{*} * 100 < 0.1
+    
+  - name: Accessibility Compliance
+    description: WCAG compliance should stay above 90%
+    target: 90
+    query: last_value:protothrive.accessibility.wcag_compliance_score{*} > 90
+
+# Custom Metrics for Agent Validation
+agent_validation_metrics:
+  security_engineer:
+    - xss_protection_active: protothrive.security.xss_attempts
+    - csrf_protection_active: protothrive.security.csrf_failures
+    - environment_security_enabled: protothrive.security.dev_login_blocked
+    
+  performance_optimizer:
+    - bundle_size_optimized: protothrive.performance.bundle_size
+    - first_contentful_paint: protothrive.performance.first_contentful_paint
+    - memory_usage_optimized: protothrive.performance.memory_usage
+    
+  accessibility_specialist:
+    - wcag_compliance: protothrive.accessibility.wcag_compliance_score
+    - keyboard_navigation: protothrive.accessibility.keyboard_navigation_success
+    - touch_target_compliance: protothrive.accessibility.touch_target_compliance
+    
+  refactor_specialist:
+    - typescript_compilation_success: protothrive.build.typescript_errors
+    - build_success_rate: protothrive.build.success_rate
+    - test_coverage: protothrive.build.test_coverage

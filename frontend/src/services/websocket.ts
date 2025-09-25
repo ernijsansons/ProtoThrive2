@@ -2,10 +2,45 @@
 import { AIFeedback } from '../components/AIFeedbackEngine';
 
 export interface WebSocketMessage {
-  type: 'ai_feedback' | 'progress_update' | 'insight' | 'notification' | 'ping' | 'pong';
+  type: 'ai_feedback' | 'progress_update' | 'insight' | 'notification' | 'collaboration' | 'ping' | 'pong' | 'node_update' | 'edge_update' | 'cursor_move' | 'user_join' | 'user_leave' | 'chat_message' | 'roadmap_lock' | 'roadmap_unlock';
   payload: any;
   timestamp: number;
   id: string;
+}
+
+export interface CollaborationEvent {
+  type: 'node_update' | 'edge_update' | 'cursor_move' | 'user_join' | 'user_leave' | 'chat_message' | 'roadmap_lock' | 'roadmap_unlock';
+  userId: string;
+  userName: string;
+  timestamp: number;
+  data: any;
+  roomId: string;
+}
+
+export interface CollaborationUser {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  cursor?: {
+    x: number;
+    y: number;
+  };
+  lastSeen: number;
+  role: 'owner' | 'editor' | 'viewer';
+  color: string;
+}
+
+export interface CollaborationRoom {
+  id: string;
+  roadmapId: string;
+  name: string;
+  users: CollaborationUser[];
+  isLocked: boolean;
+  lockedBy?: string;
+  lockTimestamp?: number;
+  createdAt: number;
+  lastActivity: number;
 }
 
 export interface WebSocketConfig {
@@ -139,6 +174,126 @@ export class WebSocketService {
 
   isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  // Collaboration methods
+  sendCollaborationEvent(event: CollaborationEvent): boolean {
+    return this.send({
+      type: event.type as any,
+      payload: event
+    });
+  }
+
+  joinCollaborationRoom(roomId: string, user: CollaborationUser): boolean {
+    const joinEvent: CollaborationEvent = {
+      type: 'user_join',
+      userId: user.id,
+      userName: user.name,
+      timestamp: Date.now(),
+      data: { user, roomId },
+      roomId
+    };
+
+    if (this.config.debug) {
+      console.log('Joining collaboration room:', roomId, user.name);
+    }
+
+    return this.sendCollaborationEvent(joinEvent);
+  }
+
+  leaveCollaborationRoom(roomId: string, user: CollaborationUser): boolean {
+    const leaveEvent: CollaborationEvent = {
+      type: 'user_leave',
+      userId: user.id,
+      userName: user.name,
+      timestamp: Date.now(),
+      data: { roomId },
+      roomId
+    };
+
+    if (this.config.debug) {
+      console.log('Leaving collaboration room:', roomId, user.name);
+    }
+
+    return this.sendCollaborationEvent(leaveEvent);
+  }
+
+  sendNodeUpdate(roomId: string, user: CollaborationUser, nodeId: string, nodeData: any): boolean {
+    const updateEvent: CollaborationEvent = {
+      type: 'node_update',
+      userId: user.id,
+      userName: user.name,
+      timestamp: Date.now(),
+      data: { nodeId, nodeData },
+      roomId
+    };
+
+    return this.sendCollaborationEvent(updateEvent);
+  }
+
+  sendEdgeUpdate(roomId: string, user: CollaborationUser, edgeId: string, edgeData: any): boolean {
+    const updateEvent: CollaborationEvent = {
+      type: 'edge_update',
+      userId: user.id,
+      userName: user.name,
+      timestamp: Date.now(),
+      data: { edgeId, edgeData },
+      roomId
+    };
+
+    return this.sendCollaborationEvent(updateEvent);
+  }
+
+  sendCursorMove(roomId: string, user: CollaborationUser, x: number, y: number): boolean {
+    const cursorEvent: CollaborationEvent = {
+      type: 'cursor_move',
+      userId: user.id,
+      userName: user.name,
+      timestamp: Date.now(),
+      data: { x, y },
+      roomId
+    };
+
+    return this.sendCollaborationEvent(cursorEvent);
+  }
+
+  sendChatMessage(roomId: string, user: CollaborationUser, message: string): boolean {
+    const chatEvent: CollaborationEvent = {
+      type: 'chat_message',
+      userId: user.id,
+      userName: user.name,
+      timestamp: Date.now(),
+      data: { message },
+      roomId
+    };
+
+    return this.sendCollaborationEvent(chatEvent);
+  }
+
+  lockRoadmap(roomId: string, user: CollaborationUser): boolean {
+    const lockEvent: CollaborationEvent = {
+      type: 'roadmap_lock',
+      userId: user.id,
+      userName: user.name,
+      timestamp: Date.now(),
+      data: { lockedBy: user.id },
+      roomId
+    };
+
+    return this.sendCollaborationEvent(lockEvent);
+  }
+
+  unlockRoadmap(roomId: string, user: CollaborationUser): boolean {
+    const unlockEvent: CollaborationEvent = {
+      type: 'roadmap_unlock',
+      userId: user.id,
+      userName: user.name,
+      timestamp: Date.now(),
+      data: { unlockedBy: user.id },
+      roomId
+    };
+
+    return this.sendCollaborationEvent(unlockEvent);
   }
 
   private setupEventListeners(): void {
