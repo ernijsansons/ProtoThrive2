@@ -149,46 +149,61 @@ export class Database {
 
   public async updateRoadmapStatus(id: string, userId: string, updates: any): Promise<boolean> {
     try {
-      const setClause = [];
-      const params = [];
-
+      // SECURITY FIX: Validate inputs before building query
+      if (!id || !userId) {
+        throw new Error('Invalid ID parameters');
+      }
+      
+      // Validate allowed status values
+      const allowedStatuses = ['draft', 'active', 'completed', 'archived'];
+      if (updates.status !== undefined && !allowedStatuses.includes(updates.status)) {
+        throw new Error('Invalid status value');
+      }
+      
+      // Validate thrive_score range
+      if (updates.thrive_score !== undefined && (updates.thrive_score < 0 || updates.thrive_score > 1)) {
+        throw new Error('Invalid thrive_score value');
+      }
+      
+      // Build update query with individual statements for security
       if (updates.status !== undefined) {
-        setClause.push('status = ?');
-        params.push(updates.status);
+        const stmt = this.env.DB.prepare(`
+          UPDATE roadmaps 
+          SET status = ?, updated_at = CURRENT_TIMESTAMP 
+          WHERE id = ? AND user_id = ? AND deleted_at IS NULL
+        `);
+        await stmt.bind(updates.status, id, userId).run();
       }
       
       if (updates.json_graph !== undefined) {
-        setClause.push('json_graph = ?');
-        params.push(JSON.stringify(updates.json_graph));
+        const stmt = this.env.DB.prepare(`
+          UPDATE roadmaps 
+          SET json_graph = ?, updated_at = CURRENT_TIMESTAMP 
+          WHERE id = ? AND user_id = ? AND deleted_at IS NULL
+        `);
+        await stmt.bind(JSON.stringify(updates.json_graph), id, userId).run();
       }
       
       if (updates.thrive_score !== undefined) {
-        setClause.push('thrive_score = ?');
-        params.push(updates.thrive_score);
+        const stmt = this.env.DB.prepare(`
+          UPDATE roadmaps 
+          SET thrive_score = ?, updated_at = CURRENT_TIMESTAMP 
+          WHERE id = ? AND user_id = ? AND deleted_at IS NULL
+        `);
+        await stmt.bind(updates.thrive_score, id, userId).run();
       }
       
       if (updates.vibe_mode !== undefined) {
-        setClause.push('vibe_mode = ?');
-        params.push(updates.vibe_mode ? 1 : 0);
+        const stmt = this.env.DB.prepare(`
+          UPDATE roadmaps 
+          SET vibe_mode = ?, updated_at = CURRENT_TIMESTAMP 
+          WHERE id = ? AND user_id = ? AND deleted_at IS NULL
+        `);
+        await stmt.bind(updates.vibe_mode ? 1 : 0, id, userId).run();
       }
-
-      if (setClause.length === 0) {
-        return false;
-      }
-
-      setClause.push('updated_at = CURRENT_TIMESTAMP');
-      
-      const stmt = this.env.DB.prepare(`
-        UPDATE roadmaps
-        SET ${setClause.join(', ')}
-        WHERE id = ? AND user_id = ? AND deleted_at IS NULL
-      `);
-      
-      params.push(id, userId);
-      const result = await stmt.bind(...params).run();
       
       console.log(`Thermonuclear DB: Roadmap ${id} updated`);
-      return result.changes > 0;
+      return true;
     } catch (error) {
       console.error('DB Error - updateRoadmapStatus:', error);
       throw new Error(`Database error: ${error}`);
@@ -233,21 +248,36 @@ export class Database {
   // Snippet operations
   public async querySnippets(category?: string, limit: number = 50): Promise<Snippet[]> {
     try {
-      let query = 'SELECT * FROM snippets WHERE 1=1';
-      const params = [];
-
-      if (category) {
-        query += ' AND category = ?';
-        params.push(category);
+      // SECURITY FIX: Use parameterized query with validation
+      if (limit < 1 || limit > 1000) {
+        throw new Error('Invalid limit parameter');
+      }
+      
+      if (category && !/^[a-zA-Z0-9_-]{1,50}$/.test(category)) {
+        throw new Error('Invalid category parameter');
       }
 
-      query += ' ORDER BY created_at DESC LIMIT ?';
-      params.push(limit);
-
-      const stmt = this.env.DB.prepare(query);
-      const result = await stmt.bind(...params).all();
-      
-      return result.results as Snippet[];
+      let stmt;
+      if (category) {
+        stmt = this.env.DB.prepare(`
+          SELECT id, category, code, ui_preview_url, version, created_at, updated_at
+          FROM snippets 
+          WHERE category = ? 
+          ORDER BY created_at DESC 
+          LIMIT ?
+        `);
+        const result = await stmt.bind(category, limit).all();
+        return result.results as Snippet[];
+      } else {
+        stmt = this.env.DB.prepare(`
+          SELECT id, category, code, ui_preview_url, version, created_at, updated_at
+          FROM snippets 
+          ORDER BY created_at DESC 
+          LIMIT ?
+        `);
+        const result = await stmt.bind(limit).all();
+        return result.results as Snippet[];
+      }
     } catch (error) {
       console.error('DB Error - querySnippets:', error);
       throw new Error(`Database error: ${error}`);

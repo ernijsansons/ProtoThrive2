@@ -9,13 +9,17 @@ ProtoThrive is a full-stack AI platform for interactive roadmap management. It c
 - **Automation & Observability:** Budget logs, agent traces, validation summaries, and governance-ready metrics for cost/quality review.
 
 ## Repository Layout
-`
-backend/             Cloudflare Workers (Python) backend
-frontend/            Next.js frontend
-enterprise-agent/    Enterprise Coding Agent v3.4 CLI and orchestration
-src/core/            Lightweight orchestrator (legacy fallback agent)
-src/utils/           Shared validation utilities
-`
+```
+backend/             Cloudflare Workers (TypeScript) backend with Hono framework
+frontend/            Next.js frontend with Tailwind CSS and Zustand state management
+protothrive-deploy/  Production deployment version with optimized components
+enterprise-agent/    Enterprise Coding Agent v3.4 CLI and multi-domain orchestration
+ai-core/            Python AI orchestration with LangChain and CrewAI
+automation/         n8n workflow automation and CI/CD scripts
+docs/               Comprehensive documentation (API, components, deployment guides)
+scripts/            Deployment and utility scripts for multiple environments
+security/           Security configurations and compliance tools
+```
 
 ## Production Deployment Status 🚀
 
@@ -133,4 +137,19 @@ pm run build + Cloudflare Pages deploy for the frontend (rontend/deploy-cloudfl
 - Re-enable roadmap integration testing with backend-connected mocks.
 - Add CI pipelines (GitHub Actions) for lint/tests/backend smoke + cost guardrail checks.
 
-For more detail on the Enterprise Agent, see enterprise-agent/README.md.
+## 📚 Complete Documentation
+
+### Core Documentation
+- **[API Documentation](docs/API_DOCUMENTATION.md)** - Complete REST API reference with authentication, endpoints, and error codes
+- **[Component Documentation](docs/COMPONENT_DOCUMENTATION.md)** - React components, props, usage examples, and testing guides
+- **[Backend Architecture](docs/BACKEND_ARCHITECTURE.md)** - Serverless architecture, database schema, security, and performance optimization
+- **[Enterprise Agent Integration](docs/ENTERPRISE_AGENT_INTEGRATION.md)** - Multi-domain AI orchestration, cost management, and safety features
+- **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Cloudflare Workers, Docker containers, and hybrid deployment options
+- **[Troubleshooting & FAQ](docs/TROUBLESHOOTING_FAQ.md)** - Common issues, debugging procedures, and emergency response
+
+### Quick Links
+- **Enterprise Agent Details**: [enterprise-agent/README.md](enterprise-agent/README.md)
+- **Frontend Components**: [protothrive-deploy/src/components/](protothrive-deploy/src/components/)
+- **Database Schema**: [backend/migrations/001_init.sql](backend/migrations/001_init.sql)
+- **Deployment Scripts**: [scripts/](scripts/)
+- **Security Configuration**: [security/](security/)

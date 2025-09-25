@@ -17,7 +17,8 @@ import ReactFlow, {
   MarkerType
 } from 'reactflow';
 import { useStore } from '../store';
-import { InputValidator } from '../utils/security';
+import { InputValidator } from '../utils/security-enhanced';
+import { useThrottledCallback, PerformanceMonitor, MemoryManager } from '../utils/performance';
 import ReactFlowAccessibility from './ReactFlowAccessibility';
 import Spline3DAccessibility from './Spline3DAccessibility';
 import 'reactflow/dist/style.css';
@@ -154,9 +155,9 @@ const MagicCanvas: React.FC<MagicCanvasProps> = ({ onNodeUpdate, onEdgeUpdate, c
     return () => observer.disconnect();
   }, [visibleNodes, rfNodes]);
 
-  // Keyboard navigation with throttling
-  const throttledKeyHandler = useCallback(
-    throttle((e: KeyboardEvent) => {
+  // Keyboard navigation with optimized throttling
+  const throttledKeyHandler = useThrottledCallback(
+    (e: KeyboardEvent) => {
       if (e.key === 'Tab') {
         return;
       }
@@ -175,7 +176,8 @@ const MagicCanvas: React.FC<MagicCanvasProps> = ({ onNodeUpdate, onEdgeUpdate, c
           );
         }
       }
-    }, 100),
+    },
+    100,
     [setNodes]
   );
 
@@ -184,27 +186,17 @@ const MagicCanvas: React.FC<MagicCanvasProps> = ({ onNodeUpdate, onEdgeUpdate, c
     return () => document.removeEventListener('keydown', throttledKeyHandler);
   }, [throttledKeyHandler]);
 
-// Throttle utility function
-function throttle<T extends (...args: any[]) => any>(
-  func: T,
-  delay: number
-): (...args: Parameters<T>) => void {
-  let timeoutId: NodeJS.Timeout | null = null;
-  let lastExecTime = 0;
-  return (...args: Parameters<T>) => {
-    const currentTime = Date.now();
-    if (currentTime - lastExecTime > delay) {
-      func(...args);
-      lastExecTime = currentTime;
-    } else {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        func(...args);
-        lastExecTime = Date.now();
-      }, delay - (currentTime - lastExecTime));
-    }
-  };
-}
+  // Component cleanup on unmount
+  useEffect(() => {
+    const componentRef = {};
+    MemoryManager.addCleanupListener(componentRef, () => {
+      console.log('MagicCanvas: Cleaning up resources');
+    });
+
+    return () => {
+      MemoryManager.cleanup(componentRef);
+    };
+  }, []);
 
   // Error boundary for 3D crashes
   const handle3DError = () => {

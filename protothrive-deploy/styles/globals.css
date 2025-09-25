@@ -1,3 +1,243 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Enhanced base styles for better accessibility and modern defaults */
+@layer base {
+  /* Improved focus management for accessibility */
+  *:focus-visible {
+    outline: 2px solid theme('colors.primary.500');
+    outline-offset: 2px;
+  }
+
+  /* Better text rendering */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Root variables for consistent theming */
+  :root {
+    --color-primary: theme('colors.primary.500');
+    --color-neon-cyan: theme('colors.neon.cyan');
+    --color-surface: theme('colors.white');
+    --color-on-surface: theme('colors.gray.900');
+    --shadow-soft: theme('boxShadow.soft');
+    --border-radius: theme('borderRadius.md');
+  }
+
+  /* Dark theme variables */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-surface: theme('colors.gray.900');
+      --color-on-surface: theme('colors.gray.100');
+    }
+  }
+
+  /* Enhanced typography */
+  html {
+    scroll-behavior: smooth;
+    font-feature-settings: 'kern' 1;
+  }
+
+  body {
+    @apply text-base leading-relaxed text-gray-900 bg-white;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1, 'pnum' 1, 'tnum' 0, 'onum' 1, 'lnum' 0, 'dlig' 0;
+  }
+
+  /* Better heading hierarchy */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+    scroll-margin-top: 2rem;
+  }
+
+  h1 { @apply text-4xl leading-tight; }
+  h2 { @apply text-3xl leading-tight; }
+  h3 { @apply text-2xl leading-snug; }
+  h4 { @apply text-xl leading-snug; }
+  h5 { @apply text-lg; }
+  h6 { @apply text-base font-medium; }
+
+  /* Better link styles */
+  a {
+    @apply text-primary-600 hover:text-primary-700 transition-colors duration-150;
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+
+  /* Remove default margins and improve form elements */
+  p, blockquote, dl, dd, h1, h2, h3, h4, h5, h6, hr, figure, pre {
+    margin: 0;
+  }
+
+  /* Better button reset */
+  button {
+    @apply font-inherit cursor-pointer;
+  }
+
+  /* Improved table styles */
+  table {
+    @apply w-full border-collapse;
+  }
+
+  /* Better form input styles */
+  input, textarea, select {
+    @apply font-inherit;
+  }
+
+  /* Accessibility improvements for reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    :root {
+      --color-primary: #000080;
+    }
+  }
+
+  /* Print styles */
+  @media print {
+    * {
+      background: white !important;
+      color: black !important;
+      box-shadow: none !important;
+    }
+    
+    a, a:visited {
+      text-decoration: underline;
+    }
+    
+    @page {
+      margin: 0.5in;
+    }
+  }
+}
+
+/* Enhanced component styles */
+@layer components {
+  /* Loading states */
+  .loading {
+    @apply animate-pulse bg-gray-200 rounded;
+  }
+  
+  .loading-dark {
+    @apply animate-pulse bg-gray-700 rounded;
+  }
+
+  /* Skip links for accessibility */
+  .skip-link {
+    @apply sr-only-focusable absolute top-0 left-0 z-50 bg-primary-600 text-white px-4 py-2 rounded-br-md;
+  }
+
+  /* Enhanced focus rings */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2;
+  }
+
+  /* Container utilities */
+  .container-fluid {
+    @apply w-full px-4 mx-auto;
+  }
+
+  .container-sm {
+    @apply max-w-2xl mx-auto px-4;
+  }
+
+  .container-lg {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Responsive text utilities */
+  .text-responsive {
+    @apply text-sm md:text-base lg:text-lg;
+  }
+
+  /* Neon-themed components for the ProtoThrive aesthetic */
+  .neon-button {
+    @apply bg-transparent border-2 border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-gray-900 transition-all duration-300;
+    box-shadow: 0 0 5px theme('colors.neon.cyan');
+  }
+
+  .neon-button:hover {
+    box-shadow: 0 0 15px theme('colors.neon.cyan'), 0 0 25px theme('colors.neon.cyan');
+  }
+
+  .neon-card {
+    @apply bg-gray-900 border border-neon-cyan rounded-lg p-6;
+    box-shadow: 0 0 10px theme('colors.neon.cyan');
+  }
+
+  /* Animation utilities */
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Utility layer enhancements */
+@layer utilities {
+  /* Accessibility utilities */
+  .visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  /* Custom scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.gray.300') transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: theme('colors.gray.300');
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: theme('colors.gray.400');
+  }
+
+  /* Text balance for better typography */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Better gradient text */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent;
+  }
+}

@@ -4,6 +4,7 @@ import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, Circle, Sparkles } from 'lucide-react';
+import Image from 'next/image';
 
 interface CustomNodeData {
   label: string;
@@ -49,10 +50,13 @@ export const CustomNode = memo(({ data, selected }: NodeProps<CustomNodeData>) =
 
       {data.uiPreview && (
         <div className="mt-2 p-2 bg-black/20 rounded">
-          <img
+          <Image
             src={data.uiPreview}
             alt="UI Preview"
+            width={200}
+            height={80}
             className="w-full h-20 object-cover rounded"
+            unoptimized
           />
         </div>
       )}

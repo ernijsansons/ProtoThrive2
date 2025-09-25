@@ -16,7 +16,7 @@ import {
   calculateThriveScore,
   createDummyData,
   validateMocks
-} from '../utils/mocks';
+} from './utils/mocks';
 import { ThermonuclearDatabase, createDatabase, mockDbQuery as dbMock } from './utils/db';
 
 // Mock environment for testing

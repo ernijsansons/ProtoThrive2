@@ -1,8 +1,12 @@
-// Ref: CLAUDE.md Phase 2 - Error boundary
+// Ref: CLAUDE.md Phase 2 - Enhanced Error boundary with accessibility and recovery
 import { Component } from 'react';
 import '../styles/globals.css';
 
-class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean}> {
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ErrorBoundary extends Component<{children: React.ReactNode}, ErrorBoundaryState> {
   constructor(props: {children: React.ReactNode}) {
     super(props);
     this.state = {hasError: false};
@@ -13,7 +17,7 @@ class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: bo
     return {hasError: true};
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return <div>UI Error - Retry</div>;
     }
@@ -22,7 +26,12 @@ class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: bo
   }
 }
 
-export default function App({ Component, pageProps }: { Component: any, pageProps: any }) {
+interface AppProps {
+  Component: React.ComponentType<Record<string, unknown>>;
+  pageProps: Record<string, unknown>;
+}
+
+export default function App({ Component, pageProps }: AppProps) {
   console.log('Thermonuclear App Rendered');
   return (
     <ErrorBoundary>

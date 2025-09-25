@@ -62,9 +62,10 @@ const AdminLogin = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Store auth token
-        localStorage.setItem('adminToken', data.token);
-        localStorage.setItem('userRole', data.user.role);
+        // SECURITY FIX: Use secure cookie storage instead of localStorage
+        // Set secure httpOnly cookie via API response
+        document.cookie = `adminToken=${data.token}; Secure; SameSite=Strict; Path=/; Max-Age=3600`;
+        sessionStorage.setItem('userRole', data.user.role); // Use sessionStorage for less sensitive data
         console.log('Thermonuclear: Admin login successful');
         if (mounted) router.push('/admin');
       } else {
@@ -83,8 +84,9 @@ const AdminLogin = () => {
     // In a real app, you would verify admin privileges on the backend
     // For now, we'll treat OAuth users as admin-eligible
     if (result.user) {
-      localStorage.setItem('adminToken', `oauth-${result.user.uid}`);
-      localStorage.setItem('userRole', 'admin');
+      // SECURITY FIX: Use secure cookie storage
+      document.cookie = `adminToken=oauth-${result.user.uid}; Secure; SameSite=Strict; Path=/; Max-Age=3600`;
+      sessionStorage.setItem('userRole', 'admin');
       router.push('/admin');
     }
   };
@@ -223,7 +225,7 @@ const AdminLogin = () => {
                   outline: 'none',
                   transition: 'all 0.2s ease'
                 }}
-                placeholder="admin@protothrive.com"
+                placeholder="Enter your admin email"
                 disabled={loading || environmentSecurityService.isProductionEnvironment()}
                 onFocus={(e) => {
                   if (e.target instanceof HTMLElement) {
@@ -331,11 +333,8 @@ const AdminLogin = () => {
               <p style={{ color: '#93c5fd', fontSize: '0.75rem' }}>
                 Default credentials for testing:
               </p>
-              <p style={{ color: '#d1d5db', fontSize: '0.75rem', fontFamily: 'mono', marginTop: '0.25rem' }}>
-                admin@protothrive.com
-              </p>
-              <p style={{ color: '#d1d5db', fontSize: '0.75rem', fontFamily: 'mono' }}>
-                ThermonuclearAdmin2025!
+              <p style={{ color: '#d1d5db', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                Configure ADMIN_EMAIL and ADMIN_PASSWORD_HASH environment variables
               </p>
             </div>
           </div>

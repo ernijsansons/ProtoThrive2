@@ -25,30 +25,275 @@ type Variables = {
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// Middleware
-app.use('*', cors({
-  origin: ['http://localhost:3000', 'http://localhost:5000', 'https://protothrive.com'],
-  credentials: true,
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'X-User-ID'],
-}));
-
-// Mock auth middleware (in production, use proper JWT validation)
-app.use('/api/*', async (c, next) => {
-  const authHeader = c.req.header('Authorization');
+// SECURITY FIX: Enhanced CORS configuration with environment-based origins
+app.use('*', async (c, next) => {
+  const origin = c.req.header('Origin');
+  const environment = c.env?.ENVIRONMENT || 'development';
   
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    // For development, use mock auth
-    c.set('user', { id: 'uuid-thermo-1', role: 'vibe_coder' });
+  let allowedOrigins: string[] = [];
+  
+  if (environment === 'production') {
+    allowedOrigins = [
+      'https://protothrive.com',
+      'https://www.protothrive.com',
+      'https://app.protothrive.com'
+    ];
+  } else if (environment === 'staging') {
+    allowedOrigins = [
+      'https://staging.protothrive.com',
+      'http://localhost:3000',
+      'http://localhost:5000'
+    ];
   } else {
-    // In production, validate JWT here
-    const token = authHeader.replace('Bearer ', '');
-    c.set('user', { id: token, role: 'vibe_coder' }); // Mock validation
+    // Development
+    allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5000',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5000'
+    ];
   }
   
-  console.log('Thermonuclear Auth: User authenticated');
+  // Validate origin
+  if (origin && !allowedOrigins.includes(origin)) {
+    console.warn('CORS: Blocked request from unauthorized origin:', origin);
+    return c.json({ error: 'CORS policy violation' }, 403);
+  }
+  
+  // Set CORS headers
+  if (origin && allowedOrigins.includes(origin)) {
+    c.res.headers.set('Access-Control-Allow-Origin', origin);
+  }
+  
+  c.res.headers.set('Access-Control-Allow-Credentials', 'true');
+  c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With');
+  c.res.headers.set('Access-Control-Max-Age', '86400'); // 24 hours
+  
+  // Handle preflight requests
+  if (c.req.method === 'OPTIONS') {
+    return c.text('', 204);
+  }
+  
   await next();
 });
+
+// SECURITY FIX: Add security headers to all responses
+app.use('*', async (c, next) => {
+  await next();
+  
+  // Set security headers
+  c.res.headers.set('X-Content-Type-Options', 'nosniff');
+  c.res.headers.set('X-Frame-Options', 'DENY');
+  c.res.headers.set('X-XSS-Protection', '1; mode=block');
+  c.res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  c.res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  
+  // Only add HSTS in production with HTTPS
+  const environment = c.env?.ENVIRONMENT || 'development';
+  if (environment === 'production') {
+    c.res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    c.res.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none';");
+  }
+});
+
+// Secure authentication middleware with proper JWT validation
+app.use('/api/*', async (c, next) => {
+  const authHeader = c.req.header('Authorization');
+  const environment = c.env?.ENVIRONMENT || 'development';
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (environment === 'development') {
+      // Only allow mock auth in development
+      c.set('user', { id: 'uuid-thermo-1', role: 'vibe_coder' });
+      console.log('Dev Auth: Mock user authenticated');
+      await next();
+      return;
+    }
+    
+    return c.json({
+      error: 'Authentication required',
+      code: 'AUTH-401'
+    }, 401);
+  }
+  
+  const token = authHeader.replace('Bearer ', '');
+  
+  try {
+    // Validate JWT token structure (basic check)
+    if (!validateJWT(token)) {
+      throw new Error('Invalid token format');
+    }
+    
+    // In production, use proper JWT verification with secret
+    if (environment === 'production') {
+      const user = await verifyJWT(token, c.env);
+      if (!user) {
+        throw new Error('Token verification failed');
+      }
+      c.set('user', user);
+    } else {
+      // Development fallback with validation
+      c.set('user', { id: extractUserIdFromToken(token), role: 'vibe_coder' });
+    }
+    
+    console.log('Thermonuclear Auth: User authenticated');
+    await next();
+    
+  } catch (error) {
+    console.error('Auth Error:', error);
+    return c.json({
+      error: 'Invalid or expired token',
+      code: 'AUTH-401',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 401);
+  }
+});
+
+// JWT validation helper functions
+function validateJWT(token: string): boolean {
+  // Basic JWT format check (header.payload.signature)
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  
+  try {
+    // Validate base64 encoding
+    atob(parts[0]);
+    atob(parts[1]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function verifyJWT(token: string, env: any): Promise<{ id: string; role: string } | null> {
+  // SECURITY FIX: Implement proper JWT verification with crypto.subtle
+  if (!env.JWT_SECRET) {
+    throw new Error('JWT_SECRET not configured');
+  }
+  
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid JWT format');
+    }
+    
+    const [header, payload, signature] = parts;
+    
+    // Verify signature using crypto.subtle
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(env.JWT_SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+    
+    const signatureData = encoder.encode(`${header}.${payload}`);
+    const signatureBytes = new Uint8Array(
+      Array.from(atob(signature.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0))
+    );
+    
+    const isValid = await crypto.subtle.verify(
+      'HMAC',
+      key,
+      signatureBytes,
+      signatureData
+    );
+    
+    if (!isValid) {
+      throw new Error('Invalid JWT signature');
+    }
+    
+    // Parse and validate payload
+    const payloadData = JSON.parse(atob(payload));
+    
+    // Check expiration
+    if (payloadData.exp && Date.now() >= payloadData.exp * 1000) {
+      throw new Error('JWT expired');
+    }
+    
+    // Validate required fields
+    if (!payloadData.sub && !payloadData.userId) {
+      throw new Error('Invalid JWT payload: missing user ID');
+    }
+    
+    return {
+      id: payloadData.sub || payloadData.userId,
+      role: payloadData.role || 'user'
+    };
+  } catch (error) {
+    console.error('JWT verification failed:', error);
+    return null;
+  }
+}
+
+function extractUserIdFromToken(token: string): string {
+  try {
+    // SECURITY FIX: Enhanced validation for development token extraction
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid token format');
+    }
+    
+    const payload = JSON.parse(atob(parts[1]));
+    
+    // Validate payload structure
+    const userId = payload.sub || payload.userId;
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Invalid user ID in token');
+    }
+    
+    // Basic UUID format validation
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId) && 
+        !userId.startsWith('uuid-thermo-')) {
+      throw new Error('Invalid user ID format');
+    }
+    
+    return userId;
+  } catch (error) {
+    console.warn('Token extraction failed:', error);
+    return 'uuid-thermo-dev';
+  }
+}
+
+// Role-based access control middleware
+const requireRole = (requiredRoles: string[]) => {
+  return async (c: any, next: any) => {
+    const user = c.get('user');
+    if (!user || !user.role) {
+      return c.json({
+        error: 'User role not found',
+        code: 'AUTH-403',
+        message: 'Authentication required with valid role'
+      }, 403);
+    }
+
+    if (!requiredRoles.includes(user.role)) {
+      console.warn(`Access denied: User role '${user.role}' not in required roles: ${requiredRoles.join(', ')}`);
+      return c.json({
+        error: 'Insufficient permissions',
+        code: 'AUTH-403',
+        message: `Role '${user.role}' does not have access to this resource. Required: ${requiredRoles.join(', ')}`
+      }, 403);
+    }
+
+    console.log(`Thermonuclear Access: User role '${user.role}' authorized for required roles: ${requiredRoles.join(', ')}`);
+    await next();
+  };
+};
+
+// Business rule helper for resource limits based on role
+const checkRoleResourceLimits = (userRole: string, requestType: string) => {
+  const limits: Record<string, { roadmaps: number, premium_features: boolean }> = {
+    vibe_coder: { roadmaps: 3, premium_features: false },
+    engineer: { roadmaps: 10, premium_features: true },
+    exec: { roadmaps: 50, premium_features: true }
+  };
+
+  return limits[userRole] || limits.vibe_coder;
+};
 
 // Initialize database
 let db: Database;
@@ -187,8 +432,35 @@ app.post('/api/roadmaps', async (c) => {
     const database = c.get('db') as Database;
     const body = await c.req.json();
 
+    // BUSINESS LOGIC: Check role-based resource limits
+    const userLimits = checkRoleResourceLimits(user.role, 'roadmap_create');
+    const existingRoadmaps = await database.queryUserRoadmaps(user.id, 100, 0);
+    
+    if (existingRoadmaps.length >= userLimits.roadmaps) {
+      return c.json({
+        error: `Roadmap limit exceeded for role '${user.role}'`,
+        code: 'BIZ-LIMIT-EXCEEDED',
+        message: `Your '${user.role}' plan allows ${userLimits.roadmaps} roadmaps. Consider upgrading to Engineer or Executive plan.`,
+        current: existingRoadmaps.length,
+        limit: userLimits.roadmaps,
+        upgrade_info: {
+          engineer: { limit: 10, premium_features: true },
+          exec: { limit: 50, premium_features: true }
+        }
+      }, 403);
+    }
+
     // Validate request body
     const validatedData = validateRoadmapBody(body);
+
+    // BUSINESS LOGIC: Restrict premium features based on role
+    if (validatedData.vibe_mode && !userLimits.premium_features) {
+      return c.json({
+        error: 'Premium feature not available for your plan',
+        code: 'BIZ-PREMIUM-REQUIRED',
+        message: `Vibe mode is a premium feature. Your '${user.role}' plan doesn't include premium features. Upgrade to Engineer or Executive plan.`
+      }, 403);
+    }
 
     const roadmapData = {
       json_graph: validatedData.json_graph,

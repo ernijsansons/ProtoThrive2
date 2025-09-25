@@ -1,5 +1,11 @@
 // Ref: CLAUDE.md - Real API Fetch for Production
-export const mockFetch = async (url: string, opts: unknown = {}) => {
+interface FetchOptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+}
+
+export const mockFetch = async (url: string, opts: FetchOptions = {}) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://backend-thermo.ernijs-ansons.workers.dev';
   const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
   

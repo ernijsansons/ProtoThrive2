@@ -17,7 +17,7 @@ const LoginPage: React.FC = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      router.push('/');
+      router.push('/dashboard-rebuilt');
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -28,7 +28,7 @@ const LoginPage: React.FC = () => {
 
     try {
       await login(email, password);
-      router.push('/');
+      router.push('/dashboard-rebuilt');
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
@@ -48,7 +48,7 @@ const LoginPage: React.FC = () => {
 
     try {
       await loginDevelopment();
-      router.push('/');
+      router.push('/dashboard-rebuilt');
     } catch (err: any) {
       setError(err.message || 'Development login failed');
     } finally {
@@ -60,7 +60,7 @@ const LoginPage: React.FC = () => {
     try {
       console.log('Thermonuclear: OAuth success, processing login');
       await loginWithOAuth(result);
-      router.push('/');
+      router.push('/dashboard-rebuilt');
     } catch (err: any) {
       console.error('Thermonuclear Error: OAuth login failed', err);
       setError(err.message || 'OAuth login failed');

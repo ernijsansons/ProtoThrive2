@@ -188,40 +188,118 @@ export function validateQueryParams(data: any) {
 
 // Helper functions for sanitization
 function sanitizeLabel(label: string): string {
-  // Remove potential XSS
-  let sanitized = label.replace(/<[^>]*>/g, '');
-  sanitized = sanitized.replace(/javascript:/gi, '');
-  return sanitized.trim();
+  // SECURITY FIX: Enhanced XSS protection
+  if (!label || typeof label !== 'string') return '';
+  
+  let sanitized = label
+    // Remove HTML tags and attributes
+    .replace(/<[^>]*>/g, '')
+    // Remove javascript: protocol
+    .replace(/javascript:/gi, '')
+    // Remove data: protocol
+    .replace(/data:/gi, '')
+    // Remove vbscript: protocol
+    .replace(/vbscript:/gi, '')
+    // Remove on* event handlers
+    .replace(/on\w+\s*=/gi, '')
+    // Remove HTML entities that could be dangerous
+    .replace(/&lt;/gi, '')
+    .replace(/&gt;/gi, '')
+    .replace(/&quot;/gi, '')
+    .replace(/&#x27;/gi, '')
+    .replace(/&#x2F;/gi, '')
+    // Remove null bytes
+    .replace(/\0/g, '');
+    
+  return sanitized.trim().substring(0, 500); // Enforce max length
 }
 
 function sanitizeText(text: string): string {
-  if (!text) return '';
+  if (!text || typeof text !== 'string') return '';
   
-  // Remove HTML tags
-  let sanitized = text.replace(/<[^>]*>/g, '');
-  
-  // Remove JavaScript
-  sanitized = sanitized.replace(/javascript:/gi, '');
-  
-  return sanitized.trim();
+  // SECURITY FIX: Comprehensive text sanitization
+  let sanitized = text
+    // Remove HTML tags and attributes
+    .replace(/<[^>]*>/g, '')
+    // Remove dangerous protocols
+    .replace(/javascript:/gi, '')
+    .replace(/data:/gi, '')
+    .replace(/vbscript:/gi, '')
+    .replace(/file:/gi, '')
+    // Remove event handlers
+    .replace(/on\w+\s*=/gi, '')
+    // Remove HTML entities
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#x27;/gi, "'")
+    .replace(/&#x2F;/gi, '/')
+    .replace(/&amp;/gi, '&')
+    // Remove null bytes and control characters
+    .replace(/[\0-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    // Remove Unicode direction override characters
+    .replace(/[\u202A-\u202E\u2066-\u2069]/g, '');
+    
+  return sanitized.trim().substring(0, 1000); // Enforce max length
 }
 
 function validateCode(code: string): boolean {
-  // Check for malicious patterns
+  // SECURITY FIX: Enhanced malicious code detection
+  if (!code || typeof code !== 'string') return false;
+  
   const dangerousPatterns = [
-    /eval\s*\(/,
-    /exec\s*\(/,
-    /__import__/,
-    /subprocess/,
-    /os\.system/,
-    /<script[^>]*>/,
-    /document\.cookie/,
-    /localStorage\./,
-    /sessionStorage\./
+    // JavaScript execution
+    /eval\s*\(/i,
+    /Function\s*\(/i,
+    /setTimeout\s*\(/i,
+    /setInterval\s*\(/i,
+    // Process execution
+    /exec\s*\(/i,
+    /spawn\s*\(/i,
+    /child_process/i,
+    /__import__/i,
+    /subprocess/i,
+    /os\.system/i,
+    /os\.popen/i,
+    // XSS vectors
+    /<script[^>]*>/i,
+    /<iframe[^>]*>/i,
+    /<object[^>]*>/i,
+    /<embed[^>]*>/i,
+    /javascript:/i,
+    /data:text\/html/i,
+    /vbscript:/i,
+    // DOM manipulation
+    /document\.write/i,
+    /document\.writeln/i,
+    /document\.cookie/i,
+    /innerHTML/i,
+    /outerHTML/i,
+    // Storage access
+    /localStorage\./i,
+    /sessionStorage\./i,
+    // Network requests
+    /XMLHttpRequest/i,
+    /fetch\s*\(/i,
+    // File system access
+    /require\s*\(/i,
+    /import\s*\(/i,
+    // SQL injection attempts
+    /union\s+select/i,
+    /drop\s+table/i,
+    /delete\s+from/i,
+    // Command injection
+    /\$\(/,
+    /`[^`]*`/,
+    /\|\s*sh/,
+    /\|\s*bash/,
+    // Null bytes
+    /\0/
   ];
 
   for (const pattern of dangerousPatterns) {
     if (pattern.test(code)) {
+      console.warn('Dangerous pattern detected in code:', pattern);
       return false;
     }
   }
@@ -232,8 +310,41 @@ function validateCode(code: string): boolean {
 function validateUrl(url: string): boolean {
   if (!url) return true; // Optional field
   
-  const urlPattern = /^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/;
-  return urlPattern.test(url);
+  // SECURITY FIX: Enhanced URL validation
+  if (typeof url !== 'string') return false;
+  
+  // Check for dangerous protocols
+  const dangerousProtocols = /^(javascript|data|vbscript|file|ftp):/i;
+  if (dangerousProtocols.test(url)) {
+    return false;
+  }
+  
+  // Only allow HTTP(S) protocols
+  const urlPattern = /^https?:\/\/[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.[a-zA-Z]{2,}(\/[^\s]*)?$/;
+  
+  if (!urlPattern.test(url)) {
+    return false;
+  }
+  
+  // Additional security checks
+  try {
+    const urlObj = new URL(url);
+    
+    // Prevent localhost and internal network access
+    const hostname = urlObj.hostname.toLowerCase();
+    if (hostname === 'localhost' || 
+        hostname === '127.0.0.1' ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        hostname.startsWith('172.16.') ||
+        hostname === '0.0.0.0') {
+      return false;
+    }
+    
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Additional utility functions

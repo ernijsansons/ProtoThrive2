@@ -2,6 +2,38 @@
 import { create } from 'zustand';
 import { authService } from './services/auth';
 
+// BUSINESS LOGIC FIX: Utility function to calculate initial Thrive Score
+// Aligned with backend formula: completion*0.6 + ui_polish*0.3 + risk*0.1
+const calculateInitialThriveScore = (nodes: Node[], edges: Edge[]): number => {
+  if (!nodes.length) return 0;
+  
+  // Map 'gray'/'neon' status to completion (none completed initially)
+  const completed = nodes.filter(n => n.status === 'neon').length;
+  const completion = completed / nodes.length;
+  
+  // No blockers initially, so ui_polish is 1.0
+  const ui_polish = 1.0;
+  
+  // Risk based on dependency complexity
+  const avgDependencies = edges.length / nodes.length;
+  const risk_score = Math.max(0, 1 - avgDependencies / 3);
+  
+  // Backend formula: completion*0.6 + ui_polish*0.3 + risk*0.1
+  const score = (completion * 0.6) + (ui_polish * 0.3) + (risk_score * 0.1);
+  
+  console.log('Thermonuclear: Initial Thrive Score calculated', {
+    nodes: nodes.length,
+    edges: edges.length,
+    completion,
+    ui_polish,
+    risk_score,
+    score: Math.round(score * 100),
+    formula: 'Backend-aligned: completion*0.6 + ui*0.3 + risk*0.1'
+  });
+  
+  return Math.round(score * 100);
+};
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
 
 interface Node {
@@ -205,18 +237,23 @@ interface State {
   setUserRole: (role: string) => void;
 }
 
+// Initialize with dummy data
+const initialNodes = [
+  {id: 'n1', label: 'Thermo Start', status: 'gray' as const, position: {x: 0, y: 0, z: 0}},
+  {id: 'n2', label: 'Middle', status: 'gray' as const, position: {x: 100, y: 100, z: 0}},
+  {id: 'n3', label: 'End', status: 'gray' as const, position: {x: 200, y: 200, z: 0}}
+];
+
+const initialEdges = [
+  {from: 'n1', to: 'n2'},
+  {from: 'n2', to: 'n3'}
+];
+
 export const useStore = create<State>((set, get) => ({
-  nodes: [
-    {id: 'n1', label: 'Thermo Start', status: 'gray', position: {x: 0, y: 0, z: 0}},
-    {id: 'n2', label: 'Middle', status: 'gray', position: {x: 100, y: 100, z: 0}},
-    {id: 'n3', label: 'End', status: 'gray', position: {x: 200, y: 200, z: 0}}
-  ],
-  edges: [
-    {from: 'n1', to: 'n2'},
-    {from: 'n2', to: 'n3'}
-  ],
+  nodes: initialNodes,
+  edges: initialEdges,
   mode: '2d',
-  thriveScore: 0.73,
+  thriveScore: calculateInitialThriveScore(initialNodes, initialEdges), // FIXED: Dynamically calculated
   footer: {
     deploymentStatus: 'ready',
     isDeploying: false,
@@ -312,7 +349,27 @@ export const useStore = create<State>((set, get) => ({
   setUserRole: (role) => set({ userRole: role }),
   loadGraph: (nodes, edges) => {
     console.log('Thermonuclear LoadGraph - Nodes:', nodes.length, 'Edges:', edges.length);
-    set({ nodes, edges });
+    
+    // BUSINESS LOGIC FIX: Validate graph integrity (match backend validation)
+    // Ref: backend/utils/validation.ts lines 38-48
+    const nodeIds = new Set(nodes.map(node => node.id));
+    const validEdges = edges.filter(edge => {
+      if (!nodeIds.has(edge.from) || !nodeIds.has(edge.to)) {
+        console.warn('Thermonuclear Graph Validation: Invalid edge references', edge);
+        return false;
+      }
+      return true;
+    });
+    
+    if (validEdges.length !== edges.length) {
+      console.warn('Thermonuclear Graph Validation: Filtered out invalid edges', {
+        original: edges.length,
+        valid: validEdges.length,
+        filtered: edges.length - validEdges.length
+      });
+    }
+    
+    set({ nodes, edges: validEdges });
   },
   updateNodeData: (nodeId, data) => {
     console.log('Thermonuclear UpdateNodeData - Node:', nodeId, 'Data:', data);

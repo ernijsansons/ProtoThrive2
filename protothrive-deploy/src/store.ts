@@ -1,23 +1,30 @@
 // Ref: CLAUDE.md Phase 2 - Store with exact Zustand interfaces
 import { create } from 'zustand';
 
-interface Node {
+export interface Node {
   id: string;
   label: string;
-  status: 'gray' | 'neon';
+  status: 'gray' | 'neon' | 'success' | 'error';
   position: {
     x: number;
     y: number;
     z: number;
   };
+  metadata?: {
+    description?: string;
+    progress?: number;
+    lastUpdated?: Date;
+  };
 }
 
-interface Edge {
+export interface Edge {
   from: string;
   to: string;
+  weight?: number;
+  type?: 'dependency' | 'flow' | 'relationship';
 }
 
-interface State {
+export interface State {
   nodes: Node[];
   edges: Edge[];
   mode: '2d' | '3d';

@@ -5,11 +5,7 @@ import { validateEnvironment, verifyPassword, generateToken, checkRateLimit, cre
 // Export edge runtime for Cloudflare Pages compatibility
 export const runtime = 'edge';
 
-// Mock super admin credentials - in production, use proper auth service
-const SUPER_ADMIN_CREDENTIALS = {
-  email: 'admin@protothrive.com',
-  password: 'ThermonuclearAdmin2025!' // In production, this would be hashed
-};
+// SECURITY FIX: Removed hardcoded credentials - use environment variables only
 
 export default async function handler(
   req: NextApiRequest,
@@ -32,15 +28,33 @@ export default async function handler(
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  // Basic input sanitization (Edge Runtime compatible)
-  const sanitizedEmail = email.replace(/[<>"'&]/g, '');
-  const sanitizedPassword = password.replace(/[<>"'&]/g, '');
+  // SECURITY FIX: Enhanced input sanitization and validation
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    return res.status(400).json({ error: 'Invalid input format' });
+  }
+  
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+  
+  if (password.length < 8 || password.length > 128) {
+    return res.status(400).json({ error: 'Invalid password length' });
+  }
+  
+  const sanitizedEmail = email.trim().toLowerCase();
+  const sanitizedPassword = password;
 
   try {
     const env = validateEnvironment();
     
-    // Verify credentials against environment variables
-    if (sanitizedEmail === env.ADMIN_EMAIL && env.ADMIN_PASSWORD_HASH) {
+    // SECURITY FIX: Verify credentials against secure environment variables only
+    if (!env.ADMIN_EMAIL || !env.ADMIN_PASSWORD_HASH) {
+      console.error('Thermonuclear Security: Admin credentials not configured');
+      return res.status(500).json({ error: 'Authentication service not available' });
+    }
+    
+    if (sanitizedEmail === env.ADMIN_EMAIL) {
       const isValidPassword = await verifyPassword(sanitizedPassword, env.ADMIN_PASSWORD_HASH);
       
       if (isValidPassword) {

@@ -4,40 +4,118 @@
     "lib": [
       "DOM",
       "DOM.Iterable",
-      "ES2022"
+      "ES2022",
+      "WebWorker"
     ],
-    "jsx": "preserve",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "allowJs": true,
-    "noEmit": true,
-    "incremental": true,
-    "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    
+    // Enhanced type checking
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": true,
+    "noPropertyAccessFromIndexSignature": false,
+    
+    // Additional strict checks
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    
+    // Module resolution and imports
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": false,
+    
+    // Emit options
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": true,
+    "removeComments": false,
+    "importHelpers": true,
+    
+    // Advanced options
+    "newLine": "lf",
+    "stripInternal": true,
+    "preserveSymlinks": false,
+    
+    // Path mapping
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@/components/*": [
+        "./src/components/*"
+      ],
+      "@/pages/*": [
+        "./src/pages/*"
+      ],
+      "@/lib/*": [
+        "./src/lib/*"
+      ],
+      "@/styles/*": [
+        "./styles/*"
+      ],
+      "@/types/*": [
+        "./src/types/*"
       ],
       "@devcommand/shared/*": [
         "../shared/*"
       ]
     },
+    
+    // Next.js plugin
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "skipLibCheck": true,
-    "strict": false,
-    "strictNullChecks": true
+    ]
   },
   "include": [
+    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "src/**/*",
+    "pages/**/*",
+    "styles/**/*"
   ],
   "exclude": [
-    "node_modules"
-  ]
+    "node_modules",
+    ".next",
+    "out",
+    "dist",
+    "coverage",
+    "_hooks_disabled",
+    "_pages_api_disabled",
+    "jest.config.ts",
+    "pages/api",
+    "src/pages/api",
+    "src/components/canvas",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ],
+  
+  // Type-only imports for better tree-shaking
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  }
 }

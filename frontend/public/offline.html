@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProtoThrive - Offline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: linear-gradient(135deg, #0a0a0b 0%, #1a1a1b 100%);
+            color: #e5e7eb;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 600px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+        
+        .icon svg {
+            width: 60px;
+            height: 60px;
+            fill: white;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        p {
+            font-size: 1.25rem;
+            color: #9ca3af;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.125rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            border: none;
+            margin: 0.5rem;
+        }
+        
+        .button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+        
+        .button:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        
+        .button-secondary {
+            background: transparent;
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
+        }
+        
+        .button-secondary:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+        
+        .status-info {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background: rgba(55, 65, 81, 0.5);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+            border-radius: 0.5rem;
+        }
+        
+        .status-info h2 {
+            color: #f3f4f6;
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+        
+        .status-info p {
+            font-size: 0.875rem;
+            color: #d1d5db;
+            margin-bottom: 0.5rem;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 40px rgba(59, 130, 246, 0.7);
+            }
+        }
+        
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            p {
+                font-size: 1rem;
+            }
+            
+            .button {
+                font-size: 1rem;
+                padding: 0.75rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+            </svg>
+        </div>
+        
+        <h1>You're Offline</h1>
+        <p>
+            It looks like you've lost your internet connection. 
+            Some features may be limited until you're back online.
+        </p>
+        
+        <div>
+            <button class="button" onclick="window.location.reload()">
+                Try Again
+            </button>
+            <button class="button button-secondary" onclick="history.back()">
+                Go Back
+            </button>
+        </div>
+        
+        <div class="status-info">
+            <h2>What you can still do:</h2>
+            <p>✓ View previously cached pages</p>
+            <p>✓ Access your recent roadmaps (if cached)</p>
+            <p>✓ Continue working with local data</p>
+            <p>✗ Save changes to the cloud</p>
+            <p>✗ Collaborate in real-time</p>
+        </div>
+    </div>
+    
+    <script>
+        // Check connection status periodically
+        let isOnline = navigator.onLine;
+        
+        function checkConnection() {
+            if (navigator.onLine && !isOnline) {
+                // Connection restored
+                window.location.reload();
+            }
+            isOnline = navigator.onLine;
+        }
+        
+        // Check every 3 seconds
+        setInterval(checkConnection, 3000);
+        
+        // Listen for connection events
+        window.addEventListener('online', () => {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>

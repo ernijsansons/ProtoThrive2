@@ -15,7 +15,29 @@ const nextConfig = {
 
   // Performance optimizations
   experimental: {
-    optimizePackageImports: ['@heroicons/react', 'lucide-react', 'framer-motion'],
+    optimizePackageImports: [
+      '@heroicons/react',
+      'lucide-react',
+      'framer-motion',
+      '@radix-ui/react-slot',
+      'reactflow',
+      '@splinetool/react-spline',
+      'class-variance-authority'
+    ],
+    scrollRestoration: true,
+  },
+  
+  // Enable modularize imports for better tree-shaking
+  modularizeImports: {
+    'lucide-react': {
+      transform: 'lucide-react/dist/esm/icons/{{member}}',
+    },
+    '@heroicons/react/24/outline': {
+      transform: '@heroicons/react/24/outline/{{member}}',
+    },
+    '@heroicons/react/24/solid': {
+      transform: '@heroicons/react/24/solid/{{member}}',
+    },
   },
 
   // Image optimization for Cloudflare
@@ -90,13 +112,18 @@ const nextConfig = {
     ];
   },
 
-  // Build configuration
+  // Build configuration with stricter checks for production quality
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
+    dirs: ['src', 'pages', 'components', 'lib', 'utils', 'hooks', 'services'],
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
+    tsconfigPath: './tsconfig.json',
   },
+  
+  // Enable Strict Mode for better error detection
+  productionBrowserSourceMaps: false,
 
   // Webpack optimizations for Cloudflare Workers
   webpack: (config, { buildId, dev, isServer, defaultLoaders }) => {

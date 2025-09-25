@@ -1,7 +1,7 @@
 // Ref: CLAUDE.md - Simple Input Component
 import * as React from 'react';
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+export type InputProps = React.InputHTMLAttributes<HTMLInputElement>
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className = '', type, ...props }, ref) => {
