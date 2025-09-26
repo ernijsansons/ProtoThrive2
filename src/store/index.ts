@@ -33,3 +33,4 @@ export const useStore = create<Store>((set) => ({
   toggleMode: () => set((state) => ({ vibeMode: !state.vibeMode })),
   loadGraph: (nodes, edges) => set({ nodes, edges })
 }));
+

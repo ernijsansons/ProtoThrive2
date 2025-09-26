@@ -18,3 +18,4 @@ describe('Basic App Tests', () => {
     expect(screen.getByText(/Toggle Mode/)).toBeInTheDocument();
   });
 });
+
