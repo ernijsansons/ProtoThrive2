@@ -111,7 +111,7 @@ export declare const mockPipelineExecution: (pipeline: string) => Promise<MockAp
  * Calculate Thrive Score
  * Ref: CLAUDE.md Global Dummy Data & Thrive Score Formula
  */
-export declare const calculateThriveScore: (logs: unknown[]) => {
+export declare const calculateThriveScore: (logs: any[]) => {
     score: number;
     status: "gray" | "neon";
 };
@@ -178,7 +178,7 @@ declare const _default: {
     checkKillSwitch: (_kv: unknown) => Promise<boolean>;
     checkBudget: (currentBudget: number, additionalCost: number) => number;
     generateMockUUID: () => string;
-    calculateThriveScore: (logs: unknown[]) => {
+    calculateThriveScore: (logs: any[]) => {
         score: number;
         status: "gray" | "neon";
     };

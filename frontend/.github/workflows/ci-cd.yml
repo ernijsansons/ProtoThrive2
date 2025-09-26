@@ -1,0 +1,396 @@
+# ProtoThrive Frontend CI/CD Pipeline
+# Comprehensive testing, security scanning, and deployment automation
+
+name: Frontend CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * *' # Daily security scan
+
+env:
+  NODE_VERSION: '20'
+  ARTIFACT_RETENTION_DAYS: 30
+
+jobs:
+  # ==================== QUALITY & SECURITY ====================
+  quality-checks:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Run TypeScript check
+        run: npm run typecheck
+
+      - name: 🧹 Run ESLint
+        run: npm run lint
+        continue-on-error: false
+
+      - name: 🎨 Check code formatting
+        run: npx prettier --check "src/**/*.{js,jsx,ts,tsx,json,css,md}"
+
+      - name: 🔐 Security audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: 📊 Upload quality report
+        uses: actions/upload-artifact@v3
+        with:
+          name: quality-report
+          path: |
+            eslint-report.json
+            security-audit.json
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  # ==================== UNIT TESTS ====================
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: quality-checks
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run Jest tests
+        run: npm run test:ci
+
+      - name: 📈 Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: 📊 Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: unit-test-results
+          path: |
+            coverage/
+            test-results/
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  # ==================== BUILD ====================
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [quality-checks, unit-tests]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔧 Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+
+      - name: 📦 Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: .next/
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  # ==================== E2E TESTS ====================
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🎭 Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: 📥 Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+          path: .next/
+
+      - name: 🧪 Run E2E tests
+        run: npm run test:e2e
+        env:
+          CI: true
+
+      - name: 📊 Upload E2E test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: e2e-test-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  # ==================== ACCESSIBILITY TESTS ====================
+  accessibility-tests:
+    name: Accessibility Tests
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🎭 Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: ♿ Run accessibility tests
+        run: npm run test:a11y
+
+      - name: 📊 Upload accessibility report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: accessibility-report
+          path: accessibility-report/
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  # ==================== PERFORMANCE TESTS ====================
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🎭 Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: ⚡ Run performance tests
+        run: npm run test:performance
+
+      - name: 📊 Upload performance report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: performance-report
+          path: performance-report/
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  # ==================== VISUAL REGRESSION TESTS ====================
+  visual-regression-tests:
+    name: Visual Regression Tests
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🎭 Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: 📥 Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+          path: .next/
+
+      - name: 📸 Run visual regression tests
+        run: npm run test:visual
+        env:
+          CI: true
+
+      - name: 📊 Upload visual test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: visual-test-results
+          path: |
+            test-results/
+            visual-snapshots/
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+      - name: 📝 Comment visual changes
+        uses: actions/github-script@v6
+        if: failure() && github.event_name == 'pull_request'
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '📸 Visual regression detected! Please review the visual differences in the artifacts.'
+            })
+
+  # ==================== STAGING DEPLOYMENT ====================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, e2e-tests, accessibility-tests, visual-regression-tests]
+    if: github.ref == 'refs/heads/develop'
+
+    environment:
+      name: staging
+      url: https://staging.protothrive.com
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+          path: .next/
+
+      - name: 🚀 Deploy to Cloudflare Pages (Staging)
+        uses: cloudflare/pages-action@1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: protothrive-frontend-staging
+          directory: .next/
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔗 Comment deployment URL
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 Staging deployment: https://staging.protothrive.com'
+            })
+
+  # ==================== PRODUCTION DEPLOYMENT ====================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, e2e-tests, accessibility-tests, performance-tests, visual-regression-tests]
+    if: github.ref == 'refs/heads/main'
+
+    environment:
+      name: production
+      url: https://protothrive.com
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+          path: .next/
+
+      - name: 🚀 Deploy to Cloudflare Pages (Production)
+        uses: cloudflare/pages-action@1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: protothrive-frontend
+          directory: .next/
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📧 Notify deployment success
+        uses: 8398a7/action-slack@v3
+        if: success()
+        with:
+          status: success
+          text: '🎉 Production deployment successful!'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # ==================== MONITORING SETUP ====================
+  post-deploy-monitoring:
+    name: Setup Monitoring
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 🔍 Health check
+        run: |
+          curl -f https://protothrive.com/health || exit 1
+
+      - name: 📊 Update monitoring dashboard
+        run: |
+          echo "Update monitoring dashboard with new deployment"
+
+      - name: 🚨 Setup alerting
+        run: |
+          echo "Configure alerts for production deployment"

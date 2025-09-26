@@ -4,22 +4,35 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { createDatabase, Database, calculateThriveScore } from '../utils/db';
-import { 
-  validateRoadmapBody, 
-  validateSnippetBody, 
+import {
+  validateRoadmapBody,
+  validateSnippetBody,
   validateUUID,
-  SecurityValidationError 
+  SecurityValidationError
 } from '../utils/validation';
+import {
+  validateJwtMiddleware,
+  requireRole,
+  requirePermission,
+  requireOwnership,
+  UserRole,
+  getResourceLimitsByRole
+} from './middleware/auth';
+import type { AuthUser } from './middleware/auth';
+import aiRoutes from './routes/ai-routes';
 
 // Define context variables interface
 type Bindings = {
   DB: any;
   KV: any;
   ENVIRONMENT?: string;
+  JWT_SECRET?: string;
+  JWT_PUBLIC_KEY?: string;
+  JWT_ALGORITHM?: string;
 }
 
 type Variables = {
-  user: { id: string; role: string };
+  user: AuthUser;
   db: Database;
 }
 
@@ -72,7 +85,7 @@ app.use('*', async (c, next) => {
   
   // Handle preflight requests
   if (c.req.method === 'OPTIONS') {
-    return c.text('', 204);
+    return new Response(null, { status: 204 });
   }
   
   await next();
@@ -93,207 +106,13 @@ app.use('*', async (c, next) => {
   const environment = c.env?.ENVIRONMENT || 'development';
   if (environment === 'production') {
     c.res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-    c.res.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none';");
+    c.res.headers.set('Content-Security-Policy', 'default-src \'self\'; script-src \'self\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: https:; connect-src \'self\'; frame-ancestors \'none\';');
   }
 });
 
-// Secure authentication middleware with proper JWT validation
-app.use('/api/*', async (c, next) => {
-  const authHeader = c.req.header('Authorization');
-  const environment = c.env?.ENVIRONMENT || 'development';
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    if (environment === 'development') {
-      // Only allow mock auth in development
-      c.set('user', { id: 'uuid-thermo-1', role: 'vibe_coder' });
-      console.log('Dev Auth: Mock user authenticated');
-      await next();
-      return;
-    }
-    
-    return c.json({
-      error: 'Authentication required',
-      code: 'AUTH-401'
-    }, 401);
-  }
-  
-  const token = authHeader.replace('Bearer ', '');
-  
-  try {
-    // Validate JWT token structure (basic check)
-    if (!validateJWT(token)) {
-      throw new Error('Invalid token format');
-    }
-    
-    // In production, use proper JWT verification with secret
-    if (environment === 'production') {
-      const user = await verifyJWT(token, c.env);
-      if (!user) {
-        throw new Error('Token verification failed');
-      }
-      c.set('user', user);
-    } else {
-      // Development fallback with validation
-      c.set('user', { id: extractUserIdFromToken(token), role: 'vibe_coder' });
-    }
-    
-    console.log('Thermonuclear Auth: User authenticated');
-    await next();
-    
-  } catch (error) {
-    console.error('Auth Error:', error);
-    return c.json({
-      error: 'Invalid or expired token',
-      code: 'AUTH-401',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    }, 401);
-  }
-});
+// Apply secure JWT authentication middleware to all API routes
+app.use('/api/*', validateJwtMiddleware);
 
-// JWT validation helper functions
-function validateJWT(token: string): boolean {
-  // Basic JWT format check (header.payload.signature)
-  const parts = token.split('.');
-  if (parts.length !== 3) return false;
-  
-  try {
-    // Validate base64 encoding
-    atob(parts[0]);
-    atob(parts[1]);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function verifyJWT(token: string, env: any): Promise<{ id: string; role: string } | null> {
-  // SECURITY FIX: Implement proper JWT verification with crypto.subtle
-  if (!env.JWT_SECRET) {
-    throw new Error('JWT_SECRET not configured');
-  }
-  
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      throw new Error('Invalid JWT format');
-    }
-    
-    const [header, payload, signature] = parts;
-    
-    // Verify signature using crypto.subtle
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(env.JWT_SECRET),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['verify']
-    );
-    
-    const signatureData = encoder.encode(`${header}.${payload}`);
-    const signatureBytes = new Uint8Array(
-      Array.from(atob(signature.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0))
-    );
-    
-    const isValid = await crypto.subtle.verify(
-      'HMAC',
-      key,
-      signatureBytes,
-      signatureData
-    );
-    
-    if (!isValid) {
-      throw new Error('Invalid JWT signature');
-    }
-    
-    // Parse and validate payload
-    const payloadData = JSON.parse(atob(payload));
-    
-    // Check expiration
-    if (payloadData.exp && Date.now() >= payloadData.exp * 1000) {
-      throw new Error('JWT expired');
-    }
-    
-    // Validate required fields
-    if (!payloadData.sub && !payloadData.userId) {
-      throw new Error('Invalid JWT payload: missing user ID');
-    }
-    
-    return {
-      id: payloadData.sub || payloadData.userId,
-      role: payloadData.role || 'user'
-    };
-  } catch (error) {
-    console.error('JWT verification failed:', error);
-    return null;
-  }
-}
-
-function extractUserIdFromToken(token: string): string {
-  try {
-    // SECURITY FIX: Enhanced validation for development token extraction
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      throw new Error('Invalid token format');
-    }
-    
-    const payload = JSON.parse(atob(parts[1]));
-    
-    // Validate payload structure
-    const userId = payload.sub || payload.userId;
-    if (!userId || typeof userId !== 'string') {
-      throw new Error('Invalid user ID in token');
-    }
-    
-    // Basic UUID format validation
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId) && 
-        !userId.startsWith('uuid-thermo-')) {
-      throw new Error('Invalid user ID format');
-    }
-    
-    return userId;
-  } catch (error) {
-    console.warn('Token extraction failed:', error);
-    return 'uuid-thermo-dev';
-  }
-}
-
-// Role-based access control middleware
-const requireRole = (requiredRoles: string[]) => {
-  return async (c: any, next: any) => {
-    const user = c.get('user');
-    if (!user || !user.role) {
-      return c.json({
-        error: 'User role not found',
-        code: 'AUTH-403',
-        message: 'Authentication required with valid role'
-      }, 403);
-    }
-
-    if (!requiredRoles.includes(user.role)) {
-      console.warn(`Access denied: User role '${user.role}' not in required roles: ${requiredRoles.join(', ')}`);
-      return c.json({
-        error: 'Insufficient permissions',
-        code: 'AUTH-403',
-        message: `Role '${user.role}' does not have access to this resource. Required: ${requiredRoles.join(', ')}`
-      }, 403);
-    }
-
-    console.log(`Thermonuclear Access: User role '${user.role}' authorized for required roles: ${requiredRoles.join(', ')}`);
-    await next();
-  };
-};
-
-// Business rule helper for resource limits based on role
-const checkRoleResourceLimits = (userRole: string, requestType: string) => {
-  const limits: Record<string, { roadmaps: number, premium_features: boolean }> = {
-    vibe_coder: { roadmaps: 3, premium_features: false },
-    engineer: { roadmaps: 10, premium_features: true },
-    exec: { roadmaps: 50, premium_features: true }
-  };
-
-  return limits[userRole] || limits.vibe_coder;
-};
 
 // Initialize database
 let db: Database;
@@ -433,19 +252,20 @@ app.post('/api/roadmaps', async (c) => {
     const body = await c.req.json();
 
     // BUSINESS LOGIC: Check role-based resource limits
-    const userLimits = checkRoleResourceLimits(user.role, 'roadmap_create');
+    const userLimits = getResourceLimitsByRole(user.role);
     const existingRoadmaps = await database.queryUserRoadmaps(user.id, 100, 0);
-    
-    if (existingRoadmaps.length >= userLimits.roadmaps) {
+
+    if (userLimits.roadmaps !== -1 && existingRoadmaps.length >= userLimits.roadmaps) {
       return c.json({
         error: `Roadmap limit exceeded for role '${user.role}'`,
         code: 'BIZ-LIMIT-EXCEEDED',
-        message: `Your '${user.role}' plan allows ${userLimits.roadmaps} roadmaps. Consider upgrading to Engineer or Executive plan.`,
+        message: `Your '${user.role}' plan allows ${userLimits.roadmaps} roadmaps. Consider upgrading to a higher tier.`,
         current: existingRoadmaps.length,
         limit: userLimits.roadmaps,
         upgrade_info: {
-          engineer: { limit: 10, premium_features: true },
-          exec: { limit: 50, premium_features: true }
+          engineer: { limit: 50, premium_features: true },
+          manager: { limit: 100, premium_features: true },
+          admin: { limit: 'unlimited', premium_features: true }
         }
       }, 403);
     }
@@ -497,8 +317,8 @@ app.post('/api/roadmaps', async (c) => {
   }
 });
 
-// PUT /api/roadmaps/:id - Update roadmap
-app.put('/api/roadmaps/:id', async (c) => {
+// PUT /api/roadmaps/:id - Update roadmap (ownership required)
+app.put('/api/roadmaps/:id', requireOwnership('roadmap'), async (c) => {
   try {
     const id = c.req.param('id');
     const user = c.get('user');
@@ -557,8 +377,8 @@ app.put('/api/roadmaps/:id', async (c) => {
   }
 });
 
-// DELETE /api/roadmaps/:id - Soft delete roadmap
-app.delete('/api/roadmaps/:id', async (c) => {
+// DELETE /api/roadmaps/:id - Soft delete roadmap (ownership required)
+app.delete('/api/roadmaps/:id', requireOwnership('roadmap'), async (c) => {
   try {
     const id = c.req.param('id');
     const user = c.get('user');
@@ -623,8 +443,8 @@ app.get('/api/snippets', async (c) => {
   }
 });
 
-// POST /api/snippets - Create new snippet
-app.post('/api/snippets', async (c) => {
+// POST /api/snippets - Create new snippet (requires snippet:create permission)
+app.post('/api/snippets', requirePermission(['snippet:create']), async (c) => {
   try {
     const database = c.get('db') as Database;
     const body = await c.req.json();
@@ -695,14 +515,14 @@ app.get('/api/agent-logs/:roadmapId', async (c) => {
   }
 });
 
-// BUSINESS LOGIC: Executive-only endpoints for advanced analytics
-app.get('/api/admin/analytics', requireRole(['exec']), async (c) => {
+// BUSINESS LOGIC: Admin/Manager-only endpoints for advanced analytics
+app.get('/api/admin/analytics', requireRole([UserRole.ADMIN, UserRole.MANAGER]), async (c) => {
   try {
     const user = c.get('user');
     const database = c.get('db') as Database;
 
-    // Only executives can access platform-wide analytics
-    console.log(`Thermonuclear Admin: Executive ${user.id} accessing analytics`);
+    // Only admins and managers can access platform-wide analytics
+    console.log(`Thermonuclear Admin: ${user.role} ${user.id} accessing analytics`);
 
     return c.json({
       message: 'Executive analytics dashboard',
@@ -727,7 +547,7 @@ app.get('/api/admin/analytics', requireRole(['exec']), async (c) => {
 });
 
 // BUSINESS LOGIC: Engineer+ role required for AI model management
-app.post('/api/admin/ai-models', requireRole(['engineer', 'exec']), async (c) => {
+app.post('/api/admin/ai-models', requireRole([UserRole.ENGINEER, UserRole.MANAGER, UserRole.ADMIN]), async (c) => {
   try {
     const user = c.get('user');
     const body = await c.req.json();
@@ -737,11 +557,12 @@ app.post('/api/admin/ai-models', requireRole(['engineer', 'exec']), async (c) =>
     return c.json({
       message: `AI model configuration updated by ${user.role}`,
       model_config: body,
-      access_level: user.role === 'exec' ? 'full_admin' : 'engineering_limited',
+      access_level: user.role === UserRole.ADMIN ? 'full_admin' :
+                     user.role === UserRole.MANAGER ? 'manager_admin' : 'engineering_limited',
       features_available: {
         model_switching: true,
         cost_optimization: true,
-        advanced_prompts: user.role === 'exec'
+        advanced_prompts: [UserRole.ADMIN, UserRole.MANAGER].includes(user.role)
       }
     });
 
@@ -765,16 +586,18 @@ app.post('/api/agent/run', async (c) => {
     console.log(`Thermonuclear AI Agent: ${user.role} user ${user.id} running analysis`);
 
     // Business logic: Check if user has access to AI features
-    const userLimits = checkRoleResourceLimits(user.role, 'ai_agent');
+    const userLimits = getResourceLimitsByRole(user.role);
     if (!userLimits.premium_features && body.mode !== 'basic') {
       return c.json({
         error: 'Advanced AI features require premium plan',
         code: 'BIZ-AI-PREMIUM-REQUIRED',
-        message: `Advanced AI mode '${body.mode}' requires Engineer or Executive plan. Your '${user.role}' plan includes basic AI only.`,
-        available_modes: user.role === 'vibe_coder' ? ['basic'] : ['basic', 'advanced', 'enterprise'],
+        message: `Advanced AI mode '${body.mode}' requires a premium plan. Your '${user.role}' plan includes basic AI only.`,
+        available_modes: user.role === UserRole.CODER || user.role === UserRole.USER ? ['basic'] :
+                        ['basic', 'advanced', 'enterprise'],
         upgrade_info: {
           engineer: 'Full AI agent access with advanced prompts',
-          exec: 'Enterprise AI with custom model selection'
+          manager: 'Enhanced AI with team management',
+          admin: 'Enterprise AI with custom model selection and unlimited usage'
         }
       }, 403);
     }
@@ -844,7 +667,7 @@ app.post('/api/deployment/trigger', async (c) => {
     const user = c.get('user');
     const body = await c.req.json();
 
-    console.log(`Thermonuclear Deploy: Triggered by automation for roadmap`, body);
+    console.log('Thermonuclear Deploy: Triggered by automation for roadmap', body);
 
     // Business logic: Only allow deployment for active/completed roadmaps
     const validStatuses = ['active', 'completed'];
@@ -870,6 +693,95 @@ app.post('/api/deployment/trigger', async (c) => {
     return c.json({
       error: 'Deployment error',
       code: 'ERR-DEPLOY',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// Permission-based endpoint: User management (admin-only)
+app.get('/api/users', requirePermission(['user:read']), async (c) => {
+  try {
+    const user = c.get('user');
+    const database = c.get('db') as Database;
+
+    console.log(`User Management: ${user.role} accessing user list`);
+
+    // Mock user data based on role permissions
+    const users = user.role === UserRole.ADMIN ?
+      // Admin sees all users
+      [
+        { id: 'uuid-1', email: 'admin@protothrive.com', role: UserRole.ADMIN, created_at: '2024-01-01' },
+        { id: 'uuid-2', email: 'manager@protothrive.com', role: UserRole.MANAGER, created_at: '2024-01-02' },
+        { id: 'uuid-3', email: 'engineer@protothrive.com', role: UserRole.ENGINEER, created_at: '2024-01-03' },
+        { id: 'uuid-4', email: 'coder@protothrive.com', role: UserRole.CODER, created_at: '2024-01-04' }
+      ] :
+      // Others see limited info
+      [
+        { id: user.id, email: user.email, role: user.role, created_at: '2024-01-01' }
+      ];
+
+    return c.json({
+      users,
+      total: users.length,
+      access_level: user.role
+    });
+
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return c.json({
+      error: 'User management error',
+      code: 'ERR-USER-MGMT',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// Permission-based endpoint: Update user role (admin-only)
+app.put('/api/users/:userId/role', requirePermission(['user:update']), async (c) => {
+  try {
+    const userId = c.req.param('userId');
+    const user = c.get('user');
+    const body = await c.req.json();
+
+    if (!validateUUID(userId)) {
+      return c.json({
+        error: 'Invalid user ID format',
+        code: 'VAL-400'
+      }, 400);
+    }
+
+    // Only admins can change roles
+    if (user.role !== UserRole.ADMIN) {
+      return c.json({
+        error: 'Only administrators can change user roles',
+        code: 'AUTH-403'
+      }, 403);
+    }
+
+    const newRole = body.role as UserRole;
+    if (!Object.values(UserRole).includes(newRole)) {
+      return c.json({
+        error: 'Invalid role specified',
+        code: 'VAL-400',
+        valid_roles: Object.values(UserRole)
+      }, 400);
+    }
+
+    console.log(`Role Update: Admin ${user.id} changing user ${userId} role to ${newRole}`);
+
+    return c.json({
+      message: 'User role updated successfully',
+      user_id: userId,
+      new_role: newRole,
+      updated_by: user.id,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    return c.json({
+      error: 'Role update error',
+      code: 'ERR-ROLE-UPDATE',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, 500);
   }
@@ -910,6 +822,9 @@ app.post('/api/notifications/hitl-escalation', async (c) => {
     }, 500);
   }
 });
+
+// Mount AI routes
+app.route('/api/ai', aiRoutes);
 
 // Legacy compatibility routes (for existing frontend)
 app.get('/roadmaps/:id', async (c) => {

@@ -10,22 +10,22 @@
  */
 export const mockFetch = (url, opts = {}) => {
     console.log(`THERMONUCLEAR MOCK FETCH: ${url} - Opts: ${JSON.stringify(opts)}`);
-    // Simulate different responses based on URL patterns
+    // Simulate different responses based on URL patterns  
     let mockData = { success: true, data: 'thermo_mock', id: 'uuid-thermo-mock' };
     if (url.includes('claude')) {
-        mockData = { model: 'claude', response: '// Thermonuclear Claude Response', tokens: 150 };
+        mockData = { success: true, model: 'claude', response: '// Thermonuclear Claude Response', tokens: 150 };
     }
     else if (url.includes('kimi')) {
-        mockData = { model: 'kimi', response: '// Thermonuclear Kimi Response', tokens: 75 };
+        mockData = { success: true, model: 'kimi', response: '// Thermonuclear Kimi Response', tokens: 75 };
     }
     else if (url.includes('uxpilot')) {
-        mockData = { model: 'uxpilot', ui_preview: 'neon_ui.png', css: 'background: neon-gradient' };
+        mockData = { success: true, model: 'uxpilot', ui_preview: 'neon_ui.png', css: 'background: neon-gradient' };
     }
     else if (url.includes('vercel')) {
-        mockData = { deployment_url: 'https://proto-thermo.vercel.app', status: 'ready' };
+        mockData = { success: true, deployment_url: 'https://proto-thermo.vercel.app', status: 'ready' };
     }
     else if (url.includes('spline')) {
-        mockData = { scene_url: 'https://prod.spline.design/neon-cube-thermo', loaded: true };
+        mockData = { success: true, scene_url: 'https://prod.spline.design/neon-cube-thermo', loaded: true };
     }
     return Promise.resolve({
         ok: true,
@@ -182,7 +182,7 @@ export const checkBudget = (currentBudget, additionalCost) => {
     const limit = 0.10; // $0.10 per task
     console.log(`Thermonuclear Budget: ${total.toFixed(4)}`);
     if (total > limit) {
-        throw { code: 'BUDGET-429', message: `Task cost $${total.toFixed(4)} exceeds limit $${limit}` };
+        throw new Error(`BUDGET-429: Task cost $${total.toFixed(4)} exceeds limit $${limit}`);
     }
     return total;
 };
@@ -300,7 +300,7 @@ export const calculateThriveScore = (logs) => {
     const completion = logs.filter(l => l.status === 'success').length / logs.length * 0.6;
     const ui_polish = logs.filter(l => l.type === 'ui').length / logs.length * 0.3;
     const risk = 1 - (logs.filter(l => l.status === 'fail').length / logs.length) * 0.1;
-    const score = completion + ui_polish + risk;
+    const score = Math.max(0, Math.min(completion + ui_polish + risk, 1.0)); // Cap between 0 and 1.0
     console.log(`THERMONUCLEAR THRIVE SCORE: ${score.toFixed(2)}`);
     return {
         score: parseFloat(score.toFixed(2)),
@@ -386,5 +386,5 @@ export default {
     validateMocks,
     mockLocalStorage
 };
-console.log('🚀 THERMONUCLEAR UNIFIED MOCKS: TypeScript/JavaScript complete mock library loaded - All phases consolidated');
+// ===== MISSING FUNCTIONS (Integration Validation Fix) =====\n\n/**\n * Thermonuclear logging function (CLAUDE.md requirement)\n */\nexport const thermonuclearLog = (message: string, level: 'INFO' | 'SUCCESS' | 'ERROR' | 'WARN' = 'INFO') => {\n  const timestamp = new Date().toISOString();\n  const prefix = `[${timestamp}] THERMONUCLEAR ${level}`;\n  \n  switch (level) {\n    case 'SUCCESS':\n      console.log(`🚀 ${prefix}: ${message}`);\n      break;\n    case 'ERROR':\n      console.error(`💥 ${prefix}: ${message}`);\n      break;\n    case 'WARN':\n      console.warn(`⚠️ ${prefix}: ${message}`);\n      break;\n    default:\n      console.log(`🔥 ${prefix}: ${message}`);\n  }\n};\n\n/**\n * Mock validation function (Integration requirement)\n */\nexport const mockValidation = (input: any, schema: string = 'default') => {\n  thermonuclearLog(`Validating input with schema: ${schema}`, 'INFO');\n  \n  // Basic validation based on schema type\n  switch (schema) {\n    case 'roadmap':\n      return {\n        valid: input && typeof input.json_graph === 'string' && typeof input.vibe_mode === 'boolean',\n        errors: !input ? ['Input is required'] : []\n      };\n    case 'snippet':\n      return {\n        valid: input && typeof input.category === 'string' && typeof input.code === 'string',\n        errors: !input ? ['Input is required'] : []\n      };\n    case 'uuid':\n      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\n      const isThermUuid = typeof input === 'string' && input.startsWith('uuid-thermo-');\n      return {\n        valid: uuidPattern.test(input) || isThermUuid,\n        errors: !input || (typeof input !== 'string') ? ['Invalid UUID format'] : []\n      };\n    default:\n      return { valid: true, errors: [] };\n  }\n};\n\nthermonuclearLog('Mock Infrastructure Initialized - All Systems Thermonuclear ⚡', 'SUCCESS');
 //# sourceMappingURL=mocks.js.map

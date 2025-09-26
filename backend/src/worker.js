@@ -90,15 +90,7 @@ export default {
       });
 
     } catch (error) {
-      console.error('Worker error:', error);
-      return new Response(JSON.stringify({
-        error: 'Internal server error',
-        message: error.message,
-        timestamp: Date.now()
-      }), {
-        headers: corsHeaders,
-        status: 500
-      });
+      return this.handleError(error, { path, method, env, corsHeaders });
     }
   },
 
@@ -228,10 +220,15 @@ export default {
           });
       }
     } catch (error) {
-      console.error('Roadmaps API error:', error);
+      const requestId = crypto.randomUUID().split('-')[0];
+      console.error(`Roadmaps API error [${requestId}]:`, error.stack || error.message);
+
       return new Response(JSON.stringify({
         error: 'Database operation failed',
-        message: error.message
+        message: env.ENVIRONMENT === 'production' ? 'Failed to process roadmap request' : error.message,
+        requestId: requestId,
+        code: error.code || 'DB-500',
+        timestamp: Date.now()
       }), {
         headers: corsHeaders,
         status: 500
@@ -265,8 +262,13 @@ export default {
       'SELECT * FROM roadmaps WHERE id = ? AND user_id = ?'
     ).bind(roadmapId, userId).first();
 
-    if (result && result.json_graph) {
-      result.json_graph = JSON.parse(result.json_graph);
+    if (result && result.json_graph && typeof result.json_graph === 'string') {
+      try {
+        result.json_graph = JSON.parse(result.json_graph);
+      } catch (e) {
+        console.warn('JSON parse warning for json_graph:', e.message);
+        result.json_graph = { nodes: [], edges: [] };
+      }
     }
     return result;
   },
@@ -284,7 +286,14 @@ export default {
     ).bind(userId).all();
 
     return results.results.map(r => {
-      if (r.json_graph) r.json_graph = JSON.parse(r.json_graph);
+      if (r.json_graph && typeof r.json_graph === 'string') {
+        try {
+          r.json_graph = JSON.parse(r.json_graph);
+        } catch (e) {
+          console.warn('JSON parse warning for json_graph:', e.message);
+          r.json_graph = { nodes: [], edges: [] };
+        }
+      }
       return r;
     });
   },
@@ -460,6 +469,81 @@ export default {
     ).bind(snippetId, data.category, data.code, data.ui_preview_url || '', 1).run();
 
     return { id: snippetId, message: 'Snippet created successfully' };
+  },
+
+  handleError(error, context) {
+    const { path, method, env, corsHeaders } = context;
+    const requestId = crypto.randomUUID().split('-')[0];
+
+    // Categorize error types
+    let statusCode = 500;
+    let errorCode = 'INTERNAL_ERROR';
+    let userMessage = 'An unexpected error occurred';
+    let logLevel = 'error';
+
+    if (error.name === 'ValidationError') {
+      statusCode = 400;
+      errorCode = 'VALIDATION_ERROR';
+      userMessage = 'Invalid request data';
+      logLevel = 'warn';
+    } else if (error.name === 'AuthenticationError') {
+      statusCode = 401;
+      errorCode = 'AUTH_ERROR';
+      userMessage = 'Authentication failed';
+      logLevel = 'warn';
+    } else if (error.name === 'NotFoundError') {
+      statusCode = 404;
+      errorCode = 'NOT_FOUND';
+      userMessage = 'Resource not found';
+      logLevel = 'info';
+    } else if (error.name === 'RateLimitError') {
+      statusCode = 429;
+      errorCode = 'RATE_LIMIT';
+      userMessage = 'Too many requests';
+      logLevel = 'warn';
+    } else if (error.name === 'DatabaseError') {
+      statusCode = 503;
+      errorCode = 'DATABASE_ERROR';
+      userMessage = 'Database service temporarily unavailable';
+      logLevel = 'error';
+    }
+
+    // Structured logging
+    const logEntry = {
+      level: logLevel,
+      requestId,
+      error: {
+        name: error.name,
+        message: error.message,
+        code: errorCode,
+        stack: env.ENVIRONMENT !== 'production' ? error.stack : undefined
+      },
+      context: {
+        path,
+        method,
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    console[logLevel](`Worker ${logLevel} [${requestId}]:`, JSON.stringify(logEntry));
+
+    // User-friendly error response
+    return new Response(JSON.stringify({
+      error: errorCode,
+      message: env.ENVIRONMENT === 'production' ? userMessage : error.message,
+      requestId,
+      timestamp: Date.now(),
+      ...(env.ENVIRONMENT !== 'production' && {
+        debug: {
+          path,
+          method,
+          stack: error.stack
+        }
+      })
+    }), {
+      headers: corsHeaders,
+      status: statusCode
+    });
   },
 
   async handleAuthAPI(request, env, path, method, corsHeaders) {

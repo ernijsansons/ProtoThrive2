@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Spline } from '@splinetool/react-spline';
+import Spline from '@splinetool/react-spline';
 import { ScreenReaderAnnouncer } from '../utils/accessibility';
 
 interface Spline3DAccessibilityProps {
@@ -256,7 +256,6 @@ export const Spline3DAccessibility: React.FC<Spline3DAccessibilityProps> = ({
         ref={splineRef}
         scene={scene}
         onLoad={handleLoad}
-        onError={handleError}
         style={{
           width: '100%',
           height: '100%',

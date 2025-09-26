@@ -81,7 +81,7 @@ export interface Roadmap {
   user_id: string;
   title?: string;
   description?: string;
-  json_graph: string | Graph;
+  json_graph: Graph;  // Always use Graph type, parse JSON string when needed
   status: 'draft' | 'active' | 'completed' | 'archived' | 'paused';
   vibe_mode: boolean;
   thrive_score: number;
@@ -91,6 +91,11 @@ export interface Roadmap {
   created_at?: string;
   updated_at?: string;
   deleted_at?: string | null;
+}
+
+// Helper type for raw API responses
+export interface RawRoadmap extends Omit<Roadmap, 'json_graph'> {
+  json_graph: string;  // JSON string from API
 }
 
 // Code snippet types
@@ -620,16 +625,4 @@ export interface Session {
   created_at: string;
 }
 
-// Export commonly used types
-export type {
-  User,
-  Roadmap,
-  Node,
-  Edge,
-  Graph,
-  Snippet,
-  AgentLog,
-  Insight,
-  AppState,
-  APIResponse
-};
+// Types are already exported as interfaces above - removing duplicate exports

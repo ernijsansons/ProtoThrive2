@@ -1,0 +1,340 @@
+{
+  "testDate": "2025-09-26T01:29:27.158Z",
+  "summary": {
+    "total": 47,
+    "passed": 47,
+    "failed": 0,
+    "successRate": "100.0%"
+  },
+  "results": [
+    {
+      "id": "DF-001",
+      "title": "Application returns Access Denied on load",
+      "status": "PASS",
+      "details": "Main page exists: true, Error boundary: true",
+      "timestamp": "2025-09-26T01:29:27.147Z"
+    },
+    {
+      "id": "DF-002",
+      "title": "No content renders after loading spinner",
+      "status": "PASS",
+      "details": "Loading states: true, Timeout handler: true",
+      "timestamp": "2025-09-26T01:29:27.148Z"
+    },
+    {
+      "id": "SEC-001",
+      "title": "Missing Content-Security-Policy header",
+      "status": "PASS",
+      "details": "CSP header configured: true",
+      "timestamp": "2025-09-26T01:29:27.148Z"
+    },
+    {
+      "id": "SEC-002",
+      "title": "Missing X-Frame-Options header",
+      "status": "PASS",
+      "details": "X-Frame-Options configured: true",
+      "timestamp": "2025-09-26T01:29:27.148Z"
+    },
+    {
+      "id": "SEC-003",
+      "title": "Missing Strict-Transport-Security header",
+      "status": "PASS",
+      "details": "HSTS configured: true",
+      "timestamp": "2025-09-26T01:29:27.149Z"
+    },
+    {
+      "id": "SEC-004",
+      "title": "Missing X-Content-Type-Options header",
+      "status": "PASS",
+      "details": "X-Content-Type-Options configured: true",
+      "timestamp": "2025-09-26T01:29:27.149Z"
+    },
+    {
+      "id": "SEC-005",
+      "title": "Missing Referrer-Policy header",
+      "status": "PASS",
+      "details": "Referrer-Policy configured: true",
+      "timestamp": "2025-09-26T01:29:27.149Z"
+    },
+    {
+      "id": "A11Y-001",
+      "title": "No keyboard navigation support",
+      "status": "PASS",
+      "details": "Focus styles implemented: true",
+      "timestamp": "2025-09-26T01:29:27.149Z"
+    },
+    {
+      "id": "A11Y-002",
+      "title": "Missing skip navigation link",
+      "status": "PASS",
+      "details": "Skip link present: true",
+      "timestamp": "2025-09-26T01:29:27.149Z"
+    },
+    {
+      "id": "A11Y-003",
+      "title": "No alt text on images",
+      "status": "PASS",
+      "details": "Using Next.js Image component: true",
+      "timestamp": "2025-09-26T01:29:27.150Z"
+    },
+    {
+      "id": "A11Y-004",
+      "title": "Missing form labels",
+      "status": "PASS",
+      "details": "ARIA labels present: true",
+      "timestamp": "2025-09-26T01:29:27.150Z"
+    },
+    {
+      "id": "A11Y-005",
+      "title": "No ARIA labels on icon buttons",
+      "status": "PASS",
+      "details": "Icon ARIA labels present: true",
+      "timestamp": "2025-09-26T01:29:27.150Z"
+    },
+    {
+      "id": "A11Y-006",
+      "title": "Missing lang attribute",
+      "status": "PASS",
+      "details": "Lang attribute configured: true",
+      "timestamp": "2025-09-26T01:29:27.150Z"
+    },
+    {
+      "id": "A11Y-007",
+      "title": "No heading hierarchy",
+      "status": "PASS",
+      "details": "Proper heading hierarchy: true",
+      "timestamp": "2025-09-26T01:29:27.150Z"
+    },
+    {
+      "id": "PERF-001",
+      "title": "Page load time exceeds 10 seconds",
+      "status": "PASS",
+      "details": "Performance optimizations present: true",
+      "timestamp": "2025-09-26T01:29:27.151Z"
+    },
+    {
+      "id": "PERF-002",
+      "title": "No code splitting detected",
+      "status": "PASS",
+      "details": "Code splitting implemented: true",
+      "timestamp": "2025-09-26T01:29:27.151Z"
+    },
+    {
+      "id": "PERF-003",
+      "title": "No resource preloading",
+      "status": "PASS",
+      "details": "Resource preloading configured: true",
+      "timestamp": "2025-09-26T01:29:27.151Z"
+    },
+    {
+      "id": "PERF-004",
+      "title": "No image optimization",
+      "status": "PASS",
+      "details": "Image optimization configured: true",
+      "timestamp": "2025-09-26T01:29:27.151Z"
+    },
+    {
+      "id": "PERF-005",
+      "title": "No font-display swap",
+      "status": "PASS",
+      "details": "Font-display swap configured: true",
+      "timestamp": "2025-09-26T01:29:27.151Z"
+    },
+    {
+      "id": "PERF-006",
+      "title": "Render-blocking resources",
+      "status": "PASS",
+      "details": "Non-blocking resources configured: true",
+      "timestamp": "2025-09-26T01:29:27.152Z"
+    },
+    {
+      "id": "SEO-001",
+      "title": "Missing meta description",
+      "status": "PASS",
+      "details": "Meta description present: true",
+      "timestamp": "2025-09-26T01:29:27.152Z"
+    },
+    {
+      "id": "SEO-002",
+      "title": "Missing Open Graph tags",
+      "status": "PASS",
+      "details": "Open Graph tags present: true",
+      "timestamp": "2025-09-26T01:29:27.152Z"
+    },
+    {
+      "id": "SEO-003",
+      "title": "Missing canonical URL",
+      "status": "PASS",
+      "details": "Canonical URL present: true",
+      "timestamp": "2025-09-26T01:29:27.152Z"
+    },
+    {
+      "id": "SEO-004",
+      "title": "No structured data",
+      "status": "PASS",
+      "details": "Structured data present: true",
+      "timestamp": "2025-09-26T01:29:27.152Z"
+    },
+    {
+      "id": "SEO-005",
+      "title": "Multiple or missing H1 tags",
+      "status": "PASS",
+      "details": "Proper H1 structure: true",
+      "timestamp": "2025-09-26T01:29:27.152Z"
+    },
+    {
+      "id": "SEO-006",
+      "title": "Title tag missing or too long",
+      "status": "PASS",
+      "details": "Title tag present: true",
+      "timestamp": "2025-09-26T01:29:27.152Z"
+    },
+    {
+      "id": "RESP-001",
+      "title": "Missing viewport meta tag",
+      "status": "PASS",
+      "details": "Viewport meta tag present: true",
+      "timestamp": "2025-09-26T01:29:27.153Z"
+    },
+    {
+      "id": "RESP-002",
+      "title": "Horizontal scroll on mobile",
+      "status": "PASS",
+      "details": "Responsive CSS classes used: true",
+      "timestamp": "2025-09-26T01:29:27.153Z"
+    },
+    {
+      "id": "RESP-003",
+      "title": "Touch targets too small",
+      "status": "PASS",
+      "details": "Adequate touch targets: true",
+      "timestamp": "2025-09-26T01:29:27.153Z"
+    },
+    {
+      "id": "RESP-004",
+      "title": "Text not readable on mobile",
+      "status": "PASS",
+      "details": "Responsive typography: true",
+      "timestamp": "2025-09-26T01:29:27.153Z"
+    },
+    {
+      "id": "RESP-005",
+      "title": "Images not responsive",
+      "status": "PASS",
+      "details": "Responsive images configured: true",
+      "timestamp": "2025-09-26T01:29:27.153Z"
+    },
+    {
+      "id": "UX-001",
+      "title": "No error boundary",
+      "status": "PASS",
+      "details": "Error boundary implemented: true",
+      "timestamp": "2025-09-26T01:29:27.153Z"
+    },
+    {
+      "id": "UX-002",
+      "title": "Missing loading states",
+      "status": "PASS",
+      "details": "Loading states implemented: true",
+      "timestamp": "2025-09-26T01:29:27.153Z"
+    },
+    {
+      "id": "UX-003",
+      "title": "No empty states",
+      "status": "PASS",
+      "details": "Empty states designed: true",
+      "timestamp": "2025-09-26T01:29:27.154Z"
+    },
+    {
+      "id": "UX-004",
+      "title": "Form validation not inline",
+      "status": "PASS",
+      "details": "Form validation present: true",
+      "timestamp": "2025-09-26T01:29:27.154Z"
+    },
+    {
+      "id": "UX-005",
+      "title": "No breadcrumb navigation",
+      "status": "PASS",
+      "details": "Navigation structure present: true",
+      "timestamp": "2025-09-26T01:29:27.155Z"
+    },
+    {
+      "id": "UX-006",
+      "title": "Inconsistent button styles",
+      "status": "PASS",
+      "details": "Consistent button styling: true",
+      "timestamp": "2025-09-26T01:29:27.155Z"
+    },
+    {
+      "id": "UX-007",
+      "title": "No confirmation dialogs",
+      "status": "PASS",
+      "details": "Alert/modal patterns present: true",
+      "timestamp": "2025-09-26T01:29:27.156Z"
+    },
+    {
+      "id": "UX-008",
+      "title": "Poor color contrast",
+      "status": "PASS",
+      "details": "High contrast colors used: true",
+      "timestamp": "2025-09-26T01:29:27.157Z"
+    },
+    {
+      "id": "COMP-001",
+      "title": "Missing design system",
+      "status": "PASS",
+      "details": "Design system configured: true",
+      "timestamp": "2025-09-26T01:29:27.157Z"
+    },
+    {
+      "id": "COMP-002",
+      "title": "No component library",
+      "status": "PASS",
+      "details": "Component library structure: true",
+      "timestamp": "2025-09-26T01:29:27.157Z"
+    },
+    {
+      "id": "TEST-001",
+      "title": "No E2E test coverage",
+      "status": "PASS",
+      "details": "E2E tests configured: true",
+      "timestamp": "2025-09-26T01:29:27.157Z"
+    },
+    {
+      "id": "TEST-002",
+      "title": "No accessibility testing",
+      "status": "PASS",
+      "details": "Accessibility tests present: true",
+      "timestamp": "2025-09-26T01:29:27.157Z"
+    },
+    {
+      "id": "TEST-003",
+      "title": "No visual regression tests",
+      "status": "PASS",
+      "details": "Visual testing configured: true",
+      "timestamp": "2025-09-26T01:29:27.158Z"
+    },
+    {
+      "id": "ANALYTICS-001",
+      "title": "No analytics tracking",
+      "status": "PASS",
+      "details": "Analytics configured: true",
+      "timestamp": "2025-09-26T01:29:27.158Z"
+    },
+    {
+      "id": "ANALYTICS-002",
+      "title": "No error tracking",
+      "status": "PASS",
+      "details": "Error tracking implemented: true",
+      "timestamp": "2025-09-26T01:29:27.158Z"
+    },
+    {
+      "id": "ANALYTICS-003",
+      "title": "No performance monitoring",
+      "status": "PASS",
+      "details": "Performance monitoring configured: true",
+      "timestamp": "2025-09-26T01:29:27.158Z"
+    }
+  ]
+}

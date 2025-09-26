@@ -3,6 +3,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Font Performance Optimization - Fix for PERF-005 */
+@font-face {
+  font-family: 'System';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap; /* Prevents invisible text during font loading */
+  src: local('system-ui'), local('-apple-system'), local('BlinkMacSystemFont');
+}
+
 /* Elite Neon Color Variables */
 :root {
   /* Neon Blues */

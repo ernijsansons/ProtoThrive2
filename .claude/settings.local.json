@@ -109,7 +109,18 @@
       "Bash(for file in interactions.tsx monitoring.tsx responsiveDesign.ts memoryManagement.ts security.ts)",
       "Bash(do mv \"$file\" ../../temp-utils/)",
       "Bash(npm:*)",
-      "Bash(claude --version)"
+      "Bash(claude --version)",
+      "Bash(unzip:*)",
+      "Bash(timeout 10s bash -c 'while ! curl -s http://localhost:5000 > /dev/null; do sleep 1; done; echo \"\"Server is ready\"\"')",
+      "Bash(venv\\Scripts\\activate:*)",
+      "Bash(venv/Scripts/python -m pip install:*)",
+      "Bash(../venv/Scripts/python -m pytest tests/test_logger.py -v --tb=short)",
+      "Bash(../venv/Scripts/python -m pip install:*)",
+      "Bash(PYTHONPATH=. ../venv/Scripts/python -m pytest tests/test_logger.py -v --tb=short)",
+      "Bash(npx next dev:*)",
+      "Bash(../venv/Scripts/python python-observability-setup.py)",
+      "Bash(set PYTHONIOENCODING=utf-8)",
+      "Bash(git push:*)"
     ],
     "defaultMode": "acceptEdits"
   }

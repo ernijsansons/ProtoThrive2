@@ -1,0 +1,305 @@
+# ProtoThrive Observability Stack with Docker Compose
+# Complete observability setup for local development and testing
+#
+# Ref: CLAUDE.md Section 5 - Security, Secrets, & Monitoring Foundation
+
+version: '3.8'
+
+networks:
+  protothrive-observability:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  loki-data:
+
+services:
+  # ProtoThrive Application Services
+  protothrive-backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.simple
+    ports:
+      - "8787:8787"
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+      - ENVIRONMENT=development
+    networks:
+      - protothrive-observability
+    depends_on:
+      - prometheus
+    labels:
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=8787"
+      - "prometheus.io/path=/metrics"
+
+  protothrive-frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.simple
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8787
+    networks:
+      - protothrive-observability
+
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: protothrive-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - protothrive-observability
+    labels:
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=9090"
+
+  # Grafana - Visualization
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: protothrive-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=protothrive2024
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - protothrive-observability
+    depends_on:
+      - prometheus
+      - loki
+
+  # Loki - Log Aggregation
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: protothrive-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki-data:/loki
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+    networks:
+      - protothrive-observability
+
+  # Promtail - Log Shipping
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: protothrive-promtail
+    restart: unless-stopped
+    volumes:
+      - /var/log:/var/log:ro
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - protothrive-observability
+    depends_on:
+      - loki
+
+  # AlertManager - Alert Management
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    container_name: protothrive-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    networks:
+      - protothrive-observability
+
+  # Node Exporter - System Metrics
+  node-exporter:
+    image: prom/node-exporter:v1.6.0
+    container_name: protothrive-node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - protothrive-observability
+
+  # cAdvisor - Container Metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
+    container_name: protothrive-cadvisor
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+    networks:
+      - protothrive-observability
+
+  # Jaeger - Distributed Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:1.47
+    container_name: protothrive-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # HTTP collector
+      - "6831:6831/udp"  # UDP agent
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - protothrive-observability
+
+  # Redis - Metrics and Caching for Observability
+  redis:
+    image: redis:7-alpine
+    container_name: protothrive-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - protothrive-observability
+
+  # Redis Exporter - Redis Metrics
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.51.0
+    container_name: protothrive-redis-exporter
+    restart: unless-stopped
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    networks:
+      - protothrive-observability
+    depends_on:
+      - redis
+
+  # Log Generator - For Testing
+  log-generator:
+    image: alpine:latest
+    container_name: protothrive-log-generator
+    restart: unless-stopped
+    command: |
+      sh -c '
+        while true; do
+          echo "$(date): ProtoThrive test log entry - Level: INFO, Component: test-generator, Message: Heartbeat"
+          echo "$(date): ProtoThrive test log entry - Level: DEBUG, Component: test-generator, Message: Debug information"
+          if [ $$(( RANDOM % 10 )) -eq 0 ]; then
+            echo "$(date): ProtoThrive test log entry - Level: ERROR, Component: test-generator, Message: Simulated error for testing"
+          fi
+          sleep 30
+        done
+      '
+    volumes:
+      - /var/log:/var/log
+    networks:
+      - protothrive-observability
+
+  # BlackBox Exporter - External Service Monitoring
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.24.0
+    container_name: protothrive-blackbox-exporter
+    restart: unless-stopped
+    ports:
+      - "9115:9115"
+    volumes:
+      - ./blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    command:
+      - '--config.file=/etc/blackbox_exporter/config.yml'
+    networks:
+      - protothrive-observability
+
+# Health check service to verify all components
+  healthcheck:
+    image: appropriate/curl:latest
+    container_name: protothrive-healthcheck
+    restart: "no"
+    command: |
+      sh -c '
+        echo "🏥 ProtoThrive Observability Health Check Starting..."
+        sleep 30
+
+        echo "📊 Checking Prometheus..."
+        curl -f http://prometheus:9090/-/healthy || echo "❌ Prometheus unhealthy"
+
+        echo "📈 Checking Grafana..."
+        curl -f http://grafana:3000/api/health || echo "❌ Grafana unhealthy"
+
+        echo "📝 Checking Loki..."
+        curl -f http://loki:3100/ready || echo "❌ Loki unhealthy"
+
+        echo "🔔 Checking AlertManager..."
+        curl -f http://alertmanager:9093/-/healthy || echo "❌ AlertManager unhealthy"
+
+        echo "🖥️ Checking Node Exporter..."
+        curl -f http://node-exporter:9100/metrics | head -5 || echo "❌ Node Exporter unhealthy"
+
+        echo "📦 Checking cAdvisor..."
+        curl -f http://cadvisor:8080/healthz || echo "❌ cAdvisor unhealthy"
+
+        echo "🔍 Checking Jaeger..."
+        curl -f http://jaeger:16686/ || echo "❌ Jaeger unhealthy"
+
+        echo "📊 Checking ProtoThrive Backend..."
+        curl -f http://protothrive-backend:8787/health || echo "❌ Backend unhealthy"
+
+        echo "🎯 Checking ProtoThrive Backend Metrics..."
+        curl -f http://protothrive-backend:8787/metrics | head -5 || echo "❌ Backend metrics unavailable"
+
+        echo "✅ ProtoThrive Observability Health Check Complete!"
+      '
+    networks:
+      - protothrive-observability
+    depends_on:
+      - prometheus
+      - grafana
+      - loki
+      - alertmanager
+      - node-exporter
+      - cadvisor
+      - jaeger
+      - protothrive-backend

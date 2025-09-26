@@ -1,0 +1,957 @@
+# CI/CD Pipeline Configuration
+## Automated Testing, Deployment, and Monitoring
+
+---
+
+## 🚀 GitHub Actions Workflow
+
+### Main CI/CD Pipeline
+
+```yaml
+# .github/workflows/ci-cd-pipeline.yml
+name: ProtoThrive CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * *' # Daily audit at midnight
+
+env:
+  NODE_VERSION: '18'
+  ARTIFACT_RETENTION_DAYS: 30
+
+jobs:
+  # ==================== CODE QUALITY ====================
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Full history for better analysis
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint:js
+        continue-on-error: false
+      
+      - name: Run Stylelint
+        run: npm run lint:css
+        continue-on-error: false
+      
+      - name: Run TypeScript checks
+        run: npm run typecheck
+      
+      - name: Check for security vulnerabilities
+        run: npm audit --audit-level=moderate
+      
+      - name: Run SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ==================== UNIT TESTS ====================
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    strategy:
+      matrix:
+        node: [16, 18, 20]
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run unit tests
+        run: npm run test:unit:coverage
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          flags: unit-tests
+          name: unit-coverage-node-${{ matrix.node }}
+
+  # ==================== E2E TESTS ====================
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+        viewport: [desktop, mobile]
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      
+      - name: Run E2E tests - ${{ matrix.browser }} - ${{ matrix.viewport }}
+        run: |
+          npm run test:e2e:${{ matrix.browser }}:${{ matrix.viewport }}
+        env:
+          CI: true
+          BASE_URL: ${{ secrets.STAGING_URL }}
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-results-${{ matrix.browser }}-${{ matrix.viewport }}
+          path: playwright-report/
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+      
+      - name: Upload test videos
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-videos-${{ matrix.browser }}-${{ matrix.viewport }}
+          path: test-results/
+          retention-days: 7
+
+  # ==================== ACCESSIBILITY TESTS ====================
+  accessibility-tests:
+    name: Accessibility Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright
+        run: npx playwright install chromium
+      
+      - name: Run accessibility tests
+        run: npm run test:a11y
+      
+      - name: Upload accessibility report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: accessibility-report
+          path: a11y-report/
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  # ==================== PERFORMANCE TESTS ====================
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            https://protothrive-frontend.pages.dev
+            https://protothrive-frontend.pages.dev/features
+            https://protothrive-frontend.pages.dev/pricing
+          budgetPath: ./lighthouse-budget.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+      
+      - name: Check bundle size
+        run: npm run analyze:bundle
+      
+      - name: Performance Budget Check
+        run: |
+          node scripts/check-performance-budget.js
+
+  # ==================== SECURITY SCAN ====================
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run Trivy security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+      
+      - name: OWASP ZAP Scan
+        uses: zaproxy/action-full-scan@v0.7.0
+        with:
+          target: 'https://protothrive-frontend.pages.dev'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+
+  # ==================== VISUAL REGRESSION ====================
+  visual-regression:
+    name: Visual Regression Tests
+    runs-on: ubuntu-latest
+    needs: [unit-tests, e2e-tests]
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run Percy visual tests
+        run: npm run test:visual
+        env:
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+
+  # ==================== BUILD & DEPLOY ====================
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    needs: [unit-tests, e2e-tests, accessibility-tests, security-scan]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+          REACT_APP_API_URL: ${{ secrets.API_URL }}
+          REACT_APP_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          REACT_APP_GA_ID: ${{ secrets.GA_ID }}
+      
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages publish dist --project-name=protothrive-frontend
+      
+      - name: Purge CDN Cache
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
+      
+      - name: Notify Slack on Success
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "✅ Deployment Successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*ProtoThrive Frontend Deployed Successfully*\n*Branch:* ${{ github.ref_name }}\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  # ==================== POST-DEPLOYMENT CHECKS ====================
+  post-deployment:
+    name: Post-Deployment Verification
+    runs-on: ubuntu-latest
+    needs: build-and-deploy
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Wait for deployment
+        run: sleep 60
+      
+      - name: Health check
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://protothrive-frontend.pages.dev)
+          if [ $response -eq 200 ]; then
+            echo "✅ Site is up and running"
+          else
+            echo "❌ Site returned status code: $response"
+            exit 1
+          fi
+      
+      - name: Run smoke tests
+        run: npm run test:smoke
+      
+      - name: Check security headers
+        run: |
+          npm run test:security-headers
+      
+      - name: Monitor Core Web Vitals
+        run: |
+          npm run monitor:cwv
+
+```
+
+---
+
+## 📦 Package.json Scripts
+
+```json
+{
+  "scripts": {
+    "// Development": "",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    
+    "// Testing": "",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "vitest",
+    "test:unit:coverage": "vitest --coverage",
+    "test:unit:watch": "vitest --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:chromium:desktop": "playwright test --project='Desktop Chrome'",
+    "test:e2e:chromium:mobile": "playwright test --project='Mobile Chrome'",
+    "test:e2e:firefox:desktop": "playwright test --project='Desktop Firefox'",
+    "test:e2e:firefox:mobile": "playwright test --project='Mobile Firefox'",
+    "test:e2e:webkit:desktop": "playwright test --project='Desktop Safari'",
+    "test:e2e:webkit:mobile": "playwright test --project='Mobile Safari'",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:a11y": "playwright test tests/accessibility",
+    "test:visual": "percy exec -- playwright test tests/visual",
+    "test:smoke": "playwright test tests/smoke --retries=0",
+    "test:security-headers": "node scripts/check-security-headers.js",
+    
+    "// Code Quality": "",
+    "lint": "npm run lint:js && npm run lint:css",
+    "lint:js": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:css": "stylelint '**/*.{css,scss}'",
+    "lint:fix": "eslint . --fix && stylelint '**/*.{css,scss}' --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    
+    "// Analysis": "",
+    "analyze:bundle": "vite-bundle-visualizer",
+    "analyze:dependencies": "npx depcheck",
+    "audit": "npm audit --audit-level=moderate",
+    "audit:fix": "npm audit fix",
+    
+    "// Monitoring": "",
+    "monitor:cwv": "node scripts/monitor-web-vitals.js",
+    "monitor:errors": "node scripts/check-sentry-errors.js",
+    
+    "// Pre-commit hooks": "",
+    "pre-commit": "lint-staged",
+    "prepare": "husky install"
+  }
+}
+```
+
+---
+
+## 🎯 Lighthouse Budget Configuration
+
+```json
+{
+  "path": "/*",
+  "timings": [
+    {
+      "metric": "interactive",
+      "budget": 3800
+    },
+    {
+      "metric": "first-contentful-paint",
+      "budget": 1800
+    },
+    {
+      "metric": "largest-contentful-paint",
+      "budget": 2500
+    },
+    {
+      "metric": "total-blocking-time",
+      "budget": 200
+    },
+    {
+      "metric": "cumulative-layout-shift",
+      "budget": 0.1
+    },
+    {
+      "metric": "speed-index",
+      "budget": 3400
+    }
+  ],
+  "resourceSizes": [
+    {
+      "resourceType": "script",
+      "budget": 250
+    },
+    {
+      "resourceType": "stylesheet",
+      "budget": 100
+    },
+    {
+      "resourceType": "image",
+      "budget": 500
+    },
+    {
+      "resourceType": "font",
+      "budget": 150
+    },
+    {
+      "resourceType": "third-party",
+      "budget": 100
+    },
+    {
+      "resourceType": "total",
+      "budget": 1000
+    }
+  ],
+  "resourceCounts": [
+    {
+      "resourceType": "script",
+      "budget": 10
+    },
+    {
+      "resourceType": "stylesheet",
+      "budget": 5
+    },
+    {
+      "resourceType": "image",
+      "budget": 20
+    },
+    {
+      "resourceType": "font",
+      "budget": 5
+    },
+    {
+      "resourceType": "third-party",
+      "budget": 5
+    }
+  ]
+}
+```
+
+---
+
+## 🔧 Pre-commit Hooks
+
+```json
+// .husky/pre-commit
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npm run pre-commit
+
+// .lintstagedrc.json
+{
+  "*.{js,jsx,ts,tsx}": [
+    "eslint --fix",
+    "prettier --write",
+    "vitest related --run"
+  ],
+  "*.{css,scss}": [
+    "stylelint --fix",
+    "prettier --write"
+  ],
+  "*.{json,md,yml,yaml}": [
+    "prettier --write"
+  ],
+  "*.{png,jpg,jpeg,gif,svg}": [
+    "imagemin-lint-staged"
+  ]
+}
+```
+
+---
+
+## 🛠️ Custom Scripts
+
+### Performance Budget Checker
+
+```javascript
+// scripts/check-performance-budget.js
+const fs = require('fs');
+const path = require('path');
+
+const BUDGETS = {
+  js: 250 * 1024,      // 250KB
+  css: 100 * 1024,     // 100KB
+  images: 500 * 1024,  // 500KB per image
+  total: 1000 * 1024   // 1MB total
+};
+
+function checkBudget(distPath) {
+  const files = fs.readdirSync(distPath, { withFileTypes: true });
+  const results = {
+    js: 0,
+    css: 0,
+    images: [],
+    total: 0,
+    violations: []
+  };
+
+  files.forEach(file => {
+    if (file.isFile()) {
+      const filePath = path.join(distPath, file.name);
+      const stats = fs.statSync(filePath);
+      const size = stats.size;
+      
+      results.total += size;
+      
+      if (file.name.endsWith('.js')) {
+        results.js += size;
+      } else if (file.name.endsWith('.css')) {
+        results.css += size;
+      } else if (/\.(jpg|jpeg|png|gif|webp)$/i.test(file.name)) {
+        results.images.push({ name: file.name, size });
+        if (size > BUDGETS.images) {
+          results.violations.push(`Image ${file.name}: ${(size / 1024).toFixed(2)}KB exceeds budget`);
+        }
+      }
+    }
+  });
+
+  // Check violations
+  if (results.js > BUDGETS.js) {
+    results.violations.push(`JS bundle: ${(results.js / 1024).toFixed(2)}KB exceeds budget`);
+  }
+  if (results.css > BUDGETS.css) {
+    results.violations.push(`CSS bundle: ${(results.css / 1024).toFixed(2)}KB exceeds budget`);
+  }
+  if (results.total > BUDGETS.total) {
+    results.violations.push(`Total size: ${(results.total / 1024).toFixed(2)}KB exceeds budget`);
+  }
+
+  // Report results
+  console.log('📊 Performance Budget Check Results:');
+  console.log(`  JS: ${(results.js / 1024).toFixed(2)}KB / ${(BUDGETS.js / 1024)}KB`);
+  console.log(`  CSS: ${(results.css / 1024).toFixed(2)}KB / ${(BUDGETS.css / 1024)}KB`);
+  console.log(`  Total: ${(results.total / 1024).toFixed(2)}KB / ${(BUDGETS.total / 1024)}KB`);
+  
+  if (results.violations.length > 0) {
+    console.error('\n❌ Budget violations:');
+    results.violations.forEach(v => console.error(`  - ${v}`));
+    process.exit(1);
+  } else {
+    console.log('\n✅ All budgets passed!');
+  }
+}
+
+checkBudget('./dist');
+```
+
+### Security Headers Checker
+
+```javascript
+// scripts/check-security-headers.js
+const https = require('https');
+
+const REQUIRED_HEADERS = {
+  'content-security-policy': /default-src/,
+  'x-frame-options': /DENY|SAMEORIGIN/,
+  'x-content-type-options': /nosniff/,
+  'strict-transport-security': /max-age=/,
+  'referrer-policy': /strict-origin|no-referrer/,
+  'permissions-policy': /geolocation/
+};
+
+function checkHeaders(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, (res) => {
+      const headers = res.headers;
+      const results = {
+        passed: [],
+        failed: [],
+        score: 0
+      };
+
+      Object.entries(REQUIRED_HEADERS).forEach(([header, pattern]) => {
+        const value = headers[header.toLowerCase()];
+        if (value && pattern.test(value)) {
+          results.passed.push(`✅ ${header}: ${value}`);
+          results.score++;
+        } else {
+          results.failed.push(`❌ ${header}: ${value || 'MISSING'}`);
+        }
+      });
+
+      const totalHeaders = Object.keys(REQUIRED_HEADERS).length;
+      const percentage = (results.score / totalHeaders * 100).toFixed(0);
+
+      console.log(`\n🔒 Security Headers Check for ${url}`);
+      console.log(`Score: ${results.score}/${totalHeaders} (${percentage}%)\n`);
+      
+      if (results.passed.length > 0) {
+        console.log('Passed:');
+        results.passed.forEach(p => console.log(`  ${p}`));
+      }
+      
+      if (results.failed.length > 0) {
+        console.log('\nFailed:');
+        results.failed.forEach(f => console.log(`  ${f}`));
+      }
+
+      if (results.score < totalHeaders) {
+        reject(new Error('Security headers check failed'));
+      } else {
+        resolve(results);
+      }
+    }).on('error', reject);
+  });
+}
+
+checkHeaders('https://protothrive-frontend.pages.dev')
+  .catch(err => {
+    console.error('\n❌ Security check failed:', err.message);
+    process.exit(1);
+  });
+```
+
+### Web Vitals Monitor
+
+```javascript
+// scripts/monitor-web-vitals.js
+const puppeteer = require('puppeteer');
+
+async function measureWebVitals(url) {
+  const browser = await puppeteer.launch({ headless: true });
+  const page = await browser.newPage();
+
+  // Inject web-vitals library
+  await page.evaluateOnNewDocument(() => {
+    window.webVitals = [];
+    
+    // Mock web-vitals functions
+    window.measureCLS = () => {
+      let cls = 0;
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (!entry.hadRecentInput) {
+            cls += entry.value;
+          }
+        }
+        window.webVitals.push({ name: 'CLS', value: cls });
+      }).observe({ type: 'layout-shift', buffered: true });
+    };
+    
+    window.measureLCP = () => {
+      new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        const lastEntry = entries[entries.length - 1];
+        window.webVitals.push({ name: 'LCP', value: lastEntry.startTime });
+      }).observe({ type: 'largest-contentful-paint', buffered: true });
+    };
+    
+    window.measureFID = () => {
+      new PerformanceObserver((list) => {
+        const firstInput = list.getEntries()[0];
+        const fid = firstInput.processingStart - firstInput.startTime;
+        window.webVitals.push({ name: 'FID', value: fid });
+      }).observe({ type: 'first-input', buffered: true });
+    };
+  });
+
+  await page.goto(url, { waitUntil: 'networkidle2' });
+  
+  // Wait for metrics
+  await page.waitForTimeout(5000);
+  
+  // Collect metrics
+  const metrics = await page.evaluate(() => {
+    const navigation = performance.getEntriesByType('navigation')[0];
+    const paint = performance.getEntriesByType('paint');
+    
+    return {
+      TTFB: navigation.responseStart - navigation.requestStart,
+      FCP: paint.find(p => p.name === 'first-contentful-paint')?.startTime || 0,
+      DCL: navigation.domContentLoadedEventEnd - navigation.fetchStart,
+      Load: navigation.loadEventEnd - navigation.fetchStart,
+      WebVitals: window.webVitals
+    };
+  });
+
+  await browser.close();
+  
+  // Report results
+  console.log('\n📊 Core Web Vitals Report');
+  console.log('========================');
+  console.log(`URL: ${url}`);
+  console.log(`\nMetrics:`);
+  console.log(`  TTFB: ${metrics.TTFB.toFixed(2)}ms ${metrics.TTFB < 600 ? '✅' : '❌'}`);
+  console.log(`  FCP: ${metrics.FCP.toFixed(2)}ms ${metrics.FCP < 1800 ? '✅' : '❌'}`);
+  console.log(`  DCL: ${metrics.DCL.toFixed(2)}ms`);
+  console.log(`  Load: ${metrics.Load.toFixed(2)}ms`);
+  
+  if (metrics.WebVitals.length > 0) {
+    console.log('\nWeb Vitals:');
+    metrics.WebVitals.forEach(vital => {
+      let threshold, status;
+      switch (vital.name) {
+        case 'CLS':
+          threshold = 0.1;
+          status = vital.value < threshold ? '✅' : '❌';
+          console.log(`  ${vital.name}: ${vital.value.toFixed(3)} ${status}`);
+          break;
+        case 'LCP':
+          threshold = 2500;
+          status = vital.value < threshold ? '✅' : '❌';
+          console.log(`  ${vital.name}: ${vital.value.toFixed(2)}ms ${status}`);
+          break;
+        case 'FID':
+          threshold = 100;
+          status = vital.value < threshold ? '✅' : '❌';
+          console.log(`  ${vital.name}: ${vital.value.toFixed(2)}ms ${status}`);
+          break;
+      }
+    });
+  }
+  
+  return metrics;
+}
+
+measureWebVitals('https://protothrive-frontend.pages.dev')
+  .catch(console.error);
+```
+
+---
+
+## 🔔 Monitoring & Alerts
+
+### Datadog Configuration
+
+```javascript
+// datadog.config.js
+module.exports = {
+  rum: {
+    applicationId: process.env.DD_APPLICATION_ID,
+    clientToken: process.env.DD_CLIENT_TOKEN,
+    site: 'datadoghq.com',
+    service: 'protothrive-frontend',
+    env: process.env.NODE_ENV,
+    version: process.env.npm_package_version,
+    sampleRate: 100,
+    trackInteractions: true,
+    defaultPrivacyLevel: 'mask-user-input'
+  },
+  
+  alerts: {
+    // Alert if error rate > 1%
+    errorRate: {
+      threshold: 0.01,
+      window: '5m',
+      severity: 'warning'
+    },
+    
+    // Alert if P95 response time > 3s
+    responseTime: {
+      metric: 'p95',
+      threshold: 3000,
+      window: '5m',
+      severity: 'critical'
+    },
+    
+    // Alert if Apdex < 0.8
+    apdex: {
+      threshold: 0.8,
+      window: '5m',
+      severity: 'warning'
+    }
+  }
+};
+```
+
+### Sentry Configuration
+
+```javascript
+// sentry.config.js
+import * as Sentry from '@sentry/react';
+import { BrowserTracing } from '@sentry/tracing';
+
+Sentry.init({
+  dsn: process.env.REACT_APP_SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+  
+  integrations: [
+    new BrowserTracing({
+      tracingOrigins: ['localhost', 'protothrive-frontend.pages.dev', /^\//],
+      routingInstrumentation: Sentry.reactRouterV6Instrumentation(
+        React.useEffect,
+        useLocation,
+        useNavigationType,
+        createRoutesFromChildren,
+        matchRoutes
+      ),
+    }),
+    new Sentry.Replay({
+      maskAllText: false,
+      blockAllMedia: false,
+    }),
+  ],
+  
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+  
+  beforeSend(event, hint) {
+    // Filter out known issues
+    if (event.exception) {
+      const error = hint.originalException;
+      // Filter out network errors
+      if (error?.message?.includes('Network request failed')) {
+        return null;
+      }
+    }
+    return event;
+  },
+  
+  ignoreErrors: [
+    'ResizeObserver loop limit exceeded',
+    'Non-Error promise rejection captured',
+    /extension\//i,
+    /^chrome:\/\//i,
+  ],
+});
+```
+
+---
+
+## 📝 Deployment Checklist
+
+### Pre-Deployment
+- [ ] All tests passing (unit, e2e, a11y)
+- [ ] Performance budget met
+- [ ] Security scan completed
+- [ ] Visual regression approved
+- [ ] Code reviewed and approved
+- [ ] Documentation updated
+- [ ] Version bumped
+- [ ] Changelog updated
+
+### Deployment
+- [ ] Deploy to staging
+- [ ] Smoke tests on staging
+- [ ] Stakeholder approval
+- [ ] Deploy to production
+- [ ] Cache purged
+- [ ] DNS propagated
+
+### Post-Deployment
+- [ ] Health checks passing
+- [ ] Monitoring active
+- [ ] Error rates normal
+- [ ] Performance metrics stable
+- [ ] User feedback monitored
+- [ ] Rollback plan ready
+
+---
+
+## 🚨 Rollback Strategy
+
+```bash
+#!/bin/bash
+# rollback.sh
+
+PREVIOUS_VERSION=$1
+ENVIRONMENT=$2
+
+echo "🔄 Rolling back to version $PREVIOUS_VERSION on $ENVIRONMENT"
+
+# Cloudflare Pages rollback
+wrangler pages rollback --project-name=protothrive-frontend --version=$PREVIOUS_VERSION
+
+# Clear CDN cache
+curl -X POST "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  --data '{"purge_everything":true}'
+
+# Notify team
+curl -X POST $SLACK_WEBHOOK_URL \
+  -H 'Content-Type: application/json' \
+  -d "{\"text\":\"⚠️ Rolled back to version $PREVIOUS_VERSION on $ENVIRONMENT\"}"
+
+# Run smoke tests
+npm run test:smoke
+
+echo "✅ Rollback complete"
+```
+
+---
+
+END OF CI/CD CONFIGURATION
