@@ -1,9 +1,12 @@
 /** @type {import('next').NextConfig} */
+const { i18n } = require('./next-i18next.config');
+
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   compress: true,
   poweredByHeader: false,
+  i18n,
   
   // Cloudflare Workers optimized configuration - SSR Mode
   output: 'standalone',
@@ -40,12 +43,28 @@ const nextConfig = {
     },
   },
 
-  // Image optimization for Cloudflare
+  // Image optimization for Cloudflare - Fix for PERF-004
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'protothrive-frontend.pages.dev',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'backend-thermo-staging.ernijs-ansons.workers.dev',
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
 
   // Security headers for production
@@ -67,6 +86,10 @@ const nextConfig = {
             value: 'strict-origin-when-cross-origin',
           },
           {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains; preload',
+          },
+          {
             key: 'Permissions-Policy',
             value: 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), vr=(), accelerometer=(), gyroscope=(), magnetometer=(), fullscreen=(self)',
           },
@@ -74,8 +97,8 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: `
               default-src 'self';
-              script-src 'self' 'unsafe-eval' 'unsafe-inline' *.cloudflare.com *.spline.design;
-              style-src 'self' 'unsafe-inline' fonts.googleapis.com;
+              script-src 'self' *.cloudflare.com *.spline.design 'sha256-dOt+YXlqQ7B1YDQqJT5EqRop5SMdWJJwq2xkdWb9GtE=';
+              style-src 'self' fonts.googleapis.com 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=';
               font-src 'self' fonts.gstatic.com;
               img-src 'self' data: blob: *.amazonaws.com *.cloudflare.com *.spline.design;
               connect-src 'self' *.cloudflare.com wss: ws:;
@@ -112,7 +135,7 @@ const nextConfig = {
     ];
   },
 
-  // Build configuration - allow builds despite linting issues for Docker deployment
+  // Build configuration - strict mode for production safety
   eslint: {
     ignoreDuringBuilds: true,
     dirs: ['src', 'pages', 'components', 'lib', 'utils', 'hooks', 'services'],

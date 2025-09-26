@@ -32,16 +32,67 @@ const LandingPage = () => {
   return (
     <>
       <Head>
-        <title>ProtoThrive - AI-Powered Project Management (Beta)</title>
-        <meta name="description" content="Transform your project management with AI-powered roadmaps and visual workflows. Beta software for innovative teams." />
+        <title>ProtoThrive - AI-Powered Project Management Platform | Beta</title>
+        <meta name="description" content="Transform your project management with AI-powered roadmaps, visual workflows, and intelligent analytics. Beta software for innovative teams ready to thrive." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="robots" content="index, follow" />
-        <meta property="og:title" content="ProtoThrive - AI-Powered Project Management" />
-        <meta property="og:description" content="Transform your project management with AI-powered roadmaps and visual workflows." />
+        <meta name="keywords" content="project management, AI roadmaps, visual workflows, team collaboration, beta software, productivity tools" />
+        <meta name="author" content="ProtoThrive Team" />
+        <meta name="language" content="en" />
+
+        {/* Open Graph Meta Tags - Fix for SEO-002 */}
+        <meta property="og:title" content="ProtoThrive - AI-Powered Project Management Platform" />
+        <meta property="og:description" content="Transform your project management with AI-powered roadmaps, visual workflows, and intelligent analytics. Beta software for innovative teams." />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://protothrive.com" />
+        <meta property="og:url" content="https://protothrive-frontend.pages.dev" />
+        <meta property="og:site_name" content="ProtoThrive" />
+        <meta property="og:image" content="https://protothrive-frontend.pages.dev/og-image.jpg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="en_US" />
+
+        {/* Twitter Card Meta Tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="ProtoThrive - AI-Powered Project Management" />
+        <meta name="twitter:description" content="Transform your project management with AI-powered roadmaps and visual workflows." />
+        <meta name="twitter:image" content="https://protothrive-frontend.pages.dev/og-image.jpg" />
+        <meta name="twitter:creator" content="@ProtoThrive" />
+
+        {/* Canonical URL - Fix for SEO-003 */}
+        <link rel="canonical" href="https://protothrive-frontend.pages.dev" />
+
+        {/* Preconnect for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://backend-thermo-staging.ernijs-ansons.workers.dev" />
+
+        {/* Structured Data - Fix for SEO-004 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "ProtoThrive",
+              "description": "AI-powered project management platform with visual workflows and intelligent roadmaps",
+              "url": "https://protothrive-frontend.pages.dev",
+              "applicationCategory": "ProjectManagement",
+              "operatingSystem": "Web",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD",
+                "description": "Free Beta Access"
+              },
+              "publisher": {
+                "@type": "Organization",
+                "name": "ProtoThrive",
+                "url": "https://protothrive-frontend.pages.dev"
+              },
+              "screenshot": "https://protothrive-frontend.pages.dev/app-screenshot.jpg"
+            })
+          }}
+        />
       </Head>
 
       <div className="min-h-screen bg-gradient-dark text-text-primary font-elite">
@@ -273,3 +324,14 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+
+// Add i18n support
+export async function getServerSideProps({ locale }: { locale: string }) {
+  const { serverSideTranslations } = await import('next-i18next/serverSideTranslations');
+
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common', 'landing'])),
+    },
+  };
+}

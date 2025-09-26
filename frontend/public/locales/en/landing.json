@@ -1,0 +1,48 @@
+{
+  "_locale": "en",
+  "hero": {
+    "title": "AI-Powered Project Visualization",
+    "subtitle": "Transform your project management with intelligent roadmaps and visual workflows.",
+    "betaNotice": "*Beta version - features in active development",
+    "startFreeTrial": "Start Free Trial",
+    "startFreeTrialDescription": "Begin your free trial and explore all features",
+    "viewDemo": "View Demo",
+    "viewDemoDescription": "Watch a demonstration of ProtoThrive in action",
+    "ctaNavigation": "Call to action navigation",
+    "opensInSamePage": "Opens in the same page"
+  },
+  "features": {
+    "heading": "Key Features",
+    "selected": "Selected feature: {{feature}}",
+    "learnMore": "Learn more about {{feature}}",
+    "smartRoadmaps": {
+      "title": "Smart Roadmaps",
+      "description": "AI-assisted project visualization with intelligent milestone tracking and progress analytics."
+    },
+    "realtimeCollab": {
+      "title": "Real-time Collaboration",
+      "description": "Live editing and updates with team synchronization across all project elements."
+    },
+    "analytics": {
+      "title": "Analytics Dashboard",
+      "description": "Comprehensive project metrics and performance insights with customizable reporting."
+    }
+  },
+  "navigation": {
+    "navigatingTo": "Navigating to {{destination}}",
+    "mainMenu": "Main navigation menu",
+    "skipToContent": "Skip to main content"
+  },
+  "help": {
+    "keyboardShortcuts": "Keyboard Shortcuts:\n• Tab: Navigate between elements\n• Enter/Space: Activate buttons and links\n• Arrow keys: Navigate within menus\n• Escape: Close dialogs",
+    "showKeyboardShortcuts": "Show keyboard shortcuts help"
+  },
+  "accessibility": {
+    "loading": "Loading content, please wait",
+    "errorOccurred": "An error occurred. Please try again.",
+    "requiredField": "Required field",
+    "closeDialog": "Close dialog",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  }
+}

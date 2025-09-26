@@ -1,0 +1,48 @@
+{
+  "_locale": "es",
+  "hero": {
+    "title": "Visualización de Proyectos con IA",
+    "subtitle": "Transforma tu gestión de proyectos con hojas de ruta inteligentes y flujos de trabajo visuales.",
+    "betaNotice": "*Versión beta - funciones en desarrollo activo",
+    "startFreeTrial": "Prueba Gratuita",
+    "startFreeTrialDescription": "Comienza tu prueba gratuita y explora todas las funciones",
+    "viewDemo": "Ver Demo",
+    "viewDemoDescription": "Mira una demostración de ProtoThrive en acción",
+    "ctaNavigation": "Navegación de llamada a la acción",
+    "opensInSamePage": "Se abre en la misma página"
+  },
+  "features": {
+    "heading": "Características Principales",
+    "selected": "Característica seleccionada: {{feature}}",
+    "learnMore": "Más información sobre {{feature}}",
+    "smartRoadmaps": {
+      "title": "Hojas de Ruta Inteligentes",
+      "description": "Visualización de proyectos asistida por IA con seguimiento inteligente de hitos y análisis de progreso."
+    },
+    "realtimeCollab": {
+      "title": "Colaboración en Tiempo Real",
+      "description": "Edición en vivo y actualizaciones con sincronización de equipo en todos los elementos del proyecto."
+    },
+    "analytics": {
+      "title": "Panel de Análisis",
+      "description": "Métricas completas del proyecto e información de rendimiento con informes personalizables."
+    }
+  },
+  "navigation": {
+    "navigatingTo": "Navegando a {{destination}}",
+    "mainMenu": "Menú de navegación principal",
+    "skipToContent": "Saltar al contenido principal"
+  },
+  "help": {
+    "keyboardShortcuts": "Atajos de Teclado:\n• Tab: Navegar entre elementos\n• Enter/Espacio: Activar botones y enlaces\n• Flechas: Navegar en menús\n• Escape: Cerrar diálogos",
+    "showKeyboardShortcuts": "Mostrar ayuda de atajos de teclado"
+  },
+  "accessibility": {
+    "loading": "Cargando contenido, por favor espere",
+    "errorOccurred": "Ocurrió un error. Por favor, inténtelo de nuevo.",
+    "requiredField": "Campo obligatorio",
+    "closeDialog": "Cerrar diálogo",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú"
+  }
+}

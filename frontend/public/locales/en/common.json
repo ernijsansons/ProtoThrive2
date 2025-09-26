@@ -1,0 +1,82 @@
+{
+  "app": {
+    "name": "ProtoThrive",
+    "tagline": "AI-Powered Project Management",
+    "version": "Beta"
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "help": "Help",
+    "logout": "Logout",
+    "login": "Login",
+    "signup": "Sign Up"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "update": "Update",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "open": "Open",
+    "download": "Download",
+    "upload": "Upload",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "continue": "Continue"
+  },
+  "status": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "processing": "Processing...",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "pending": "Pending",
+    "completed": "Completed",
+    "failed": "Failed",
+    "active": "Active",
+    "inactive": "Inactive",
+    "online": "Online",
+    "offline": "Offline"
+  },
+  "messages": {
+    "welcome": "Welcome to {{app}}",
+    "confirmDelete": "Are you sure you want to delete this item?",
+    "unsavedChanges": "You have unsaved changes. Do you want to save them?",
+    "operationSuccess": "Operation completed successfully",
+    "operationFailed": "Operation failed. Please try again.",
+    "networkError": "Network error. Please check your connection.",
+    "sessionExpired": "Your session has expired. Please login again.",
+    "accessDenied": "Access denied. You don't have permission to perform this action.",
+    "notFound": "The requested resource was not found.",
+    "validationError": "Please check your input and try again."
+  },
+  "footer": {
+    "copyright": "© {{year}} ProtoThrive. All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "contact": "Contact Us",
+    "about": "About",
+    "blog": "Blog",
+    "support": "Support",
+    "documentation": "Documentation"
+  },
+  "beta": {
+    "notice": "This is beta software. Features may change.",
+    "feedback": "Send Feedback",
+    "reportBug": "Report a Bug",
+    "requestFeature": "Request a Feature"
+  }
+}

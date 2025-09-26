@@ -1,0 +1,82 @@
+{
+  "app": {
+    "name": "ProtoThrive",
+    "tagline": "Gestión de Proyectos con IA",
+    "version": "Beta"
+  },
+  "nav": {
+    "home": "Inicio",
+    "dashboard": "Panel",
+    "projects": "Proyectos",
+    "analytics": "Análisis",
+    "settings": "Configuración",
+    "help": "Ayuda",
+    "logout": "Cerrar Sesión",
+    "login": "Iniciar Sesión",
+    "signup": "Registrarse"
+  },
+  "actions": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "update": "Actualizar",
+    "submit": "Enviar",
+    "confirm": "Confirmar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "close": "Cerrar",
+    "open": "Abrir",
+    "download": "Descargar",
+    "upload": "Subir",
+    "refresh": "Actualizar",
+    "retry": "Reintentar",
+    "continue": "Continuar"
+  },
+  "status": {
+    "loading": "Cargando...",
+    "saving": "Guardando...",
+    "processing": "Procesando...",
+    "success": "Éxito",
+    "error": "Error",
+    "warning": "Advertencia",
+    "info": "Información",
+    "pending": "Pendiente",
+    "completed": "Completado",
+    "failed": "Fallido",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "online": "En línea",
+    "offline": "Sin conexión"
+  },
+  "messages": {
+    "welcome": "Bienvenido a {{app}}",
+    "confirmDelete": "¿Está seguro de que desea eliminar este elemento?",
+    "unsavedChanges": "Tiene cambios sin guardar. ¿Desea guardarlos?",
+    "operationSuccess": "Operación completada con éxito",
+    "operationFailed": "La operación falló. Por favor, inténtelo de nuevo.",
+    "networkError": "Error de red. Por favor, verifique su conexión.",
+    "sessionExpired": "Su sesión ha expirado. Por favor, inicie sesión de nuevo.",
+    "accessDenied": "Acceso denegado. No tiene permiso para realizar esta acción.",
+    "notFound": "No se encontró el recurso solicitado.",
+    "validationError": "Por favor, verifique su entrada e inténtelo de nuevo."
+  },
+  "footer": {
+    "copyright": "© {{year}} ProtoThrive. Todos los derechos reservados.",
+    "privacy": "Política de Privacidad",
+    "terms": "Términos de Servicio",
+    "contact": "Contáctenos",
+    "about": "Acerca de",
+    "blog": "Blog",
+    "support": "Soporte",
+    "documentation": "Documentación"
+  },
+  "beta": {
+    "notice": "Este es software beta. Las funciones pueden cambiar.",
+    "feedback": "Enviar Comentarios",
+    "reportBug": "Reportar un Error",
+    "requestFeature": "Solicitar una Función"
+  }
+}

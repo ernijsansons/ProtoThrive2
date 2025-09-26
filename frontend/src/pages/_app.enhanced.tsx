@@ -3,32 +3,7 @@ import { appWithTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { AuthProvider } from '../contexts/AuthContext';
-import { ThemeProvider } from '../contexts/ThemeContext';
-import { EnhancedErrorBoundary } from '../components/EnhancedErrorBoundary';
 import '../styles/globals.css';
-import '../styles/wcag-colors.css';
-// Fix for DF-003: ReactFlow CSS Missing - Magic Canvas styling
-import 'reactflow/dist/style.css';
-
-// Initialize security features and monitoring
-if (typeof window !== 'undefined') {
-  // Client-side only initialization
-  import('../utils/security-enhanced').then(({ default: Security }) => {
-    // Set up CSP nonce
-    Security.CSPManager.generateNonce();
-    console.log('🔒 ProtoThrive Security initialized');
-  });
-
-  // Initialize performance monitoring
-  import('../utils/monitoring').then(({ performanceMonitor }) => {
-    // Monitoring is initialized automatically
-    console.log('📊 ProtoThrive Monitoring initialized');
-
-    // Track app initialization
-    performanceMonitor.trackEvent('AppInitialized', Date.now());
-  });
-}
 
 // Skip link component for accessibility
 const SkipLink: React.FC = () => (
@@ -103,6 +78,48 @@ const AccessibilityAnnouncer: React.FC = () => {
   );
 };
 
+// Error boundary component for better error handling
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white p-4">
+          <div className="max-w-md text-center">
+            <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
+            <p className="text-gray-400 mb-4">
+              We apologize for the inconvenience. Please try refreshing the page.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
 
@@ -156,23 +173,17 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="theme-color" content="#000000" />
       </Head>
 
-      <EnhancedErrorBoundary level="critical">
+      <ErrorBoundary>
         <SkipLink />
         <LanguageSelector />
         <AccessibilityAnnouncer />
 
-        <ThemeProvider>
-          <AuthProvider>
-            <EnhancedErrorBoundary level="page">
-              <div className="min-h-screen bg-gradient-dark text-text-primary">
-                <main id="main-content" role="main">
-                  <Component {...pageProps} />
-                </main>
-              </div>
-            </EnhancedErrorBoundary>
-          </AuthProvider>
-        </ThemeProvider>
-      </EnhancedErrorBoundary>
+        <div className="min-h-screen bg-gradient-dark text-text-primary">
+          <main id="main-content" role="main">
+            <Component {...pageProps} />
+          </main>
+        </div>
+      </ErrorBoundary>
     </>
   );
 }
