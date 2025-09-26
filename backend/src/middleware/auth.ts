@@ -2,6 +2,7 @@
 import type { Context, Next } from 'hono';
 import { jwtVerify, importSPKI, importJWK } from 'jose';
 import type { JWTPayload } from 'jose';
+import { AppError, ErrorCode } from '../errors/AppError';
 
 // Types
 export interface AuthUser {

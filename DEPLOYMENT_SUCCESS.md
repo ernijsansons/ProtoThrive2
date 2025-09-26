@@ -19,8 +19,9 @@
 ## 🔑 Access Credentials
 
 ### Admin Portal
-- **Email**: admin@protothrive.com
-- **Password**: ThermonuclearAdmin2025!
+- **Email**: Set via ADMIN_EMAIL environment variable
+- **Password**: Set via ADMIN_PASSWORD environment variable
+- ⚠️ **SECURITY**: Configure these before first use
 
 ## 🚀 What's Working
 

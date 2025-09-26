@@ -92,3 +92,4 @@ Write-ColorLog "Running docker push script..." $Blue
 & ".\docker-push.ps1" -Registry $Registry -Tag $Tag -All
 
 Write-ColorLog "Script completed!" $Green
+

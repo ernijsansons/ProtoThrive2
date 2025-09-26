@@ -46,9 +46,9 @@ if [ -d ".next" ]; then
     echo "   Main: https://protothrive-frontend.pages.dev"
     echo "   Admin: https://protothrive-frontend.pages.dev/admin-login"
     echo ""
-    echo "🔐 Admin credentials:"
-    echo "   Email: admin@protothrive.com"
-    echo "   Password: ThermonuclearAdmin2025!"
+    echo "🔐 Admin Setup Required:"
+    echo "   Set ADMIN_EMAIL and ADMIN_PASSWORD environment variables"
+    echo "   ⚠️  Default credentials removed for security"
     echo ""
     echo "✅ Backend API: https://backend-thermo.ernijs-ansons.workers.dev (CONFIRMED WORKING)"
 else

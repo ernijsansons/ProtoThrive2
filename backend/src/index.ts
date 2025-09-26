@@ -18,6 +18,24 @@ import {
   UserRole,
   getResourceLimitsByRole
 } from './middleware/auth';
+import {
+  budgetTrackingMiddleware,
+  rateLimitMiddleware,
+  getBudgetStatus
+} from './middleware/budget';
+import {
+  validateAPIKeyMiddleware,
+  requireAPIKeyPermission
+} from './middleware/apikey';
+import { APIKeyService } from './services/apiKeyService';
+import { ProductionOrchestrator } from './services/orchestrator';
+import { AppError, ErrorCode } from './errors/AppError';
+import logger from './utils/logger';
+import {
+  createErrorHandlerMiddleware,
+  requestContextMiddleware,
+  asyncHandler
+} from './middleware/errorHandler';
 import type { AuthUser } from './middleware/auth';
 import aiRoutes from './routes/ai-routes';
 
@@ -112,6 +130,13 @@ app.use('*', async (c, next) => {
 
 // Apply secure JWT authentication middleware to all API routes
 app.use('/api/*', validateJwtMiddleware);
+
+// Apply request context middleware globally
+app.use('*', requestContextMiddleware());
+
+// Apply budget tracking and rate limiting to authenticated routes
+app.use('/api/*', budgetTrackingMiddleware);
+app.use('/api/*', rateLimitMiddleware);
 
 
 // Initialize database
@@ -583,15 +608,42 @@ app.post('/api/agent/run', async (c) => {
     const database = c.get('db') as Database;
     const body = await c.req.json();
 
-    console.log(`Thermonuclear AI Agent: ${user.role} user ${user.id} running analysis`);
+    logger.info('AI Orchestrator: Starting execution', {
+      userId: user.id,
+      userRole: user.role,
+      mode: body.mode || 'basic'
+    });
+
+    // Validate request body
+    if (!body.roadmap_graph) {
+      throw AppError.validation('roadmap_graph is required', [{
+        field: 'roadmap_graph',
+        message: 'This field is required'
+      }]);
+    }
+
+    // Parse roadmap graph
+    let roadmapGraph;
+    try {
+      roadmapGraph = typeof body.roadmap_graph === 'string'
+        ? JSON.parse(body.roadmap_graph)
+        : body.roadmap_graph;
+    } catch (error) {
+      throw AppError.validation('Invalid JSON in roadmap_graph', [{
+        field: 'roadmap_graph',
+        message: 'Must be valid JSON format'
+      }]);
+    }
 
     // Business logic: Check if user has access to AI features
     const userLimits = getResourceLimitsByRole(user.role);
-    if (!userLimits.premium_features && body.mode !== 'basic') {
+    const mode = body.mode || 'basic';
+
+    if (!userLimits.premium_features && mode !== 'basic') {
       return c.json({
         error: 'Advanced AI features require premium plan',
         code: 'BIZ-AI-PREMIUM-REQUIRED',
-        message: `Advanced AI mode '${body.mode}' requires a premium plan. Your '${user.role}' plan includes basic AI only.`,
+        message: `Advanced AI mode '${mode}' requires a premium plan. Your '${user.role}' plan includes basic AI only.`,
         available_modes: user.role === UserRole.CODER || user.role === UserRole.USER ? ['basic'] :
                         ['basic', 'advanced', 'enterprise'],
         upgrade_info: {
@@ -602,60 +654,80 @@ app.post('/api/agent/run', async (c) => {
       }, 403);
     }
 
-    // Mock AI agent processing with realistic response
-    const mockAgentReport = {
-      agent: body.mode === 'enterprise' ? 'claude-3.5-sonnet' : 'claude-3-haiku',
-      confidence: 0.87,
-      cost: {
-        estimate: 0.05,
-        actual: 0.042,
-        consumed: 0.042,
-        remaining: userLimits.premium_features ? 0.958 : 0.0
-      },
-      fallback_used: false,
-      trace: [
-        {
-          agent: body.mode === 'enterprise' ? 'claude-3.5-sonnet' : 'claude-3-haiku',
-          success: true,
-          confidence: 0.87,
-          cost: 0.042,
-          task: body.task || 'Roadmap analysis'
-        }
-      ],
-      analysis_results: {
-        roadmap_complexity: 'medium',
-        recommendations: [
-          'Consider adding validation milestones',
-          'Implement parallel task execution',
-          'Add risk mitigation strategies'
-        ],
-        thrive_score_prediction: 0.78,
-        business_insights: `Analysis completed by ${body.mode || 'standard'} AI agent`
-      }
-    };
+    // Set budget based on user tier
+    const maxCost = userLimits.premium_features
+      ? (mode === 'enterprise' ? 10.0 : 5.0)
+      : 1.0; // Basic tier limited to $1
 
-    // Log the AI operation
-    if (body.roadmap_id) {
-      // In a real implementation, we would log this to agent_logs table
-      console.log(`Thermonuclear AI: Logged analysis for roadmap ${body.roadmap_id}`);
-    }
+    // Initialize orchestrator
+    const orchestrator = new ProductionOrchestrator(c.env);
+
+    // Execute orchestration
+    const result = await orchestrator.orchestrate(
+      roadmapGraph,
+      body.roadmap_id || `roadmap-${Date.now()}`,
+      user.id,
+      {
+        maxCost,
+        timeout: userLimits.premium_features ? 300000 : 60000 // 5min vs 1min
+      }
+    );
+
+    logger.orchestration(result.roadmap_id, 'completed', {
+      thriveScore: result.thrive_score,
+      totalCost: result.total_cost,
+      tasksCompleted: result.completed_tasks,
+      tasksTotal: result.total_tasks,
+      executionTime: result.execution_time_ms
+    });
 
     return c.json({
-      message: 'AI agent analysis completed successfully',
-      agent_report: mockAgentReport,
-      user_access: {
-        role: user.role,
-        premium_features: userLimits.premium_features,
-        remaining_budget: mockAgentReport.cost.remaining
+      success: true,
+      orchestration: result,
+      summary: {
+        tasks_completed: result.completed_tasks,
+        tasks_total: result.total_tasks,
+        success_rate: result.total_tasks > 0 ? (result.completed_tasks / result.total_tasks) : 0,
+        thrive_score: result.thrive_score,
+        total_cost: result.total_cost,
+        execution_time: result.execution_time_ms,
+        status: result.status
       },
-      business_rule: 'AI feature access based on user role and plan limits'
+      mode: mode,
+      user_tier: user.role
     });
 
   } catch (error) {
-    console.error('Error running AI agent:', error);
+    logger.error('AI Orchestrator failed', {
+      userId: c.get('user')?.id,
+      roadmapId: body.roadmap_id
+    }, error as Error);
+
+    throw AppError.orchestrationFailed(
+      error instanceof Error ? error.message : 'Unknown orchestration error'
+    );
+  }
+});
+
+// Get orchestration history for a roadmap
+app.get('/api/agent/history/:roadmapId', async (c) => {
+  try {
+    const user = c.get('user');
+    const roadmapId = c.req.param('roadmapId');
+
+    const orchestrator = new ProductionOrchestrator(c.env);
+    const history = await orchestrator.getOrchestrationHistory(roadmapId);
+
     return c.json({
-      error: 'AI agent error',
-      code: 'ERR-AI-AGENT',
+      roadmap_id: roadmapId,
+      history,
+      total_executions: history.length
+    });
+
+  } catch (error) {
+    console.error('Error getting orchestration history:', error);
+    return c.json({
+      error: 'HISTORY_FETCH_FAILED',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, 500);
   }
@@ -710,7 +782,7 @@ app.get('/api/users', requirePermission(['user:read']), async (c) => {
     const users = user.role === UserRole.ADMIN ?
       // Admin sees all users
       [
-        { id: 'uuid-1', email: 'admin@protothrive.com', role: UserRole.ADMIN, created_at: '2024-01-01' },
+        { id: 'uuid-1', email: process.env.ADMIN_EMAIL || 'admin@company.com', role: UserRole.ADMIN, created_at: '2024-01-01' },
         { id: 'uuid-2', email: 'manager@protothrive.com', role: UserRole.MANAGER, created_at: '2024-01-02' },
         { id: 'uuid-3', email: 'engineer@protothrive.com', role: UserRole.ENGINEER, created_at: '2024-01-03' },
         { id: 'uuid-4', email: 'coder@protothrive.com', role: UserRole.CODER, created_at: '2024-01-04' }
@@ -735,6 +807,9 @@ app.get('/api/users', requirePermission(['user:read']), async (c) => {
     }, 500);
   }
 });
+
+// Budget monitoring endpoint (admin-only)
+app.get('/api/admin/budget-status', requireRole([UserRole.ADMIN]), getBudgetStatus);
 
 // Permission-based endpoint: Update user role (admin-only)
 app.put('/api/users/:userId/role', requirePermission(['user:update']), async (c) => {
@@ -845,20 +920,159 @@ app.post('/roadmaps', async (c) => {
   }, 201);
 });
 
-// Global error handler
-app.onError((err, c) => {
-  console.error('Thermonuclear Error:', err);
-  
-  const code = err.message?.includes('VAL-') ? err.message.split(':')[0] : 'ERR-500';
-  const status = code?.startsWith('VAL-') ? 400 : 500;
-  
-  return c.json({
-    error: err.message || 'Internal Server Error',
-    code: code || 'ERR-500',
-    timestamp: new Date().toISOString(),
-    request_id: crypto.randomUUID()
-  }, status);
+// ========================================
+// API KEY MANAGEMENT ENDPOINTS (Admin Only)
+// ========================================
+
+// Create new API key
+app.post('/api/admin/apikeys', requireRole([UserRole.ADMIN]), async (c) => {
+  try {
+    const user = c.get('user');
+    const request = await c.req.json();
+    const apiKeyService = new APIKeyService(c.env);
+
+    const newKey = await apiKeyService.createAPIKey(request, user);
+
+    return c.json({
+      success: true,
+      api_key: newKey,
+      warning: 'Store this key securely - it will not be shown again'
+    }, 201);
+
+  } catch (error) {
+    console.error('Error creating API key:', error);
+    return c.json({
+      error: 'API_KEY_CREATION_FAILED',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
 });
+
+// List all API keys
+app.get('/api/admin/apikeys', requireRole([UserRole.ADMIN]), async (c) => {
+  try {
+    const user = c.get('user');
+    const apiKeyService = new APIKeyService(c.env);
+
+    const keys = await apiKeyService.listAPIKeys(user);
+
+    return c.json({
+      api_keys: keys,
+      total: keys.length
+    });
+
+  } catch (error) {
+    console.error('Error listing API keys:', error);
+    return c.json({
+      error: 'API_KEY_LIST_FAILED',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// Deactivate API key
+app.delete('/api/admin/apikeys/:keyId', requireRole([UserRole.ADMIN]), async (c) => {
+  try {
+    const user = c.get('user');
+    const keyId = c.req.param('keyId');
+    const apiKeyService = new APIKeyService(c.env);
+
+    const success = await apiKeyService.deactivateAPIKey(keyId, user);
+
+    if (success) {
+      return c.json({ success: true, message: 'API key deactivated' });
+    } else {
+      return c.json({ error: 'DEACTIVATION_FAILED' }, 500);
+    }
+
+  } catch (error) {
+    console.error('Error deactivating API key:', error);
+    return c.json({
+      error: 'API_KEY_DEACTIVATION_FAILED',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// Rotate API key
+app.post('/api/admin/apikeys/:keyId/rotate', requireRole([UserRole.ADMIN]), async (c) => {
+  try {
+    const user = c.get('user');
+    const keyId = c.req.param('keyId');
+    const apiKeyService = new APIKeyService(c.env);
+
+    const rotatedKey = await apiKeyService.rotateAPIKey(keyId, user);
+
+    return c.json({
+      success: true,
+      api_key: rotatedKey,
+      warning: 'Store this new key securely - it will not be shown again'
+    });
+
+  } catch (error) {
+    console.error('Error rotating API key:', error);
+    return c.json({
+      error: 'API_KEY_ROTATION_FAILED',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// Get API key audit log
+app.get('/api/admin/apikeys/:keyId/audit', requireRole([UserRole.ADMIN]), async (c) => {
+  try {
+    const user = c.get('user');
+    const keyId = c.req.param('keyId');
+    const apiKeyService = new APIKeyService(c.env);
+
+    const auditLog = await apiKeyService.getAPIKeyAuditLog(keyId, user);
+
+    return c.json({
+      key_id: keyId,
+      audit_log: auditLog,
+      total_events: auditLog.length
+    });
+
+  } catch (error) {
+    console.error('Error fetching audit log:', error);
+    return c.json({
+      error: 'AUDIT_LOG_FAILED',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// Alternative API endpoint accessible via API key
+app.get('/api/external/roadmaps', validateAPIKeyMiddleware, requireAPIKeyPermission(['roadmap:read']), async (c) => {
+  try {
+    const apiKey = c.get('apiKey');
+    console.log(`External API access via key: ${apiKey.id}`);
+
+    // Return mock data for external API access
+    return c.json({
+      roadmaps: [
+        {
+          id: 'rm-external-1',
+          title: 'External API Roadmap',
+          status: 'active',
+          created_at: new Date().toISOString()
+        }
+      ],
+      access_method: 'api_key',
+      key_service: apiKey.service
+    });
+
+  } catch (error) {
+    console.error('Error in external API:', error);
+    return c.json({
+      error: 'EXTERNAL_API_ERROR',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// Global error handler with structured logging
+app.onError(createErrorHandlerMiddleware());
 
 // 404 handler
 app.notFound((c) => {

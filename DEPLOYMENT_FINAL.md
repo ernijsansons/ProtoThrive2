@@ -45,8 +45,9 @@ The frontend has been successfully deployed twice:
 
 ### Admin Portal (/admin-login)
 - Login form
-- Email: admin@protothrive.com
-- Password: ThermonuclearAdmin2025!
+- Email: Set via ADMIN_EMAIL environment variable
+- Password: Set via ADMIN_PASSWORD environment variable
+- ⚠️ **SECURITY**: Configure credentials before deployment
 
 ### After Login (/admin)
 - Tabs for: API Keys, Users, Monitoring, Settings

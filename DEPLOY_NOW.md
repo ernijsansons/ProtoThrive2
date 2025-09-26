@@ -59,8 +59,8 @@ The monorepo structure is causing build conflicts. Here's how to deploy immediat
 ### Live URLs:
 - **Main App**: https://protothrive-frontend.pages.dev
 - **Admin Portal**: https://protothrive-frontend.pages.dev/admin-login
-  - Email: admin@protothrive.com
-  - Password: ThermonuclearAdmin2025!
+  - ⚠️ **SECURITY**: Set ADMIN_EMAIL and ADMIN_PASSWORD environment variables before first use
+  - Default credentials removed for security
 
 ### Features Working:
 - ✅ Magic Canvas (2D/3D visualization)

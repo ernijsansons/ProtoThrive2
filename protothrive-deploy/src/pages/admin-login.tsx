@@ -337,8 +337,8 @@ const AdminLogin = () => {
               <div className="text-gray-400 text-xs space-y-1">
                 <p>Test credentials (development only):</p>
                 <div className="font-mono bg-gray-800 p-2 rounded text-xs space-y-1">
-                  <p>Email: admin@protothrive.com</p>
-                  <p>Password: ThermonuclearAdmin2025!</p>
+                  <p>⚠️ Configure ADMIN_EMAIL and ADMIN_PASSWORD environment variables</p>
+                  <p>Default credentials removed for security</p>
                 </div>
               </div>
             </div>
