@@ -201,7 +201,7 @@ The database is automatically initialized with:
 - Project and roadmap tables
 - Collaboration session tables
 - Audit logging tables
-- Default admin user: `admin@protothrive.com` / `admin123`
+- **SECURITY**: Admin credentials must be configured via environment variables (see Security section)
 
 ### Backup and Recovery
 ```bash

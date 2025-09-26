@@ -178,14 +178,18 @@ CREATE TRIGGER update_nodes_updated_at BEFORE UPDATE ON nodes FOR EACH ROW EXECU
 CREATE TRIGGER update_edges_updated_at BEFORE UPDATE ON edges FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_code_snippets_updated_at BEFORE UPDATE ON code_snippets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Insert default admin user (password: admin123 - change in production!)
+-- SECURITY: Admin user must be created through secure environment setup
+-- CREATE ADMIN USER VIA SECURE ENVIRONMENT VARIABLES ONLY
+-- Do not hardcode credentials in database initialization scripts
+/*
 INSERT INTO users (email, username, password_hash, role, first_name, last_name, is_verified)
 VALUES (
-    'admin@protothrive.com',
+    '${ADMIN_EMAIL}',
     'admin',
-    crypt('admin123', gen_salt('bf')),
+    crypt('${ADMIN_PASSWORD}', gen_salt('bf')),
     'admin',
     'System',
     'Administrator',
     true
 ) ON CONFLICT (email) DO NOTHING;
+*/

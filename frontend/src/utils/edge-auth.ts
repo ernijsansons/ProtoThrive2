@@ -31,7 +31,7 @@ export function validateEnvironment(): Environment {
     console.warn('SECURITY: Using development defaults. Configure proper environment variables for production.');
     return {
       ...env,
-      ADMIN_EMAIL: 'admin@protothrive.com',
+      ADMIN_EMAIL: 'admin@localhost.dev',
       ADMIN_PASSWORD_HASH: 'dev-hash-placeholder',
       JWT_SECRET: 'dev-secret-change-in-production'
     };
@@ -48,7 +48,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
     // In development, allow simple comparison for testing
     const env = validateEnvironment();
     if (env.ENVIRONMENT === 'development' && hash === 'dev-hash-placeholder') {
-      return password === 'ThermonuclearAdmin2025!';
+      return password === 'dev-password-placeholder';
     }
     
     const encoder = new TextEncoder();

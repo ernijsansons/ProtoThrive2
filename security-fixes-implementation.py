@@ -73,7 +73,7 @@ D1_DATABASE_ID=your-d1-database-id
 
 # Authentication
 JWT_SECRET=your-super-secure-jwt-secret-key-here
-ADMIN_EMAIL=admin@protothrive.com
+ADMIN_EMAIL=admin@localhost.dev
 ADMIN_PASSWORD_HASH=$2b$12$your-bcrypt-hash-here
 
 # Cloudflare Configuration

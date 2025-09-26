@@ -61,13 +61,13 @@ export default async function handler(
         // Generate secure JWT token and session
         const token = generateToken({
           id: 'admin-001',
-          email: env.ADMIN_EMAIL || 'admin@protothrive.com',
+          email: env.ADMIN_EMAIL || 'admin@localhost.dev',
           role: 'super_admin'
         });
 
         const sessionId = createSession({
           id: 'admin-001',
-          email: env.ADMIN_EMAIL || 'admin@protothrive.com',
+          email: env.ADMIN_EMAIL || 'admin@localhost.dev',
           role: 'super_admin'
         });
 
@@ -79,7 +79,7 @@ export default async function handler(
           sessionId,
           user: {
             id: 'admin-001',
-            email: env.ADMIN_EMAIL || 'admin@protothrive.com',
+            email: env.ADMIN_EMAIL || 'admin@localhost.dev',
             role: 'super_admin'
           }
         });

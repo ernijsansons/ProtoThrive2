@@ -251,7 +251,7 @@ class AttackVectorLibrary:
         if claims is None:
             claims = {
                 'id': 'admin_user',
-                'email': 'admin@protothrive.com',
+                'email': 'test.admin@example.com',
                 'role': 'admin',
                 'exp': int(time.time()) + 3600,
                 'iat': int(time.time())

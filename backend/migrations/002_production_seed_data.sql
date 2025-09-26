@@ -9,11 +9,11 @@ VALUES ('uuid-thermo-1', 'test@proto.com', 'vibe_coder', 'local',
         '{"notifications": true, "theme": "dark", "tutorial_completed": true}', 
         CURRENT_TIMESTAMP, NULL);
 
--- Enterprise admin user
-INSERT OR REPLACE INTO users (id, email, role, auth_provider, enterprise_id, settings, created_at, deleted_at) 
-VALUES ('uuid-thermo-admin', 'admin@protothrive.com', 'admin', 'local', 'enterprise-1',
-        '{"notifications": true, "theme": "dark", "admin_features": true}', 
-        CURRENT_TIMESTAMP, NULL);
+-- Enterprise admin user (NOTE: Admin user must be created through secure environment setup)
+-- INSERT OR REPLACE INTO users (id, email, role, auth_provider, enterprise_id, settings, created_at, deleted_at)
+-- VALUES ('uuid-admin', 'ADMIN_EMAIL_FROM_ENV', 'admin', 'local', 'enterprise-1',
+--         '{"notifications": true, "theme": "dark", "admin_features": true}',
+--         CURRENT_TIMESTAMP, NULL);
 
 -- Engineer user for testing
 INSERT OR REPLACE INTO users (id, email, role, created_at, deleted_at) 

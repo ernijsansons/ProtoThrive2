@@ -82,7 +82,7 @@ class AdminUserService {
     this.mockUsers = [
       {
         id: 'admin-1',
-        email: 'admin@protothrive.com',
+        email: 'admin@localhost.dev',
         name: 'Super Administrator',
         role: 'super_admin',
         organization: {

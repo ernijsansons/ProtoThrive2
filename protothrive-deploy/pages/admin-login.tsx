@@ -39,14 +39,14 @@ const AdminLogin = () => {
       }
     } catch (err) {
       console.error('Thermonuclear Error: Login failed', err);
-      // For demo purposes, allow login with default credentials
-      if (credentials.email === 'admin@protothrive.com' && credentials.password === 'ThermonuclearAdmin2025!') {
+      // For demo purposes, allow login with test credentials
+      if (credentials.email === 'admin@localhost.dev' && credentials.password === 'dev-test-password') {
         localStorage.setItem('adminToken', 'mock-admin-token');
         localStorage.setItem('userRole', 'super_admin');
         console.log('Thermonuclear: Demo login successful');
         router.push('/admin');
       } else {
-        setError('Invalid credentials. Please try again.');
+        setError('Invalid credentials. Configure proper environment variables for production.');
       }
     } finally {
       setLoading(false);
@@ -72,7 +72,7 @@ const AdminLogin = () => {
               value={credentials.email}
               onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="admin@protothrive.com"
+              placeholder="admin@localhost.dev"
             />
           </div>
           
@@ -108,9 +108,9 @@ const AdminLogin = () => {
 
         <div className="mt-6 text-center text-gray-400 text-sm">
           <p>Thermonuclear Security Active</p>
-          <p className="mt-2">Default credentials for testing:</p>
-          <p className="font-mono text-xs mt-1">admin@protothrive.com</p>
-          <p className="font-mono text-xs">ThermonuclearAdmin2025!</p>
+          <p className="mt-2">Test credentials for development:</p>
+          <p className="font-mono text-xs mt-1">admin@localhost.dev</p>
+          <p className="font-mono text-xs">dev-test-password</p>
         </div>
       </div>
     </div>

@@ -84,8 +84,9 @@ CREATE INDEX IF NOT EXISTS idx_insights_created_at ON insights(created_at);
 
 -- Insert some initial data for testing
 INSERT OR IGNORE INTO users (id, email, role, created_at, updated_at) VALUES
-('user_demo_001', 'demo@protothrive.com', 'vibe_coder', strftime('%s', 'now'), strftime('%s', 'now')),
-('user_admin_001', 'admin@protothrive.com', 'admin', strftime('%s', 'now'), strftime('%s', 'now'));
+('user_demo_001', 'demo@protothrive.com', 'vibe_coder', strftime('%s', 'now'), strftime('%s', 'now'));
+-- Admin user must be created through secure environment setup, not hardcoded
+-- ('user_admin_001', 'ADMIN_EMAIL_FROM_ENV', 'admin', strftime('%s', 'now'), strftime('%s', 'now'));
 
 -- Insert demo roadmap
 INSERT OR IGNORE INTO roadmaps (id, user_id, json_graph, status, vibe_mode, thrive_score, created_at, updated_at) VALUES

@@ -22,8 +22,9 @@ CREATE INDEX IF NOT EXISTS idx_insights_roadmap_id ON insights(roadmap_id);
 -- Insert demo users (ignore if already exist)
 INSERT OR IGNORE INTO users (id, email, role, created_at, updated_at) VALUES
 ('user_demo_001', 'demo@protothrive.com', 'vibe_coder', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('user_admin_001', 'admin@protothrive.com', 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('user_test_001', 'test@protothrive.com', 'vibe_coder', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+-- Admin user must be created through secure environment setup, not hardcoded
+-- ('user_admin_001', 'ADMIN_EMAIL_FROM_ENV', 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert demo roadmaps
 INSERT OR IGNORE INTO roadmaps (id, user_id, json_graph, status, vibe_mode, thrive_score, created_at, updated_at) VALUES

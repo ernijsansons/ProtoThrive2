@@ -424,7 +424,7 @@ export const validateMocks = async (): Promise<boolean> => {
     return true;
     
   } catch (error: unknown) {
-    console.error('❌ THERMONUCLEAR MOCK VALIDATION FAILED:', error.message);
+    console.error('❌ THERMONUCLEAR MOCK VALIDATION FAILED:', (error as Error).message);
     return false;
   }
 };

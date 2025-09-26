@@ -80,7 +80,7 @@ import { mockFetch } from './mocks';
 // Mock environment variables for testing
 export const mockEnv = {
   JWT_SECRET: 'test-jwt-secret-key-for-testing-only',
-  ADMIN_EMAIL: 'admin@protothrive.com',
+  ADMIN_EMAIL: 'admin@localhost.dev',
   ADMIN_PASSWORD_HASH: '$2b$12$test.hash.for.testing.only',
   ENCRYPTION_KEY: 'test-encryption-key-32-chars',
   NODE_ENV: 'test'
@@ -349,14 +349,14 @@ describe('AdminLogin Component', () => {
       mockApiResponse({
         success: true,
         token: 'mock-token',
-        user: { id: 'admin-001', email: 'admin@protothrive.com', role: 'super_admin' }
+        user: { id: 'admin-001', email: 'admin@localhost.dev', role: 'super_admin' }
       })
     );
 
     render(<AdminLogin />);
     
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'admin@protothrive.com' },
+      target: { value: 'admin@localhost.dev' },
     });
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: 'password123' },

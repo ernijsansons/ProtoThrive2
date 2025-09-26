@@ -13,10 +13,10 @@ export const testUsers = {
     displayName: 'Dev User'
   },
   admin: {
-    email: 'admin@protothrive.com',
-    password: 'admin123',
+    email: 'test.admin@example.com',
+    password: 'test123',
     role: 'exec',
-    displayName: 'Admin User'
+    displayName: 'Test Admin User'
   },
   engineer: {
     email: 'engineer@protothrive.com',

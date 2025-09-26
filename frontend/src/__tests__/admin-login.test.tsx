@@ -37,14 +37,14 @@ describe('AdminLogin Component', () => {
       mockApiResponse({
         success: true,
         token: 'mock-token',
-        user: { id: 'admin-001', email: 'admin@protothrive.com', role: 'super_admin' }
+        user: { id: 'admin-001', email: 'test.admin@example.com', role: 'super_admin' }
       })
     );
 
     render(<AdminLogin />);
     
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'admin@protothrive.com' },
+      target: { value: 'test.admin@example.com' },
     });
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: 'password123' },

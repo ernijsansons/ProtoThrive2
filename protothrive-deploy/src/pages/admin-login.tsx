@@ -229,7 +229,7 @@ const AdminLogin = () => {
                     value={credentials.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-                    placeholder="admin@protothrive.com"
+                    placeholder="admin@localhost.dev"
                     aria-describedby="email-help"
                     aria-invalid={error && !credentials.email ? 'true' : 'false'}
                   />

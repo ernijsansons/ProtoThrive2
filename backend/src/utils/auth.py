@@ -325,7 +325,7 @@ def create_test_tokens():
     # Admin user token
     tokens['admin'] = generate_dev_jwt(
         'user_admin_001',
-        'admin@protothrive.com',
+        'admin@localhost.dev',
         'admin'
     )
 

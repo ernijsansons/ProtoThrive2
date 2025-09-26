@@ -195,7 +195,7 @@ show_status() {
     echo "  MinIO Console: http://localhost:9001"
     echo ""
     echo "Default Credentials:"
-    echo "  Admin User: admin@protothrive.com / admin123"
+    echo "  Admin User: Configure via ADMIN_EMAIL and ADMIN_PASSWORD_HASH environment variables"
     echo "  Grafana: admin / (check .env GRAFANA_PASSWORD)"
     echo "  MinIO: minioadmin / (check .env MINIO_ROOT_PASSWORD)"
 }

@@ -45,8 +45,9 @@
 ### Admin Portal
 - URL: `https://protothrive-frontend.pages.dev/admin-login`
 - Login:
-  - Email: `admin@protothrive.com`
-  - Password: `ThermonuclearAdmin2025!`
+  - **SECURITY WARNING**: Admin credentials must be configured via secure environment variables
+  - Set ADMIN_EMAIL and ADMIN_PASSWORD_HASH in your deployment environment
+  - Never use hardcoded credentials in production
 - Features:
   - Add/manage API keys
   - Rotate keys
