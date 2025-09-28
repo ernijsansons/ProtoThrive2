@@ -107,7 +107,9 @@
       "WebFetch(domain:bbb298b7.protothrive-frontend.pages.dev)",
       "WebFetch(domain:afe744db.protothrive-frontend.pages.dev)",
       "WebFetch(domain:f37f18ed.protothrive-frontend.pages.dev)",
-      "WebFetch(domain:3379e8cc.protothrive-frontend.pages.dev)"
+      "WebFetch(domain:3379e8cc.protothrive-frontend.pages.dev)",
+      "WebFetch(domain:876017e2.protothrive-frontend.pages.dev)",
+      "Bash(set CLOUDFLARE_API_TOKEN=Uj6hzZ11a5hixKc0NAJ1Tkap-6TjbfTPzU6YIJcy)"
     ],
     "defaultMode": "acceptEdits"
   }

@@ -1,0 +1,22 @@
+name = "protothrive-backend"
+main = "backend/src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+account_id = "d2897bdebfa128919bd89b265e6a712e"
+
+# Production environment (default)
+[env.production]
+name = "protothrive-backend-prod"
+vars = { NODE_ENV = "production" }
+
+# KV Namespace for caching
+[[env.production.kv_namespaces]]
+binding = "KV_STORE"
+id = "ec3183e7b4e94442b3f99b4d2f4b083e"
+
+# D1 Database
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "protothrive-db"
+database_id = "0b6970f4-c6ca-4245-aabf-98fa2d4f28a8"
+
