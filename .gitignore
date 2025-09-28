@@ -74,6 +74,61 @@ __pycache__/
 # Temporary files
 .tmp/
 temp/-e 
-# Environment files
+# SECURITY: Environment and secrets files
 *.env
 *.env.*
+.env.backup
+.env.example.local
+*secrets*
+*keys*
+*.key
+*.pem
+*.p12
+*.pfx
+.wrangler/
+wrangler.toml.local
+
+# SECURITY: Configuration files that may contain secrets
+config/production.json
+config/staging.json
+src/config/secrets.ts
+src/config/keys.ts
+settings.local.json
+.claude/settings.local.json
+
+# SECURITY: Authentication and tokens
+jwt.key
+oauth.json
+auth.json
+tokens/
+credentials/
+
+# SECURITY: Database and backup files
+*.sql.backup
+*.db.backup
+dumps/
+backups/
+
+# SECURITY: Log files that may contain sensitive data
+audit.log
+access.log
+error.log
+security.log
+
+# Problematic files
+nul
+NUL
+
+# Embedded git repositories
+**/.git/
+
+# Agent backups (keep active ones only)
+.claude/agents-backup-*/
+
+# Large temporary files and reports
+**/claude-agents-*.zip
+thermonuclear-*.json
+*-report.json
+*-report.md
+validation_*.py
+*_REPORT.md

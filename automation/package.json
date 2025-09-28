@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "build": "echo 'Thermonuclear Build: Automation scripts ready'",
     "test": "node tests/test-automation.js",
     "lint": "echo 'Thermonuclear Lint: No linter configured for automation scripts'",
     "validate:workflow": "node tests/validate-workflow.js",

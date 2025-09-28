@@ -1,46 +1,92 @@
-name = "protothrive-backend-python"
-main = "src/main.py"
-compatibility_date = "2024-08-26"
-compatibility_flags = ["python_workers"]
 
-# Account and route configuration
-account_id = "d2897bdebfa128919bd89b265e6a712e" # Placeholder, replace with actual
-workers_dev = true
+# Ref: CLAUDE.md Thermonuclear Cloudflare Workers Configuration
+# Wrangler configuration for ProtoThrive backend deployment
 
-# Environment variables
-[vars]
-ENVIRONMENT = "development"
-SERVICE_NAME = "protothrive-backend-python"
-
-# D1 Database binding
-[[d1_databases]]
-binding = "DB"
-database_name = "protothrive-db"
-database_id = "0b6970f4-c6ca-4245-aabf-98fa2d4f28a8" # Placeholder, replace with actual
-
-# KV Namespace binding
-[[kv_namespaces]]
-binding = "KV"
-id = "ec3183e7b4e94442b3f99b4d2f4b083e" # Placeholder, replace with actual
-preview_id = "ec3183e7b4e94442b3f99b4d2f4b083e" # Placeholder, replace with actual
-
-# Build configuration for Python Worker
-[build]
-command = "pip install -r requirements.txt" # Or poetry install if using poetry
-python_requirements_file = "requirements.txt" # Or poetry.lock if using poetry
+name = "protothrive-backend"
+main = "backend/src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
 
 # Development environment
 [env.development]
-name = "protothrive-backend-python-dev"
-vars = { ENVIRONMENT = "development" }
+name = "protothrive-backend-dev"
+vars = { NODE_ENV = "development" }
+
+# KV Namespaces for development
+[[env.development.kv_namespaces]]
+binding = "KV_STORE"
+id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Replace with actual development KV namespace ID
+preview_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Replace with actual development preview KV namespace ID
+
+# D1 Databases for development
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "protothrive-db-dev"
+database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Replace with actual development D1 database ID
+
+# R2 Storage for development
+[[env.development.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "protothrive-uploads-dev"
 
 # Staging environment
 [env.staging]
-name = "protothrive-backend-python-staging"
-vars = { ENVIRONMENT = "staging" }
+name = "protothrive-backend-staging"
+vars = { NODE_ENV = "staging" }
 
 # Production environment
 [env.production]
-name = "protothrive-backend-python-prod"
-vars = { ENVIRONMENT = "production" }
-route = "api.protothrive.com/*" # Placeholder, replace with actual
+name = "protothrive-backend-prod"
+vars = { NODE_ENV = "production" }
+
+# KV Namespaces for caching and session storage
+[[env.production.kv_namespaces]]
+binding = "KV_STORE"
+id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Replace with actual production KV namespace ID
+preview_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Replace with actual preview KV namespace ID
+
+[[env.staging.kv_namespaces]]
+binding = "KV_STORE"
+id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Replace with actual staging KV namespace ID
+preview_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Replace with actual staging preview KV namespace ID
+
+# D1 Databases for persistent storage
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "protothrive-db-prod"
+database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Replace with actual production D1 database ID
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "protothrive-db-staging"
+database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Replace with actual staging D1 database ID
+
+# Analytics Engine for monitoring
+[[env.production.analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "protothrive-analytics"
+
+# R2 Storage for file uploads
+[[env.production.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "protothrive-uploads-prod"
+
+[[env.staging.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "protothrive-uploads-staging"
+
+# Environment variables (managed via inline vars above)
+# Additional vars can be set with wrangler secret commands
+
+# Build configuration
+[build]
+command = "npm run build"
+cwd = "backend"
+
+# Triggers for automatic deployments
+[triggers]
+crons = ["0 2 * * *"]  # Daily health checks at 2 AM UTC
+
+# Placement for edge optimization
+[placement]
+mode = "smart"

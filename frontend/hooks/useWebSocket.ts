@@ -5,7 +5,16 @@ import { toast } from 'sonner';
 interface WebSocketMessage {
   type: 'update' | 'cursor' | 'selection' | 'presence' | 'init' | 'sync' | 'error' | 'pong';
   userId?: string;
-  data?: unknown;
+  data?: {
+    participants?: Participant[];
+    updates?: unknown[];
+    x?: number;
+    y?: number;
+    userEmail?: string;
+    nodeId?: string;
+    message?: string;
+    [key: string]: unknown;
+  };
   timestamp?: number;
 }
 
@@ -47,6 +56,23 @@ export function useWebSocket({
 
   const connect = useCallback(async () => {
     try {
+      // Prevent multiple concurrent connections - race condition fix
+      if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
+        return; // Connection already in progress
+      }
+
+      // Clean up existing connection before creating new one
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+
+      // Clear any existing intervals to prevent memory leaks
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = null;
+      }
+
       const token = await getToken();
       if (!token) {
         throw new Error('No authentication token');
@@ -54,7 +80,7 @@ export function useWebSocket({
 
       const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'wss://api.devcommand.com';
       const url = `${wsUrl}/api/ws/${roadmapId}?token=${token}`;
-      
+
       const ws = new WebSocket(url);
       wsRef.current = ws;
 
@@ -85,7 +111,7 @@ export function useWebSocket({
               break;
               
             case 'sync':
-              if (message.data?.updates) {
+              if (message.data?.updates && Array.isArray(message.data.updates)) {
                 onSync?.(message.data.updates);
               }
               break;
@@ -97,19 +123,22 @@ export function useWebSocket({
               break;
               
             case 'cursor':
-              if (message.data && message.userId) {
+              if (message.data && message.userId && typeof message.data.x === 'number' && typeof message.data.y === 'number' && message.data.userEmail) {
                 onCursor?.({
                   userId: message.userId,
-                  ...message.data,
+                  x: message.data.x,
+                  y: message.data.y,
+                  userEmail: message.data.userEmail,
                 });
               }
               break;
-              
+
             case 'selection':
-              if (message.data && message.userId) {
+              if (message.data && message.userId && typeof message.data.nodeId === 'string' && message.data.userEmail) {
                 onSelection?.({
                   userId: message.userId,
-                  ...message.data,
+                  nodeId: message.data.nodeId,
+                  userEmail: message.data.userEmail,
                 });
               }
               break;

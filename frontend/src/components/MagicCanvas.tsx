@@ -1,574 +1,362 @@
-import React, { useCallback, useRef, useState, useEffect } from 'react';
-import ReactFlow, {
+/**
+ * @fileoverview ProtoThrive MagicCanvas Component
+ * Advanced visual roadmap builder with AI-powered features
+ */
+
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import {
+  ReactFlow,
   MiniMap,
   Controls,
   Background,
   useNodesState,
   useEdgesState,
   addEdge,
-  Connection,
-  Edge,
   Node,
-  Panel,
-  useReactFlow,
-  ReactFlowProvider,
+  Edge,
+  Connection,
+  ConnectionMode,
+  Panel
 } from 'reactflow';
-import 'reactflow/dist/style.css';
-import Spline from '@splinetool/react-spline';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CustomNode } from './canvas/CustomNode';
+import {
+  SparklesIcon,
+  CpuChipIcon,
+  LightBulbIcon,
+  RocketLaunchIcon,
+  MagnifyingGlassIcon
+} from '@heroicons/react/24/outline';
 import { useStore } from '../store';
-import { 
-  ZoomIn, 
-  ZoomOut, 
-  Maximize, 
-  RotateCcw, 
-  Download,
-  Upload,
-  Move3D,
-  Layers,
-  Settings,
-  Sparkles
-} from 'lucide-react';
 
-// Elite Node Types for React Flow
-const nodeTypes = {
-  custom: CustomNode,
-};
-
-// Elite edge styling with neon glow
-const eliteEdgeStyles = {
-  default: {
-    stroke: 'var(--neon-blue-primary)',
-    strokeWidth: 2,
-    filter: 'drop-shadow(0 0 8px var(--neon-blue-primary))',
-  },
-  animated: {
-    stroke: 'var(--neon-green-primary)',
-    strokeWidth: 3,
-    filter: 'drop-shadow(0 0 12px var(--neon-green-primary))',
-    strokeDasharray: '5,5',
-    animation: 'flow 2s linear infinite',
-  },
-  selected: {
-    stroke: 'var(--neon-purple)',
-    strokeWidth: 4,
-    filter: 'drop-shadow(0 0 16px var(--neon-purple))',
-  },
-};
+import 'reactflow/dist/style.css';
 
 interface MagicCanvasProps {
-  className?: string;
-  isMobile?: boolean;
-  isTablet?: boolean;
+  projectId?: string;
+  readOnly?: boolean;
+  onSave?: (data: { nodes: Node[]; edges: Edge[] }) => void;
+  initialData?: { nodes: Node[]; edges: Edge[] };
 }
 
-const MagicCanvasCore = ({ className = '', isMobile = false, isTablet = false }: MagicCanvasProps) => {
-  console.log('Thermonuclear Elite MagicCanvas Rendered');
-  const { nodes: storeNodes, edges: storeEdges, mode, thriveScore } = useStore();
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
-  const [canvasStats, setCanvasStats] = useState({
-    nodeCount: 0,
-    connectionCount: 0,
-    completionRate: 0,
-  });
-  
-  // Mobile-specific state
-  const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null);
-  const [isMultiTouch, setIsMultiTouch] = useState(false);
-  const [lastTouchTime, setLastTouchTime] = useState(0);
-  const [touchZoomActive, setTouchZoomActive] = useState(false);
-  
-  const reactFlowInstance = useReactFlow();
-  const canvasRef = useRef<HTMLDivElement>(null);
-
-  // Convert store nodes to React Flow format with elite styling
-  useEffect(() => {
-    const rfNodes: Node[] = storeNodes.map(n => ({
-      id: n.id,
-      type: 'custom',
-      position: { x: n.position.x, y: n.position.y },
-      data: { 
-        label: n.label,
-        status: n.status,
-        templateMatch: Math.random() > 0.5 ? 'auth-basic' : undefined,
-      },
-      style: {
-        background: n.status === 'neon' 
-          ? 'rgba(0, 210, 255, 0.1)' 
-          : 'rgba(42, 42, 43, 0.8)',
-        border: n.status === 'neon' 
-          ? '2px solid var(--neon-blue-primary)' 
-          : '1px solid rgba(255, 255, 255, 0.2)',
-        borderRadius: '12px',
-        backdropFilter: 'blur(10px)',
-        boxShadow: n.status === 'neon' 
-          ? '0 0 20px var(--neon-blue-primary)' 
-          : '0 4px 12px rgba(0, 0, 0, 0.3)',
-      },
-      selected: selectedNodes.includes(n.id),
-    }));
-
-    const rfEdges: Edge[] = storeEdges.map(e => ({
-      id: `e-${e.from}-${e.to}`,
-      source: e.from,
-      target: e.to,
-      type: 'smoothstep',
-      style: eliteEdgeStyles.default,
-      animated: Math.random() > 0.7,
-      markerEnd: 'arrowclosed',
-    }));
-
-    setNodes(rfNodes);
-    setEdges(rfEdges);
-
-    // Update canvas stats
-    const completedNodes = storeNodes.filter(n => n.status === 'neon').length;
-    setCanvasStats({
-      nodeCount: storeNodes.length,
-      connectionCount: storeEdges.length,
-      completionRate: storeNodes.length > 0 ? (completedNodes / storeNodes.length) * 100 : 0,
-    });
-  }, [storeNodes, storeEdges, selectedNodes, setNodes, setEdges]);
-
-  // Handle edge connections with elite effects
-  const onConnect = useCallback((params: Connection | Edge) => {
-    const newEdge = {
-      ...params,
-      type: 'smoothstep',
-      style: eliteEdgeStyles.animated,
-      animated: true,
-    };
-    setEdges((eds) => addEdge(newEdge, eds));
-  }, [setEdges]);
-
-  // Elite drag and drop handler
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }, []);
-
-  const onDrop = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-
-    const type = event.dataTransfer.getData('application/reactflow');
-    const templateData = event.dataTransfer.getData('template');
-
-    if (typeof type === 'undefined' || !type || !templateData) {
-      return;
+const defaultNodes: Node[] = [
+  {
+    id: 'start',
+    type: 'input',
+    position: { x: 250, y: 0 },
+    data: {
+      label: '🚀 Project Start',
+    },
+    style: {
+      background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '10px',
+      fontWeight: 'bold',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
     }
-
-    const template = JSON.parse(templateData);
-    const position = reactFlowInstance.screenToFlowPosition({
-      x: event.clientX,
-      y: event.clientY,
-    });
-
-    const newNode: Node = {
-      id: `${template.id}-${Date.now()}`,
-      type: 'custom',
-      position,
-      data: {
-        label: template.label,
-        status: 'gray',
-        templateMatch: template.id,
-      },
-      style: {
-        background: 'rgba(42, 42, 43, 0.8)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        borderRadius: '12px',
-        backdropFilter: 'blur(10px)',
-      },
-    };
-
-    setNodes((nds) => nds.concat(newNode));
-  }, [reactFlowInstance, setNodes]);
-
-  // Mobile touch gesture handlers - Non-conflicting with React Flow
-  const handleTouchStart = useCallback((event: React.TouchEvent) => {
-    if (!isMobile && !isTablet) return;
-    
-    // Only handle touches on control panel or non-React Flow elements
-    const target = event.target as HTMLElement;
-    if (target.closest('.react-flow__renderer')) {
-      // Let React Flow handle its own touch events
-      return;
-    }
-    
-    const touch = event.touches[0];
-    setTouchStartPos({ x: touch.clientX, y: touch.clientY });
-    setIsMultiTouch(event.touches.length > 1);
-    
-    // Detect double tap for mobile zoom (only on control elements)
-    const currentTime = Date.now();
-    if (currentTime - lastTouchTime < 300) {
-      // Double tap detected - fit view or zoom to selection
-      if (selectedNodes.length > 0) {
-        reactFlowInstance.fitView({ 
-          nodes: selectedNodes.map(id => ({ id })),
-          padding: 0.3,
-          duration: 500 
-        });
-      } else {
-        reactFlowInstance.fitView({ padding: 0.2, duration: 500 });
-      }
-    }
-    setLastTouchTime(currentTime);
-  }, [isMobile, isTablet, selectedNodes, reactFlowInstance, lastTouchTime]);
-
-  const handleTouchMove = useCallback((event: React.TouchEvent) => {
-    if (!isMobile && !isTablet) return;
-    
-    // Only prevent default on non-React Flow elements to avoid conflicts
-    const target = event.target as HTMLElement;
-    if (target.closest('.react-flow__renderer')) {
-      // Let React Flow handle its own gestures
-      return;
-    }
-    
-    // Handle multi-touch on control elements only
-    if (event.touches.length === 2 && !touchZoomActive) {
-      setTouchZoomActive(true);
-      // Don't preventDefault here - let React Flow handle zoom
-    }
-  }, [isMobile, isTablet, touchZoomActive]);
-
-  const handleTouchEnd = useCallback((event: React.TouchEvent) => {
-    if (!isMobile && !isTablet || !touchStartPos) return;
-    
-    // Only handle touches on control panel or non-React Flow elements
-    const target = event.target as HTMLElement;
-    if (target.closest('.react-flow__renderer')) {
-      // Let React Flow handle its own touch events
-      setTouchStartPos(null);
-      setIsMultiTouch(false);
-      setTouchZoomActive(false);
-      return;
-    }
-    
-    const touch = event.changedTouches[0];
-    const deltaX = touch.clientX - touchStartPos.x;
-    const deltaY = touch.clientY - touchStartPos.y;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    
-    // Reset multi-touch and zoom states
-    setIsMultiTouch(false);
-    setTouchZoomActive(false);
-    setTouchStartPos(null);
-    
-    // Handle swipe gestures only on control elements
-    if (distance > 50) {
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        // Horizontal swipe
-        if (deltaX > 50) {
-          // Swipe right - fit view
-          reactFlowInstance.fitView({ padding: 0.2, duration: 500 });
-        } else if (deltaX < -50) {
-          // Swipe left - center on selected nodes or reset
-          if (selectedNodes.length > 0) {
-            const selectedNodeObjects = nodes.filter(n => selectedNodes.includes(n.id));
-            if (selectedNodeObjects.length > 0) {
-              const avgX = selectedNodeObjects.reduce((sum, n) => sum + n.position.x, 0) / selectedNodeObjects.length;
-              const avgY = selectedNodeObjects.reduce((sum, n) => sum + n.position.y, 0) / selectedNodeObjects.length;
-              reactFlowInstance.setCenter(avgX, avgY, { zoom: 1.2, duration: 500 });
-            }
-          }
-        }
-      }
-    }
-  }, [isMobile, isTablet, touchStartPos, selectedNodes, nodes, reactFlowInstance]);
-
-  // Enhanced mobile drag and drop for touch devices
-  const handleMobileTouchNodeDrop = useCallback((position: { x: number; y: number }, templateData: any) => {
-    if (!isMobile && !isTablet) return;
-    
-    const flowPosition = reactFlowInstance.screenToFlowPosition(position);
-    const newNode: Node = {
-      id: `mobile-${templateData.id}-${Date.now()}`,
-      type: 'custom',
-      position: flowPosition,
-      data: {
-        label: templateData.name || templateData.label,
-        status: 'gray',
-        templateMatch: templateData.id,
-        isMobileCreated: true,
-      },
-      style: {
-        background: 'rgba(42, 42, 43, 0.8)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        borderRadius: isMobile ? '8px' : '12px',
-        backdropFilter: 'blur(10px)',
-        transform: isMobile ? 'scale(0.9)' : 'scale(1)',
-      },
-    };
-
-    setNodes((nds) => nds.concat(newNode));
-  }, [isMobile, isTablet, reactFlowInstance, setNodes]);
-
-  // Elite canvas controls
-  const handleZoomIn = () => reactFlowInstance.zoomIn();
-  const handleZoomOut = () => reactFlowInstance.zoomOut();
-  const handleFitView = () => reactFlowInstance.fitView({ padding: 0.2 });
-  const handleReset = () => {
-    reactFlowInstance.setCenter(0, 0);
-    reactFlowInstance.zoomTo(1);
-  };
-
-  // Export/Import functionality
-  const handleExport = () => {
-    const flow = reactFlowInstance.toObject();
-    const dataStr = JSON.stringify(flow, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = 'protothrive-canvas.json';
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-  };
-
-  // Spline 3D scene handler with better error handling
-  const handleSplineLoad = () => {
-    console.log('Thermonuclear Elite 3D Loaded - Nodes mapped to positions:', storeNodes.map(n => n.position));
-    setIsLoading(false);
-  };
-
-  const handleSplineError = (error: any) => {
-    console.warn('Spline loading error, falling back to 2D mode:', error);
-    setIsLoading(false);
-  };
-
-  // Node selection handler
-  const onSelectionChange = useCallback(({ nodes }: { nodes: Node[] }) => {
-    setSelectedNodes(nodes.map(node => node.id));
-  }, []);
-
-  if (mode === '3d') {
-    return (
-      <motion.div 
-        className={`relative w-full h-full rounded-xl overflow-hidden ${className}`}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.5 }}
-      >
-        {isLoading && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-primary/80 backdrop-blur-sm">
-            <div className="text-center">
-              <div className="spinner-elite mb-4 mx-auto"></div>
-              <p className="text-neon-blue-primary animate-neon-glow">Loading 3D Experience...</p>
-            </div>
-          </div>
-        )}
-        
-        <Spline
-          scene="https://prod.spline.design/6Wq1Q7YGyM-iab9t/scene.splinecode"
-          onLoad={handleSplineLoad}
-          onError={handleSplineError}
-          style={{
-            width: '100%',
-            height: '100%',
-            background: 'radial-gradient(circle at center, rgba(0, 210, 255, 0.1) 0%, rgba(10, 10, 11, 1) 70%)',
-          }}
-        />
-        
-        {/* 3D Overlay Controls */}
-        <div className="absolute top-4 right-4 z-10">
-          <div className="glass-elite p-3 rounded-lg">
-            <div className="flex items-center space-x-3 text-sm">
-              <Sparkles className="h-4 w-4 text-neon-blue-primary animate-neon-glow" suppressHydrationWarning={true} />
-              <span className="text-neon-blue-primary">3D Mode Active</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    );
   }
+];
+
+const defaultEdges: Edge[] = [];
+
+const MagicCanvas: React.FC<MagicCanvasProps> = ({
+  projectId,
+  readOnly = false,
+  onSave,
+  initialData
+}) => {
+  const { mode } = useStore();
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    initialData?.nodes || defaultNodes
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    initialData?.edges || defaultEdges
+  );
+  const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
+  const [isAIAnalyzing, setIsAIAnalyzing] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [showAIPanel, setShowAIPanel] = useState(true);
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
+  const onConnect = useCallback(
+    (params: Connection) => {
+      const newEdge = {
+        ...params,
+        animated: true,
+        style: {
+          stroke: '#6366f1',
+          strokeWidth: 2,
+          filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))'
+        }
+      };
+      setEdges((eds) => addEdge(newEdge, eds));
+    },
+    [setEdges]
+  );
+
+  const onSelectionChange = useCallback((elements: any) => {
+    setSelectedNodes(elements.nodes || []);
+  }, []);
+
+  const addSmartNode = useCallback((type: string) => {
+    const colors = {
+      feature: { bg: '#ddd6fe', border: '#7c3aed', color: '#5b21b6' },
+      task: { bg: '#bfdbfe', border: '#2563eb', color: '#1d4ed8' },
+      milestone: { bg: '#fecaca', border: '#dc2626', color: '#b91c1c' },
+      decision: { bg: '#fed7aa', border: '#ea580c', color: '#c2410c' },
+      integration: { bg: '#bbf7d0', border: '#059669', color: '#047857' }
+    };
+
+    const labels = {
+      feature: '✨ New Feature',
+      task: '📋 Task',
+      milestone: '🎯 Milestone',
+      decision: '❓ Decision Point',
+      integration: '🔗 Integration'
+    };
+
+    const color = colors[type as keyof typeof colors] || colors.task;
+    const label = labels[type as keyof typeof labels] || labels.task;
+
+    const newNode: Node = {
+      id: `${type}_${Date.now()}`,
+      position: {
+        x: Math.random() * 400 + 100,
+        y: Math.random() * 300 + 100
+      },
+      data: {
+        label,
+        type,
+        description: '',
+        status: 'pending',
+        priority: 'medium'
+      },
+      style: {
+        background: color.bg,
+        color: color.color,
+        border: `2px solid ${color.border}`,
+        borderRadius: '10px',
+        fontSize: '14px',
+        fontWeight: '500',
+        padding: '10px',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+        minWidth: '120px',
+        textAlign: 'center'
+      }
+    };
+
+    setNodes((nds) => nds.concat(newNode));
+  }, [setNodes]);
+
+  const runAIAnalysis = useCallback(async () => {
+    setIsAIAnalyzing(true);
+
+    try {
+      // Simulate AI analysis
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const suggestions = [
+        '💡 Consider adding error handling for the authentication flow',
+        '🔍 Missing test coverage for the payment processing module',
+        '⚡ Optimize database queries in the user dashboard',
+        '🔐 Add security validation for API endpoints',
+        '📊 Include performance monitoring for critical paths'
+      ];
+
+      setAiSuggestions(suggestions);
+    } catch (error) {
+      console.error('AI analysis failed:', error);
+    } finally {
+      setIsAIAnalyzing(false);
+    }
+  }, []);
+
+  const applySuggestion = useCallback((suggestion: string) => {
+    // Extract action from suggestion and create appropriate node
+    if (suggestion.includes('error handling')) {
+      addSmartNode('task');
+    } else if (suggestion.includes('test')) {
+      addSmartNode('task');
+    } else if (suggestion.includes('security')) {
+      addSmartNode('milestone');
+    } else {
+      addSmartNode('feature');
+    }
+  }, [addSmartNode]);
+
+  useEffect(() => {
+    if (onSave) {
+      const timer = setTimeout(() => {
+        onSave({ nodes, edges });
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [nodes, edges, onSave]);
 
   return (
-    <motion.div 
-      className={`relative w-full h-full rounded-xl overflow-hidden border border-neon-blue-primary/20 ${className}`}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5 }}
-      style={{
-        background: 'radial-gradient(circle at center, rgba(0, 210, 255, 0.05) 0%, rgba(10, 10, 11, 0.95) 70%)',
-      }}
-    >
+    <div className="w-full h-full relative">
       <ReactFlow
-        ref={canvasRef}
+        ref={reactFlowWrapper}
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
         onSelectionChange={onSelectionChange}
-        nodeTypes={nodeTypes}
+        connectionMode={ConnectionMode.Loose}
         fitView
-        proOptions={{ hideAttribution: true }}
-        style={{
-          background: 'transparent',
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        attributionPosition="bottom-left"
+        className="bg-gradient-to-br from-slate-50 to-blue-50"
+        nodesDraggable={!readOnly}
+        nodesConnectable={!readOnly}
+        elementsSelectable={!readOnly}
       >
-        {/* Elite Background with Neon Grid */}
-        <Background 
-          color="rgba(0, 210, 255, 0.1)" 
+        <Background
+          color="#e2e8f0"
           gap={20}
           size={1}
-          style={{
-            background: 'radial-gradient(circle at center, rgba(0, 210, 255, 0.02) 0%, transparent 70%)',
-          }}
         />
-        
-        {/* Elite MiniMap */}
-        <MiniMap 
-          nodeColor={(node) => {
-            if (node.data?.status === 'neon') return 'var(--neon-blue-primary)';
-            return 'rgba(255, 255, 255, 0.3)';
-          }}
-          style={{
-            background: 'rgba(26, 26, 27, 0.8)',
-            border: '1px solid var(--neon-blue-primary)',
-            borderRadius: '8px',
-            backdropFilter: 'blur(10px)',
-          }}
-        />
-        
-        {/* Elite Controls */}
-        <Controls 
-          style={{
-            background: 'transparent',
-            border: 'none',
-          }}
-        />
-        
-        {/* Elite Canvas Stats Panel */}
-        <Panel position="top-left">
-          <motion.div 
-            className="glass-elite p-4 rounded-lg border border-neon-blue-primary/30"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="flex items-center space-x-3 mb-3">
-              <Layers className="h-5 w-5 text-neon-blue-primary" suppressHydrationWarning={true} />
-              <h3 className="text-sm font-bold text-neon-blue-primary">Canvas Stats</h3>
-            </div>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-text-secondary">Nodes:</span>
-                <span className="text-neon-blue-primary font-mono">{canvasStats.nodeCount}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-text-secondary">Connections:</span>
-                <span className="text-neon-green-primary font-mono">{canvasStats.connectionCount}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-text-secondary">Completion:</span>
-                <span className="text-neon-purple font-mono">{canvasStats.completionRate.toFixed(1)}%</span>
-              </div>
-              <div className="w-full bg-dark-tertiary rounded-full h-2 mt-2">
-                <motion.div 
-                  className="h-2 rounded-full bg-gradient-green"
-                  style={{ width: `${canvasStats.completionRate}%` }}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${canvasStats.completionRate}%` }}
-                  transition={{ duration: 1, delay: 0.5 }}
-                />
-              </div>
-            </div>
-          </motion.div>
-        </Panel>
-        
-        {/* Elite Control Panel */}
-        <Panel position="top-right">
-          <motion.div 
-            className="glass-elite p-3 rounded-lg border border-neon-green-primary/30"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <div className="flex items-center space-x-2">
-              <button 
-                onClick={handleZoomIn}
-                className="p-2 rounded bg-neon-blue-primary/20 hover:bg-neon-blue-primary/30 transition-colors neon-glow-blue"
-                title="Zoom In"
-              >
-                <ZoomIn className="h-4 w-4 text-neon-blue-primary" suppressHydrationWarning={true} />
-              </button>
-              <button 
-                onClick={handleZoomOut}
-                className="p-2 rounded bg-neon-blue-primary/20 hover:bg-neon-blue-primary/30 transition-colors neon-glow-blue"
-                title="Zoom Out"
-              >
-                <ZoomOut className="h-4 w-4 text-neon-blue-primary" suppressHydrationWarning={true} />
-              </button>
-              <button 
-                onClick={handleFitView}
-                className="p-2 rounded bg-neon-green-primary/20 hover:bg-neon-green-primary/30 transition-colors neon-glow-green"
-                title="Fit View"
-              >
-                <Maximize className="h-4 w-4 text-neon-green-primary" suppressHydrationWarning={true} />
-              </button>
-              <button 
-                onClick={handleReset}
-                className="p-2 rounded bg-neon-purple/20 hover:bg-neon-purple/30 transition-colors neon-glow-purple"
-                title="Reset View"
-              >
-                <RotateCcw className="h-4 w-4 text-neon-purple" suppressHydrationWarning={true} />
-              </button>
-              <button 
-                onClick={handleExport}
-                className="p-2 rounded bg-neon-orange/20 hover:bg-neon-orange/30 transition-colors"
-                title="Export Canvas"
-              >
-                <Download className="h-4 w-4 text-neon-orange" suppressHydrationWarning={true} />
-              </button>
-            </div>
-          </motion.div>
-        </Panel>
 
-        {/* Selection Info Panel */}
-        {selectedNodes.length > 0 && (
-          <Panel position="bottom-left">
-            <motion.div 
-              className="glass-elite p-4 rounded-lg border border-neon-purple/30"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
+        <MiniMap
+          nodeColor="#6366f1"
+          className="bg-white/80 backdrop-blur border border-gray-200 rounded-lg shadow-sm"
+          style={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }}
+        />
+
+        <Controls
+          className="bg-white/80 backdrop-blur border border-gray-200 rounded-lg shadow-sm"
+          showZoom={true}
+          showFitView={true}
+          showInteractive={!readOnly}
+        />
+
+        {!readOnly && (
+          <Panel position="top-left" className="space-y-2">
+            <div className="bg-white/90 backdrop-blur rounded-lg shadow-lg border border-gray-200 p-3">
+              <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
+                <SparklesIcon className="h-4 w-4 mr-2 text-purple-600" />
+                Quick Add
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => addSmartNode('feature')}
+                  className="px-3 py-2 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-md hover:bg-purple-100 transition-colors"
+                >
+                  ✨ Feature
+                </button>
+                <button
+                  onClick={() => addSmartNode('task')}
+                  className="px-3 py-2 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
+                >
+                  📋 Task
+                </button>
+                <button
+                  onClick={() => addSmartNode('milestone')}
+                  className="px-3 py-2 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
+                >
+                  🎯 Milestone
+                </button>
+                <button
+                  onClick={() => addSmartNode('decision')}
+                  className="px-3 py-2 text-xs font-medium text-orange-700 bg-orange-50 border border-orange-200 rounded-md hover:bg-orange-100 transition-colors"
+                >
+                  ❓ Decision
+                </button>
+              </div>
+            </div>
+          </Panel>
+        )}
+
+        {showAIPanel && (
+          <Panel position="bottom-right" className="w-80">
+            <div className="bg-white/95 backdrop-blur rounded-lg shadow-xl border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center">
+                  <CpuChipIcon className="h-4 w-4 mr-2 text-blue-600" />
+                  AI Assistant
+                </h3>
+                <button
+                  onClick={() => setShowAIPanel(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={runAIAnalysis}
+                  disabled={isAIAnalyzing}
+                  className="w-full inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 border border-transparent rounded-md hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isAIAnalyzing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <MagnifyingGlassIcon className="h-4 w-4 mr-2" />
+                      Analyze Roadmap
+                    </>
+                  )}
+                </button>
+
+                {aiSuggestions.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center text-xs font-medium text-gray-700">
+                      <LightBulbIcon className="h-3 w-3 mr-1 text-yellow-500" />
+                      AI Suggestions:
+                    </div>
+                    {aiSuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="group bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-md p-2"
+                      >
+                        <p className="text-xs text-gray-700 mb-2">{suggestion}</p>
+                        <button
+                          onClick={() => applySuggestion(suggestion)}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          Apply →
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-gray-200">
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span>Total Nodes:</span>
+                      <span className="font-medium">{nodes.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Connections:</span>
+                      <span className="font-medium">{edges.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Selected:</span>
+                      <span className="font-medium">{selectedNodes.length}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Panel>
+        )}
+
+        {!showAIPanel && (
+          <Panel position="bottom-right">
+            <button
+              onClick={() => setShowAIPanel(true)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
             >
-              <div className="flex items-center space-x-3 mb-2">
-                <Settings className="h-4 w-4 text-neon-purple" suppressHydrationWarning={true} />
-                <span className="text-sm font-bold text-neon-purple">
-                  {selectedNodes.length} Node{selectedNodes.length > 1 ? 's' : ''} Selected
-                </span>
-              </div>
-              <div className="text-xs text-text-muted">
-                Right-click for context menu • Drag to move • Delete to remove
-              </div>
-            </motion.div>
+              <CpuChipIcon className="h-5 w-5" />
+            </button>
           </Panel>
         )}
       </ReactFlow>
-    </motion.div>
+    </div>
   );
 };
 
-const MagicCanvas = ({ className }: MagicCanvasProps) => {
-  return (
-    <ReactFlowProvider>
-      <MagicCanvasCore className={className} />
-    </ReactFlowProvider>
-  );
-};
-
-export default React.memo(MagicCanvas);
+export default MagicCanvas;

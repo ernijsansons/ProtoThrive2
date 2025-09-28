@@ -1,307 +1,377 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useStore } from '../store';
-import { PaperAirplaneIcon, SparklesIcon } from '@heroicons/react/24/outline';
+/**
+ * @fileoverview ProtoThrive Agent Chat Interface
+ * Multi-agent AI chat system with specialized agents
+ */
 
-interface TypingIndicatorProps {
-  isVisible: boolean;
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  PaperAirplaneIcon,
+  UserIcon,
+  CpuChipIcon,
+  SparklesIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/react/24/outline';
+
+interface Message {
+  id: string;
+  content: string;
+  sender: 'user' | 'agent';
+  agentType?: string;
+  timestamp: Date;
+  status?: 'sending' | 'sent' | 'error';
 }
 
-const TypingIndicator: React.FC<TypingIndicatorProps> = ({ isVisible }) => {
-  return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="flex items-center space-x-2 px-4 py-3 bg-dark-tertiary/60 rounded-lg border border-neon-blue-primary/20 backdrop-blur-lg"
-        >
-          <div className="w-6 h-6 rounded-full bg-gradient-blue flex items-center justify-center">
-            <SparklesIcon className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex space-x-1">
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="w-2 h-2 rounded-full bg-neon-blue-primary"
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 1, 0.5]
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  delay: i * 0.2
-                }}
-              />
-            ))}
-          </div>
-          <span className="text-xs text-neon-blue-light">AI is thinking...</span>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-};
-
-interface ChatBubbleProps {
-  message: {
-    id: string;
-    sender: 'user' | 'agent';
-    message: string;
-    timestamp: Date;
-  };
-  index: number;
+interface Agent {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  specialization: string[];
 }
 
-const ChatBubble: React.FC<ChatBubbleProps> = ({ message, index }) => {
-  const isUser = message.sender === 'user';
-  const [isVisible, setIsVisible] = useState(false);
+const agents: Agent[] = [
+  {
+    id: 'strategic-planner',
+    name: 'Strategic Planner',
+    description: 'Roadmap analysis and task decomposition',
+    icon: '🎯',
+    color: 'blue',
+    specialization: ['planning', 'architecture', 'strategy']
+  },
+  {
+    id: 'tdd-implementer',
+    name: 'TDD Implementer',
+    description: 'Test-driven development specialist',
+    icon: '🧪',
+    color: 'green',
+    specialization: ['testing', 'tdd', 'quality']
+  },
+  {
+    id: 'security-auditor',
+    name: 'Security Auditor',
+    description: 'OWASP compliance and vulnerability scanning',
+    icon: '🔒',
+    color: 'red',
+    specialization: ['security', 'audit', 'compliance']
+  },
+  {
+    id: 'performance-optimizer',
+    name: 'Performance Optimizer',
+    description: 'Code optimization and latency reduction',
+    icon: '⚡',
+    color: 'yellow',
+    specialization: ['performance', 'optimization', 'scaling']
+  },
+  {
+    id: 'grug-reviewer',
+    name: 'Grug Code Reviewer',
+    description: 'Simplicity-focused code review',
+    icon: '🗿',
+    color: 'gray',
+    specialization: ['review', 'simplicity', 'maintainability']
+  },
+  {
+    id: 'edge-innovator',
+    name: 'Edge Innovator',
+    description: 'Cutting-edge technology integration',
+    icon: '🚀',
+    color: 'purple',
+    specialization: ['innovation', 'emerging-tech', 'research']
+  }
+];
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), index * 100);
-    return () => clearTimeout(timer);
-  }, [index]);
+interface AgentChatInterfaceProps {
+  projectId?: string;
+  onAgentAction?: (action: string, data: any) => void;
+  className?: string;
+}
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    });
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: isUser ? 50 : -50, scale: 0.8 }}
-      animate={{ 
-        opacity: isVisible ? 1 : 0, 
-        x: 0, 
-        scale: isVisible ? 1 : 0.8 
-      }}
-      transition={{ 
-        duration: 0.5, 
-        type: 'spring',
-        stiffness: 100,
-        damping: 15
-      }}
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}
-    >
-      <div className={`max-w-[85%] ${isUser ? 'order-2' : 'order-1'}`}>
-        <div className="flex items-end space-x-2">
-          {/* Avatar */}
-          {!isUser && (
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              className="w-8 h-8 rounded-full bg-gradient-blue flex items-center justify-center flex-shrink-0 mb-1"
-            >
-              <SparklesIcon className="w-5 h-5 text-white" />
-            </motion.div>
-          )}
-
-          {/* Message Content */}
-          <div
-            className={`rounded-2xl px-4 py-3 backdrop-blur-lg border relative ${
-              isUser
-                ? 'bg-gradient-blue border-neon-blue-primary/30 text-white'
-                : 'bg-dark-tertiary/80 border-neon-green-primary/30 text-text-primary'
-            }`}
-          >
-            {/* Message text */}
-            <p className="text-sm leading-relaxed">{message.message}</p>
-            
-            {/* Timestamp */}
-            <div className={`text-xs mt-2 ${isUser ? 'text-blue-200' : 'text-text-muted'}`}>
-              {formatTime(message.timestamp)}
-            </div>
-
-            {/* Glow effect for agent messages */}
-            {!isUser && (
-              <div className="absolute -inset-1 bg-gradient-green rounded-2xl blur opacity-20 -z-10" />
-            )}
-          </div>
-
-          {/* User Avatar */}
-          {isUser && (
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              className="w-8 h-8 rounded-full bg-gradient-green flex items-center justify-center flex-shrink-0 mb-1"
-            >
-              <span className="text-sm font-bold text-white">U</span>
-            </motion.div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-const AgentChatInterface: React.FC = () => {
-  const { 
-    insightsPanel: { chatHistory, isTyping },
-    addChatMessage,
-    setAgentTyping
-  } = useStore();
-  
-  const [inputMessage, setInputMessage] = useState('');
+const AgentChatInterface: React.FC<AgentChatInterfaceProps> = ({
+  projectId,
+  onAgentAction,
+  className = ''
+}) => {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      content: 'Hello! I\'m your AI agent coordinator. I can connect you with any of our 14 specialized agents. What would you like help with today?',
+      sender: 'agent',
+      agentType: 'coordinator',
+      timestamp: new Date(),
+      status: 'sent'
+    }
+  ]);
+  const [inputValue, setInputValue] = useState('');
+  const [selectedAgent, setSelectedAgent] = useState<string>('coordinator');
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistory, isTyping]);
-
-  // Simulate agent responses
-  const simulateAgentResponse = async (userMessage: string) => {
-    setAgentTyping(true);
-    
-    // Simulate thinking time
-    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
-    
-    const responses = [
-      "I understand what you're looking for. Let me help you create that feature with the best practices in mind.",
-      "Great idea! I can assist you with implementing that. Would you like me to start with the component structure?",
-      "That's an interesting challenge. I'll guide you through the implementation step by step.",
-      "Perfect! I can help optimize that for better performance and user experience.",
-      "Excellent question! Let me provide you with a comprehensive solution for this."
-    ];
-    
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    
-    setAgentTyping(false);
-    addChatMessage({
-      sender: 'agent',
-      message: randomResponse
-    });
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputMessage.trim()) return;
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
-    const messageText = inputMessage.trim();
-    setInputMessage('');
+  const handleSendMessage = async () => {
+    if (!inputValue.trim()) return;
 
-    // Add user message
-    addChatMessage({
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: inputValue,
       sender: 'user',
-      message: messageText
-    });
+      timestamp: new Date(),
+      status: 'sent'
+    };
 
-    // Simulate agent response
-    await simulateAgentResponse(messageText);
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsTyping(true);
+
+    try {
+      // Simulate agent processing
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const agentResponse = await generateAgentResponse(inputValue, selectedAgent);
+
+      const agentMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: agentResponse.content,
+        sender: 'agent',
+        agentType: agentResponse.agentType,
+        timestamp: new Date(),
+        status: 'sent'
+      };
+
+      setMessages(prev => [...prev, agentMessage]);
+
+      if (agentResponse.action && onAgentAction) {
+        onAgentAction(agentResponse.action, agentResponse.actionData);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        content: 'Sorry, I encountered an error processing your request. Please try again.',
+        sender: 'agent',
+        agentType: 'coordinator',
+        timestamp: new Date(),
+        status: 'error'
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const generateAgentResponse = async (input: string, agentId: string) => {
+    // Simulate different agent responses based on input and selected agent
+    const responses = {
+      'strategic-planner': {
+        content: `I've analyzed your request. Here's a strategic breakdown: ${input}. I recommend breaking this into 3 phases with clear milestones and dependencies.`,
+        agentType: 'strategic-planner',
+        action: 'create-roadmap-nodes',
+        actionData: { type: 'strategic-plan', input }
+      },
+      'tdd-implementer': {
+        content: `From a TDD perspective, let's start with tests. I'll help you write comprehensive test cases for: ${input}. We should aim for 95%+ coverage.`,
+        agentType: 'tdd-implementer',
+        action: 'generate-tests',
+        actionData: { type: 'test-suite', input }
+      },
+      'security-auditor': {
+        content: `Security assessment for: ${input}. I've identified potential vulnerabilities and OWASP compliance requirements. Let me provide a security checklist.`,
+        agentType: 'security-auditor',
+        action: 'security-scan',
+        actionData: { type: 'security-audit', input }
+      },
+      'performance-optimizer': {
+        content: `Performance analysis for: ${input}. I can optimize this for sub-10ms response times. Here are my recommendations for scaling and optimization.`,
+        agentType: 'performance-optimizer',
+        action: 'optimize-performance',
+        actionData: { type: 'performance-tune', input }
+      },
+      'grug-reviewer': {
+        content: `Grug think: ${input} too complex! Grug make simple. Remove fancy stuff. Use rock-solid patterns. Grug show better way.`,
+        agentType: 'grug-reviewer',
+        action: 'simplify-code',
+        actionData: { type: 'simplification', input }
+      },
+      'edge-innovator': {
+        content: `Fascinating! ${input} could benefit from cutting-edge approaches. Consider WebAssembly, edge computing, or AI integration. Let me prototype some innovative solutions.`,
+        agentType: 'edge-innovator',
+        action: 'innovate-solution',
+        actionData: { type: 'innovation', input }
+      },
+      'coordinator': {
+        content: `I understand you need help with: ${input}. Based on this, I recommend working with our Security Auditor and Performance Optimizer. Would you like me to connect you?`,
+        agentType: 'coordinator',
+        action: 'route-to-agent',
+        actionData: { recommendedAgents: ['security-auditor', 'performance-optimizer'], input }
+      }
+    };
+
+    return responses[agentId as keyof typeof responses] || responses.coordinator;
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage(e);
+      handleSendMessage();
+    }
+  };
+
+  const getAgentInfo = (agentType: string) => {
+    return agents.find(agent => agent.id === agentType) || {
+      id: 'coordinator',
+      name: 'AI Coordinator',
+      icon: '🤖',
+      color: 'blue'
+    };
+  };
+
+  const getStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'sending':
+        return <ClockIcon className="h-3 w-3 text-gray-400 animate-spin" />;
+      case 'sent':
+        return <CheckCircleIcon className="h-3 w-3 text-green-500" />;
+      case 'error':
+        return <ExclamationTriangleIcon className="h-3 w-3 text-red-500" />;
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Chat Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center space-x-3 p-4 border-b border-neon-blue-primary/20 backdrop-blur-lg"
-      >
-        <div className="w-10 h-10 rounded-full bg-gradient-blue flex items-center justify-center">
-          <SparklesIcon className="w-6 h-6 text-white" />
+    <div className={`flex flex-col h-full bg-white rounded-lg shadow-lg border border-gray-200 ${className}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+        <div className="flex items-center">
+          <CpuChipIcon className="h-6 w-6 text-blue-600 mr-2" />
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">AI Agent Chat</h3>
+            <p className="text-sm text-gray-500">14 specialized agents at your service</p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-sm font-bold text-neon-blue-primary">AI Assistant</h3>
-          <p className="text-xs text-text-muted">Always here to help</p>
-        </div>
-        <motion.div
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.5, 1, 0.5]
-          }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="ml-auto w-2 h-2 rounded-full bg-neon-green-primary"
-        />
-      </motion.div>
+        <SparklesIcon className="h-5 w-5 text-purple-600" />
+      </div>
 
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-        <AnimatePresence>
-          {chatHistory.map((message, index) => (
-            <ChatBubble
-              key={message.id}
-              message={message}
-              index={index}
-            />
+      {/* Agent Selector */}
+      <div className="p-3 border-b border-gray-100 bg-gray-50">
+        <div className="flex flex-wrap gap-2">
+          {agents.slice(0, 6).map((agent) => (
+            <button
+              key={agent.id}
+              onClick={() => setSelectedAgent(agent.id)}
+              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                selectedAgent === agent.id
+                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <span className="mr-1">{agent.icon}</span>
+              {agent.name}
+            </button>
           ))}
-        </AnimatePresence>
-        
-        {/* Typing Indicator */}
-        <TypingIndicator isVisible={isTyping} />
-        
-        {/* Scroll anchor */}
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div className={`flex max-w-xs lg:max-w-md ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+              <div className={`flex-shrink-0 ${message.sender === 'user' ? 'ml-3' : 'mr-3'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  message.sender === 'user'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {message.sender === 'user' ? (
+                    <UserIcon className="h-4 w-4" />
+                  ) : (
+                    <span className="text-sm">{getAgentInfo(message.agentType || 'coordinator').icon}</span>
+                  )}
+                </div>
+              </div>
+              <div className={`flex flex-col ${message.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                {message.sender === 'agent' && (
+                  <span className="text-xs text-gray-500 mb-1">
+                    {getAgentInfo(message.agentType || 'coordinator').name}
+                  </span>
+                )}
+                <div className={`px-4 py-2 rounded-lg ${
+                  message.sender === 'user'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-900'
+                }`}>
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                </div>
+                <div className="flex items-center mt-1 space-x-1">
+                  <span className="text-xs text-gray-400">
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  {getStatusIcon(message.status)}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="flex mr-3">
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                <span className="text-sm">{getAgentInfo(selectedAgent).icon}</span>
+              </div>
+            </div>
+            <div className="bg-gray-100 rounded-lg px-4 py-2">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <motion.form
-        onSubmit={handleSendMessage}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="p-4 border-t border-neon-blue-primary/20 backdrop-blur-lg"
-      >
-        <div className="relative">
+      {/* Input */}
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex space-x-2">
           <input
             ref={inputRef}
             type="text"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask AI anything..."
-            className="input-elite w-full pr-12 py-3 text-sm bg-dark-secondary/60 backdrop-blur-lg border-2 border-neon-blue-primary/30 rounded-full text-text-primary placeholder-text-muted focus:border-neon-blue-primary focus:ring-2 focus:ring-neon-blue-primary/20 transition-all duration-300"
+            placeholder={`Ask ${getAgentInfo(selectedAgent).name} for help...`}
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+            disabled={isTyping}
           />
-          
-          <motion.button
-            type="submit"
-            disabled={!inputMessage.trim() || isTyping}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
-              inputMessage.trim() && !isTyping
-                ? 'bg-gradient-blue hover:shadow-glow-blue text-white'
-                : 'bg-dark-hover text-text-muted cursor-not-allowed'
-            }`}
+          <button
+            onClick={handleSendMessage}
+            disabled={!inputValue.trim() || isTyping}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <PaperAirplaneIcon className="w-4 h-4" />
-          </motion.button>
+            <PaperAirplaneIcon className="h-4 w-4" />
+          </button>
         </div>
-
-        {/* Quick Action Suggestions */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-3 flex flex-wrap gap-2"
-        >
-          {[
-            '🚀 Create component',
-            '🎨 Improve design',
-            '⚡ Optimize performance',
-            '🔧 Debug issue'
-          ].map((suggestion) => (
-            <motion.button
-              key={suggestion}
-              onClick={() => setInputMessage(suggestion.slice(2).trim())}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-3 py-1 text-xs rounded-full bg-dark-tertiary/60 border border-neon-blue-primary/20 text-text-secondary hover:border-neon-blue-primary/40 hover:text-neon-blue-light transition-all duration-300"
-            >
-              {suggestion}
-            </motion.button>
-          ))}
-        </motion.div>
-      </motion.form>
+        <p className="text-xs text-gray-500 mt-2">
+          Currently chatting with <strong>{getAgentInfo(selectedAgent).name}</strong>
+        </p>
+      </div>
     </div>
   );
 };

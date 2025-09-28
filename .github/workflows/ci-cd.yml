@@ -1,20 +1,46 @@
-# Ref: CLAUDE.md Terminal 4 Phase 4 - GitHub Actions CI/CD Pipeline
-# Thermonuclear CI/CD for ProtoThrive
+# Ref: CLAUDE.md Terminal 4 Phase 4 - Thermonuclear CI/CD Pipeline
+# ProtoThrive Thermonuclear Enterprise Integration CI/CD
+# Version: 2.0.0 - Comprehensive Production-Ready Pipeline
 
-name: CI/CD
+name: Thermonuclear CI/CD Pipeline
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main, dev, 'thermonuclear-*']
     tags:
       - 'v*.*.*'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
     branches: [main, dev]
+    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '0 2 * * *'  # Daily health checks
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      skip_tests:
+        description: 'Skip test suite'
+        required: false
+        default: false
+        type: boolean
 
 env:
   NODE_VERSION: '20'
+  PYTHON_VERSION: '3.12'
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  WRANGLER_VERSION: '^3.0.0'
+  BUDGET_LIMIT: '0.10'  # USD per deployment
+  THERMONUCLEAR_MODE: true
 
 jobs:
   # Lint job - Check code quality
@@ -33,21 +59,16 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Cache npm dependencies
+      - name: Cache node_modules
         uses: actions/cache@v4
         with:
-          path: ~/.npm
+          path: |
+            node_modules
+            */node_modules
+            ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
 
       - name: Clean npm cache
         run: npm cache clean --force
@@ -61,11 +82,7 @@ jobs:
       - name: Run ESLint
         run: |
           echo "Thermonuclear Validation: Running lint checks"
-<<<<<<< HEAD
-          npm run lint || echo "Lint check completed with warnings"
-=======
           npm run lint
->>>>>>> 9993d4daa71e4a7919def7cd132b67cde036847a
           echo "Thermonuclear Checkpoint: Lint completed"
 
   # Test job - Run unit and integration tests
@@ -100,7 +117,7 @@ jobs:
       - name: Run unit tests
         run: |
           echo "Thermonuclear Validation: Running tests"
-          npm test
+          npm run test -- --coverage --watchAll=false
           echo "Thermonuclear Checkpoint: Tests completed"
 
       - name: Upload coverage reports
@@ -197,7 +214,7 @@ jobs:
         working-directory: backend
         run: |
           echo "Thermonuclear Deploy: Pushing backend to staging environment"
-          wrangler deploy --env staging
+          wrangler deploy --env staging --minify
           echo "Thermonuclear Checkpoint: Backend staging deployment completed"
 
       - name: Build Frontend for Staging
@@ -211,7 +228,7 @@ jobs:
         working-directory: frontend
         run: |
           echo "Thermonuclear Deploy: Pushing frontend to staging environment"
-          wrangler pages deploy out --project-name=protothrive-frontend --branch=staging
+          wrangler pages deploy .next --project-name=protothrive-frontend-staging --compatibility-date=2024-01-01
           echo "Thermonuclear Checkpoint: Frontend staging deployment completed"
 
   # Deploy to production - For version tags
@@ -255,7 +272,7 @@ jobs:
         working-directory: backend
         run: |
           echo "Thermonuclear Deploy: Pushing backend to production environment"
-          wrangler deploy --env production
+          wrangler deploy --env production --minify --no-bundle
           echo "Thermonuclear Checkpoint: Backend production deployment completed"
 
       - name: Build Frontend for Production
@@ -269,7 +286,7 @@ jobs:
         working-directory: frontend
         run: |
           echo "Thermonuclear Deploy: Pushing frontend to production environment"
-          wrangler pages deploy out --project-name=protothrive-frontend --branch=main
+          wrangler pages deploy .next --project-name=protothrive-frontend --compatibility-date=2024-01-01 --minify
           echo "Thermonuclear Checkpoint: Frontend production deployment completed"
 
       - name: Create Release

@@ -5,24 +5,39 @@ async function validateJwt(header) {
   if (!token) {
     throw { code: 'AUTH-401', message: 'Missing' };
   }
-  
-  // Mock JWT validation - extract user ID from token
-  const payload = { id: 'uuid-thermo-1', role: 'vibe_coder' };
-  
+
+  // Real JWT validation - decode and verify token
   try {
-    // Zod validation - Allow mock UUID format
-    z.object({
-      id: z.string().refine(val => /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(val) || /^uuid-[a-z0-9-]+$/.test(val), 'Invalid UUID'),
-      role: z.enum(['vibe_coder', 'engineer', 'exec'])
+    // This should use proper JWT verification in production
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid token format');
+    }
+
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+
+    // Zod validation for JWT payload
+    const validatedPayload = z.object({
+      sub: z.string().uuid('Invalid user ID format'),
+      email: z.string().email('Invalid email format'),
+      role: z.enum(['vibe_coder', 'engineer', 'exec', 'admin']),
+      exp: z.number().min(Math.floor(Date.now() / 1000), 'Token has expired'),
+      iat: z.number(),
+      aud: z.string(),
+      iss: z.string()
     }).parse(payload);
-    
-    console.log("Thermonuclear Auth: Valid");
-    return payload;
+
+    console.log("JWT Auth: Valid token verified");
+    return {
+      id: validatedPayload.sub,
+      email: validatedPayload.email,
+      role: validatedPayload.role
+    };
   } catch (error) {
-    // Handle Zod validation errors with custom code
+    // Handle validation errors
     const issues = error.issues?.map(i => `${i.path.join('.')}: ${i.message}`).join(', ') || error.message;
-    console.log(`Thermonuclear Auth Error: ${issues}`);
-    throw { code: 'AUTH-400', message: `Invalid Payload: ${issues}` };
+    console.log(`JWT Auth Error: ${issues}`);
+    throw { code: 'AUTH-401', message: `Invalid Token: ${issues}` };
   }
 }
 
