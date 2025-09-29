@@ -18,27 +18,54 @@ export class DatabaseService {
     this.kv = kv;
   }
 
-  // Roadmap operations
+  // Roadmap operations with tenant isolation
   async queryRoadmaps(userId: string, params: any = {}) {
-    const limit = params.limit || 50;
+    if (!userId) {
+      throw new Error('User ID is required for data access');
+    }
+    const limit = Math.min(params.limit || 50, 100); // Max 100 items
     const offset = params.offset || 0;
     return this.getRoadmaps(userId, limit, offset);
   }
 
   async getRoadmap(roadmapId: string, userId: string) {
-    return this.getRoadmapById(roadmapId);
+    if (!userId || !roadmapId) {
+      throw new Error('User ID and Roadmap ID are required');
+    }
+
+    // Ensure user can only access their own roadmaps
+    const result = await this.db
+      .prepare('SELECT * FROM roadmaps WHERE id = ? AND user_id = ?')
+      .bind(roadmapId, userId)
+      .first();
+
+    return result;
   }
 
   async insertRoadmap(userId: string, data: any) {
+    if (!userId) {
+      throw new Error('User ID is required to create roadmap');
+    }
     const result = await this.createRoadmap({ ...data, userId });
     return result.id;
   }
 
   async updateRoadmap(roadmapId: string, userId: string, data: any) {
+    if (!userId || !roadmapId) {
+      throw new Error('User ID and Roadmap ID are required');
+    }
+
     try {
+      // First verify ownership
+      const existing = await this.getRoadmap(roadmapId, userId);
+      if (!existing) {
+        throw new Error('Roadmap not found or access denied');
+      }
+
       await this.updateRoadmapData(roadmapId, data);
       return true;
-    } catch {
+    } catch (error) {
+      console.error('Update roadmap error:', error);
       return false;
     }
   }

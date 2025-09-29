@@ -57,7 +57,13 @@ export class JWTService {
         audience: this.audience
       });
 
-      return payload as JWTPayload;
+      return {
+        sub: payload.sub as string,
+        email: payload.email as string,
+        role: payload.role as string,
+        iat: payload.iat as number,
+        exp: payload.exp as number
+      };
     } catch (error) {
       throw new Error('Invalid or expired token');
     }
@@ -149,16 +155,115 @@ export function createSecurityHeadersMiddleware() {
   };
 }
 
+/**
+ * Secure password hashing using PBKDF2 with Web Crypto API
+ * @param password - Plain text password
+ * @returns Promise<string> - Base64 encoded salt:hash
+ */
 export async function hashPassword(password: string): Promise<string> {
-  // Simple hash for Cloudflare Workers (replace with proper hashing in production)
+  // Generate a random salt
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+
+  // Convert password to array buffer
   const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const passwordBuffer = encoder.encode(password);
+
+  // Import the password as a key
+  const key = await crypto.subtle.importKey(
+    'raw',
+    passwordBuffer,
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits']
+  );
+
+  // Derive key using PBKDF2
+  const hashBuffer = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000, // 100k iterations for security
+      hash: 'SHA-256'
+    },
+    key,
+    256 // 256 bits = 32 bytes
+  );
+
+  // Combine salt and hash, encode as base64
+  const combined = new Uint8Array(salt.length + hashBuffer.byteLength);
+  combined.set(salt);
+  combined.set(new Uint8Array(hashBuffer), salt.length);
+
+  return btoa(String.fromCharCode(...combined));
 }
 
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const hashedPassword = await hashPassword(password);
-  return hashedPassword === hash;
+/**
+ * Verify password against stored hash
+ * @param password - Plain text password
+ * @param storedHash - Base64 encoded salt:hash
+ * @returns Promise<boolean> - True if password matches
+ */
+export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  try {
+    // Decode the stored hash
+    const combined = new Uint8Array(
+      atob(storedHash).split('').map(char => char.charCodeAt(0))
+    );
+
+    // Extract salt (first 16 bytes) and hash (remaining bytes)
+    const salt = combined.slice(0, 16);
+    const originalHash = combined.slice(16);
+
+    // Convert password to array buffer
+    const encoder = new TextEncoder();
+    const passwordBuffer = encoder.encode(password);
+
+    // Import the password as a key
+    const key = await crypto.subtle.importKey(
+      'raw',
+      passwordBuffer,
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits']
+    );
+
+    // Derive key using same parameters
+    const hashBuffer = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        salt: salt,
+        iterations: 100000,
+        hash: 'SHA-256'
+      },
+      key,
+      256
+    );
+
+    const newHash = new Uint8Array(hashBuffer);
+
+    // Compare hashes using constant-time comparison
+    return constantTimeEquals(originalHash, newHash);
+  } catch (error) {
+    console.error('Password verification error:', error);
+    return false;
+  }
+}
+
+/**
+ * Constant-time comparison to prevent timing attacks
+ * @param a - First array
+ * @param b - Second array
+ * @returns boolean - True if arrays are equal
+ */
+function constantTimeEquals(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a[i] ^ b[i];
+  }
+
+  return result === 0;
 }

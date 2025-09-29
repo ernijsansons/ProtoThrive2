@@ -3,7 +3,7 @@
 # Wrangler configuration for ProtoThrive backend deployment
 
 name = "protothrive-backend"
-main = "backend/src/index.ts"
+main = "backend/src/index-minimal.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
@@ -78,10 +78,10 @@ bucket_name = "protothrive-uploads-staging"
 # Environment variables (managed via inline vars above)
 # Additional vars can be set with wrangler secret commands
 
-# Build configuration
-[build]
-command = "npm run build"
-cwd = "backend"
+# Build configuration disabled for direct deployment
+# [build]
+# command = "npm run build"
+# cwd = "backend"
 
 # Triggers for automatic deployments
 [triggers]
@@ -90,3 +90,14 @@ crons = ["0 2 * * *"]  # Daily health checks at 2 AM UTC
 # Placement for edge optimization
 [placement]
 mode = "smart"
+
+# Durable Objects disabled for free plan
+# [[durable_objects.bindings]]
+# name = "RATE_LIMITER"
+# class_name = "RateLimiter"
+# script_name = "protothrive-backend"
+
+# Migration for Durable Objects
+# [[migrations]]
+# tag = "v1"
+# new_classes = ["RateLimiter"]

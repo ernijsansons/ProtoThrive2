@@ -69,39 +69,51 @@ const nextConfig = {
       tls: false,
     };
 
-    // Bundle optimization for 2.8MB → 1.2MB target
+    // Bundle optimization for <2MB target with aggressive code splitting
     config.optimization = {
       ...config.optimization,
       splitChunks: {
         chunks: 'all',
+        maxInitialRequests: 25,
+        maxAsyncRequests: 25,
+        minSize: 20000,
+        maxSize: 200000, // 200KB max per chunk
         cacheGroups: {
-          // Separate vendor chunks
+          // Core React dependencies
+          react: {
+            test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+            name: 'react',
+            chunks: 'all',
+            priority: 20,
+          },
+          // Essential vendor chunks
           vendor: {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
             chunks: 'all',
-            maxSize: 244000, // 244KB max per chunk
+            maxSize: 150000, // 150KB max per vendor chunk
+            priority: 5,
           },
-          // Heavy 3D libraries in separate chunk
+          // Heavy 3D libraries (optional, loaded on demand)
           three: {
             test: /[\\/]node_modules[\\/](@react-three|three|@splinetool)[\\/]/,
             name: 'three-libs',
-            chunks: 'all',
-            priority: 10,
+            chunks: 'async', // Only load when needed
+            priority: 15,
           },
-          // Framer Motion in separate chunk
-          framer: {
-            test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
-            name: 'framer-motion',
-            chunks: 'all',
-            priority: 10,
+          // Animation libraries (optional)
+          animation: {
+            test: /[\\/]node_modules[\\/](framer-motion)[\\/]/,
+            name: 'animation',
+            chunks: 'async',
+            priority: 15,
           },
-          // React Flow in separate chunk
+          // React Flow (load on demand)
           reactflow: {
             test: /[\\/]node_modules[\\/]reactflow[\\/]/,
             name: 'reactflow',
-            chunks: 'all',
-            priority: 10,
+            chunks: 'async',
+            priority: 15,
           },
           // Common components
           common: {
@@ -109,6 +121,7 @@ const nextConfig = {
             minChunks: 2,
             chunks: 'all',
             enforce: true,
+            priority: 1,
           },
         },
       },
