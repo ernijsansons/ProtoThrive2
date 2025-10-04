@@ -5,6 +5,7 @@
 
 import React from 'react';
 import Head from 'next/head';
+import MobileNav from '../components/MobileNav';
 
 const LandingPage: React.FC = () => {
   return (
@@ -16,10 +17,18 @@ const LandingPage: React.FC = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      {/* Skip to main content link for accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-lg z-50"
+      >
+        Skip to main content
+      </a>
+
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
         {/* Navigation Header */}
-        <header className="bg-black/20 backdrop-blur-md border-b border-gray-700">
-          <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <header className="bg-black/20 backdrop-blur-md border-b border-gray-700" role="banner">
+          <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" role="navigation" aria-label="Main navigation">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
@@ -41,13 +50,18 @@ const LandingPage: React.FC = () => {
                   Get Started
                 </a>
               </div>
+
+              {/* Mobile Navigation */}
+              <MobileNav />
             </div>
           </nav>
         </header>
 
-        {/* Hero Section */}
-        <section className="relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+        {/* Main Content */}
+        <main id="main-content" role="main">
+          {/* Hero Section */}
+          <section className="relative overflow-hidden">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
             <div className="text-center">
               <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6">
                 AI-First Visual
@@ -165,9 +179,10 @@ const LandingPage: React.FC = () => {
             <p className="text-gray-400 mt-4">No credit card required</p>
           </div>
         </section>
+        </main>
 
         {/* Footer */}
-        <footer className="py-8 border-t border-gray-700">
+        <footer className="py-8 border-t border-gray-700" role="contentinfo">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="text-gray-400 text-sm">

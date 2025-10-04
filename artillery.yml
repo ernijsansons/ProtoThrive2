@@ -1,0 +1,215 @@
+config:
+  target: "http://localhost:8787"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 50
+      name: "Ramp up load"
+    - duration: 300
+      arrivalRate: 100
+      name: "Sustained load"
+    - duration: 60
+      arrivalRate: 200
+      name: "Peak load"
+
+  # Performance thresholds
+  ensure:
+    p95: 100    # 95th percentile should be under 100ms
+    p99: 200    # 99th percentile should be under 200ms
+    maxErrorRate: 0.1  # Error rate should be under 0.1%
+
+  # Payload configuration
+  payload:
+    path: "./test-data.csv"
+    fields:
+      - "email"
+      - "password"
+
+  # Processor functions
+  processor: "./artillery-processor.js"
+
+  # Environment-specific variables
+  environments:
+    local:
+      target: "http://localhost:8787"
+    staging:
+      target: "https://staging-api.protothrive.com"
+    production:
+      target: "https://api.protothrive.com"
+
+scenarios:
+  # Health check scenario
+  - name: "Health Check"
+    weight: 10
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: status
+
+  # Authentication flow
+  - name: "Authentication Flow"
+    weight: 30
+    flow:
+      # Register new user
+      - post:
+          url: "/api/auth/register"
+          json:
+            email: "{{ $randomString() }}@test.protothrive.com"
+            password: "SecurePassword123!"
+            name: "Load Test User"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.user.id"
+              as: "userId"
+          expect:
+            - statusCode: 201
+
+      # Login with credentials
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.refreshToken"
+              as: "refreshToken"
+          expect:
+            - statusCode: 200
+
+      # Refresh token
+      - post:
+          url: "/api/auth/refresh"
+          json:
+            refreshToken: "{{ refreshToken }}"
+          expect:
+            - statusCode: 200
+
+  # Roadmap CRUD operations
+  - name: "Roadmap Operations"
+    weight: 40
+    flow:
+      # Authenticate first
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "test@protothrive.com"
+            password: "TestPassword123!"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      # List roadmaps
+      - get:
+          url: "/api/roadmaps"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: data
+
+      # Create roadmap
+      - post:
+          url: "/api/roadmaps"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            title: "Load Test Roadmap {{ $randomNumber() }}"
+            description: "Testing roadmap creation under load"
+            nodes: []
+          capture:
+            - json: "$.roadmap.id"
+              as: "roadmapId"
+          expect:
+            - statusCode: 201
+
+      # Get specific roadmap
+      - get:
+          url: "/api/roadmaps/{{ roadmapId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+      # Update roadmap
+      - put:
+          url: "/api/roadmaps/{{ roadmapId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            title: "Updated Load Test Roadmap"
+            description: "Updated description"
+          expect:
+            - statusCode: 200
+
+      # Calculate thrive score
+      - post:
+          url: "/api/roadmaps/{{ roadmapId }}/thrive-score"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+  # Snippet operations
+  - name: "Snippet Operations"
+    weight: 20
+    flow:
+      # Authenticate
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "test@protothrive.com"
+            password: "TestPassword123!"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      # List snippets
+      - get:
+          url: "/api/snippets"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+      # Create snippet
+      - post:
+          url: "/api/snippets"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            title: "Load Test Snippet"
+            description: "Testing snippet creation"
+            language: "javascript"
+            code: "console.log('Load test');"
+            category: "test"
+          expect:
+            - statusCode: 201
+
+  # Rate limiting test
+  - name: "Rate Limit Test"
+    weight: 5
+    flow:
+      - loop:
+          count: 150
+          over:
+            - get:
+                url: "/health"
+                ifTrue: "{{ $loopCount }} < 100"
+                expect:
+                  - statusCode: 200
+            - get:
+                url: "/health"
+                ifTrue: "{{ $loopCount }} >= 100"
+                expect:
+                  - statusCode:
+                      - 200
+                      - 429  # Rate limited

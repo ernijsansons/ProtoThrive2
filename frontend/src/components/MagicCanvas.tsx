@@ -19,12 +19,12 @@ import {
   Panel
 } from 'reactflow';
 import {
-  SparklesIcon,
-  CpuChipIcon,
-  LightBulbIcon,
-  RocketLaunchIcon,
-  MagnifyingGlassIcon
-} from '@heroicons/react/24/outline';
+  Sparkles as SparklesIcon,
+  Cpu as CpuChipIcon,
+  Lightbulb as LightBulbIcon,
+  Rocket as RocketLaunchIcon,
+  Search as MagnifyingGlassIcon
+} from 'lucide-react';
 import { useStore } from '../store';
 
 import 'reactflow/dist/style.css';
@@ -57,7 +57,7 @@ const defaultNodes: Node[] = [
 
 const defaultEdges: Edge[] = [];
 
-const MagicCanvas: React.FC<MagicCanvasProps> = ({
+const MagicCanvas: React.FC<MagicCanvasProps> = React.memo(({
   projectId,
   readOnly = false,
   onSave,
@@ -357,6 +357,8 @@ const MagicCanvas: React.FC<MagicCanvasProps> = ({
       </ReactFlow>
     </div>
   );
-};
+});
+
+MagicCanvas.displayName = 'MagicCanvas';
 
 export default MagicCanvas;

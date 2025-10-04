@@ -1,0 +1,139 @@
+{
+  "timestamp": "2025-09-28T18:49:46.118099",
+  "total_checks": 16,
+  "passed": 14,
+  "failed": 1,
+  "warnings": 1,
+  "compliance_rate": 87.5,
+  "status": "READY",
+  "detailed_results": [
+    {
+      "timestamp": "2025-09-28T18:49:39.009786",
+      "category": "Cloudflare Workers",
+      "check": "Deployment Status",
+      "status": "PASS",
+      "details": "Version: 1.0.0, CF-RAY: 9867237b99a469c9-DFW",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:39.467182",
+      "category": "Cloudflare Workers",
+      "check": "Edge Distribution",
+      "status": "PASS",
+      "details": "Served from datacenter: DFW",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:40.087081",
+      "category": "Cloudflare Pages",
+      "check": "Frontend Deployment",
+      "status": "PASS",
+      "details": "Size: 8167 bytes, Next.js: True, React: True",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:40.087081",
+      "category": "Cloudflare Pages",
+      "check": "Caching Headers",
+      "status": "PASS",
+      "details": "Cache-Control: public, max-age=0, must-revalidate",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:40.496605",
+      "category": "Performance",
+      "check": "API Response Time",
+      "status": "PASS",
+      "details": "407.50ms (Target: <500ms)",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:40.998927",
+      "category": "Performance",
+      "check": "Frontend Load Time",
+      "status": "PASS",
+      "details": "502.32ms (Target: <1000ms)",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:41.579390",
+      "category": "Security",
+      "check": "HTTPS Enforcement",
+      "status": "PASS",
+      "details": "All traffic served over HTTPS",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:42.015991",
+      "category": "Security",
+      "check": "Security Headers",
+      "status": "FAIL",
+      "details": "No security headers found",
+      "recommendation": "Implement comprehensive security headers"
+    },
+    {
+      "timestamp": "2025-09-28T18:49:42.468018",
+      "category": "Security",
+      "check": "CORS Configuration",
+      "status": "PASS",
+      "details": "Frontend origin allowed: https://876017e2.protothrive-frontend.pages.dev",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:43.008366",
+      "category": "Error Handling",
+      "check": "404 Error Response",
+      "status": "WARN",
+      "details": "404 returned but not JSON response",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:43.725302",
+      "category": "Error Handling",
+      "check": "Error Structure",
+      "status": "PASS",
+      "details": "Proper error structure in API responses",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:44.267834",
+      "category": "API Endpoints",
+      "check": "Endpoint /health",
+      "status": "PASS",
+      "details": "Returns JSON (Content-Type: application/json)",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:44.744946",
+      "category": "API Endpoints",
+      "check": "Endpoint /api/status",
+      "status": "PASS",
+      "details": "Returns JSON (Content-Type: application/json)",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:45.244220",
+      "category": "API Endpoints",
+      "check": "Endpoint /api/roadmaps",
+      "status": "PASS",
+      "details": "Returns JSON (Content-Type: application/json)",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:45.658392",
+      "category": "API Endpoints",
+      "check": "Endpoint /api/snippets",
+      "status": "PASS",
+      "details": "Returns JSON (Content-Type: application/json)",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-28T18:49:46.118099",
+      "category": "Environment",
+      "check": "Environment Setting",
+      "status": "PASS",
+      "details": "Environment: production",
+      "recommendation": ""
+    }
+  ]
+}

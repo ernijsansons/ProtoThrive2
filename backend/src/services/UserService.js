@@ -11,97 +11,172 @@ export class UserService {
      * Create a new user account
      */
     async createUser(userData) {
-        const { email, password, name, role = 'user' } = userData;
-        // Check if user already exists
-        const existingUser = await this.getUserByEmail(email);
-        if (existingUser) {
-            throw new Error('User already exists with this email');
+        try {
+            const { email, password, name, firstName, lastName, role = 'vibe_coder' } = userData;
+            // Validate inputs
+            if (!email || !password) {
+                throw new Error('Email and password are required');
+            }
+            // FIXED: Map old 'user' role to new 'vibe_coder' role
+            const mappedRole = role === 'user' ? 'vibe_coder' : role;
+            const validRoles = ['vibe_coder', 'engineer', 'exec', 'admin'];
+            if (!validRoles.includes(mappedRole)) {
+                throw new Error(`Invalid role: ${mappedRole}. Must be one of: ${validRoles.join(', ')}`);
+            }
+            // Check if user already exists
+            const existingUser = await this.getUserByEmail(email);
+            if (existingUser) {
+                throw new Error('User already exists with this email');
+            }
+            // Hash password securely
+            const hashedPassword = await hashPassword(password);
+            // Generate user ID
+            const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            // FIXED: Use correct schema field names
+            const query = `
+        INSERT INTO users (id, email, first_name, last_name, password_hash, role, created_at, updated_at, email_verified)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+            const now = new Date().toISOString();
+            const userFirstName = firstName || name || '';
+            const userLastName = lastName || '';
+            await this.db.database.prepare(query).bind(userId, email.toLowerCase(), userFirstName, userLastName, hashedPassword, mappedRole, now, now, false).run();
+            // Return user without password
+            return {
+                id: userId,
+                email: email.toLowerCase(),
+                first_name: userFirstName,
+                last_name: userLastName,
+                name: `${userFirstName} ${userLastName}`.trim() || email.split('@')[0],
+                role: mappedRole,
+                created_at: now,
+                updated_at: now,
+                email_verified: false
+            };
         }
-        // Hash password securely
-        const hashedPassword = await hashPassword(password);
-        // Generate user ID
-        const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        // Insert user into database
-        const query = `
-      INSERT INTO users (id, email, name, password_hash, role, created_at, updated_at, email_verified)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-        const now = new Date().toISOString();
-        await this.db.database.prepare(query).bind(userId, email.toLowerCase(), name, hashedPassword, role, now, now, false).run();
-        // Return user without password
-        return {
-            id: userId,
-            email: email.toLowerCase(),
-            name,
-            role,
-            created_at: now,
-            updated_at: now,
-            email_verified: false
-        };
+        catch (error) {
+            console.error('Create user error:', error);
+            if (error instanceof Error) {
+                if (error.message.includes('UNIQUE constraint failed') || error.message.includes('already exists')) {
+                    throw new Error('User already exists with this email');
+                }
+                throw error;
+            }
+            throw new Error('Failed to create user');
+        }
     }
     /**
      * Authenticate user login
      */
     async authenticateUser(loginData) {
-        const { email, password } = loginData;
-        // Get user by email
-        const user = await this.getUserByEmail(email);
-        if (!user) {
+        try {
+            const { email, password } = loginData;
+            if (!email || !password) {
+                return null;
+            }
+            // Get user by email
+            const user = await this.getUserByEmail(email);
+            if (!user) {
+                return null;
+            }
+            // Verify password
+            const isValidPassword = await verifyPassword(password, user.password_hash);
+            if (!isValidPassword) {
+                return null;
+            }
+            // Update last login
+            await this.updateLastLogin(user.id);
+            // Return user without password and with computed name field
+            const { password_hash, ...userWithoutPassword } = user;
+            return {
+                ...userWithoutPassword,
+                name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email.split('@')[0]
+            };
+        }
+        catch (error) {
+            console.error('Authentication error:', error);
             return null;
         }
-        // Verify password
-        const isValidPassword = await verifyPassword(password, user.password_hash);
-        if (!isValidPassword) {
-            return null;
-        }
-        // Update last login
-        await this.updateLastLogin(user.id);
-        // Return user without password
-        const { password_hash, ...userWithoutPassword } = user;
-        return userWithoutPassword;
     }
     /**
      * Get user by email
      */
     async getUserByEmail(email) {
-        const query = `
-      SELECT id, email, name, password_hash, role, created_at, updated_at, email_verified, last_login
-      FROM users
-      WHERE email = ?
-    `;
-        const result = await this.db.database.prepare(query).bind(email.toLowerCase()).first();
-        return result;
+        try {
+            if (!email) {
+                return null;
+            }
+            // FIXED: Use correct schema field names
+            const query = `
+        SELECT id, email, first_name, last_name, password_hash, role, created_at, updated_at, email_verified, last_login
+        FROM users
+        WHERE email = ?
+      `;
+            const result = await this.db.database.prepare(query).bind(email.toLowerCase()).first();
+            return result;
+        }
+        catch (error) {
+            console.error('Get user by email error:', error);
+            throw new Error('Failed to fetch user by email');
+        }
     }
     /**
      * Get user by ID
      */
     async getUserById(userId) {
-        const query = `
-      SELECT id, email, name, role, created_at, updated_at, email_verified, last_login
-      FROM users
-      WHERE id = ?
-    `;
-        const result = await this.db.database.prepare(query).bind(userId).first();
-        return result;
+        try {
+            if (!userId) {
+                return null;
+            }
+            // FIXED: Use correct schema field names
+            const query = `
+        SELECT id, email, first_name, last_name, role, created_at, updated_at, email_verified, last_login
+        FROM users
+        WHERE id = ?
+      `;
+            const result = await this.db.database.prepare(query).bind(userId).first();
+            if (!result) {
+                return null;
+            }
+            // Add computed name field for backward compatibility
+            return {
+                ...result,
+                name: `${result.first_name || ''} ${result.last_name || ''}`.trim() || result.email.split('@')[0]
+            };
+        }
+        catch (error) {
+            console.error('Get user by ID error:', error);
+            throw new Error('Failed to fetch user by ID');
+        }
     }
     /**
      * Update user profile
      */
     async updateUser(userId, updates) {
-        const allowedFields = ['name', 'email'];
-        const updateFields = Object.keys(updates).filter(key => allowedFields.includes(key));
-        if (updateFields.length === 0) {
-            return false;
+        try {
+            if (!userId) {
+                throw new Error('User ID is required');
+            }
+            // FIXED: Use correct schema field names
+            const allowedFields = ['first_name', 'last_name', 'email'];
+            const updateFields = Object.keys(updates).filter(key => allowedFields.includes(key));
+            if (updateFields.length === 0) {
+                return false;
+            }
+            const setClause = updateFields.map(field => `${field} = ?`).join(', ');
+            const values = updateFields.map(field => updates[field]);
+            const query = `
+        UPDATE users
+        SET ${setClause}, updated_at = ?
+        WHERE id = ?
+      `;
+            const result = await this.db.database.prepare(query).bind(...values, new Date().toISOString(), userId).run();
+            return result.success;
         }
-        const setClause = updateFields.map(field => `${field} = ?`).join(', ');
-        const values = updateFields.map(field => updates[field]);
-        const query = `
-      UPDATE users
-      SET ${setClause}, updated_at = ?
-      WHERE id = ?
-    `;
-        const result = await this.db.database.prepare(query).bind(...values, new Date().toISOString(), userId).run();
-        return result.success;
+        catch (error) {
+            console.error('Update user error:', error);
+            throw new Error('Failed to update user');
+        }
     }
     /**
      * Update user password

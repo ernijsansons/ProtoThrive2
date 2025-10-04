@@ -2,12 +2,13 @@
 # Thermonuclear Cloudflare Workers Configuration for ProtoThrive
 
 name = "backend-thermo"
-main = "src/index.ts"
-compatibility_date = "2024-08-23"
+main = "dist/index.js"
+compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
 # Account and route configuration
-account_id = "d2897bdebfa128919bd89b265e6a712e"
+# IMPORTANT: Set via environment variable or wrangler login
+# account_id will be read from CLOUDFLARE_ACCOUNT_ID env var
 workers_dev = true
 
 # Environment variables
@@ -23,9 +24,15 @@ database_id = "0b6970f4-c6ca-4245-aabf-98fa2d4f28a8"
 
 # KV Namespace binding
 [[kv_namespaces]]
-binding = "KV"
+binding = "KV_STORE"
 id = "ec3183e7b4e94442b3f99b4d2f4b083e"
 preview_id = "ec3183e7b4e94442b3f99b4d2f4b083e"
+
+# Durable Object bindings
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+script_name = "backend-thermo"
 
 # Build configuration
 [build]
@@ -44,12 +51,60 @@ vars = { ENVIRONMENT = "staging" }
 # Production environment
 [env.production]
 name = "backend-thermo-prod"
-vars = { ENVIRONMENT = "production" }
 route = "api.protothrive.com/*"
 
-# Limits commented out for free plan
+[env.production.vars]
+ENVIRONMENT = "production"
+SERVICE_NAME = "protothrive-backend-prod"
+LOG_LEVEL = "info"
+RATE_LIMIT_REQUESTS_PER_MINUTE = "100"
+RATE_LIMIT_REQUESTS_PER_SECOND = "10"
+CACHE_TTL_SECONDS = "3600"
+MAX_UPLOAD_SIZE_MB = "10"
+JWT_EXPIRY_SECONDS = "900"
+REFRESH_TOKEN_EXPIRY_SECONDS = "604800"
+BCRYPT_ROUNDS = "12"
+CORS_ORIGIN = "https://protothrive.com"
+ALLOWED_ORIGINS = "https://protothrive.com,https://www.protothrive.com"
+API_URL = "https://api.protothrive.com"
+FRONTEND_URL = "https://protothrive.com"
+WEBSOCKET_URL = "wss://ws.protothrive.com"
+ENABLE_BETA_FEATURES = "false"
+ENABLE_PERFORMANCE_MONITORING = "true"
+AUTO_DEPLOY_ENABLED = "false"
+ENABLE_RATE_LIMITING = "true"
+ENABLE_CACHING = "true"
+
+# Production D1 Database
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "protothrive-db"
+database_id = "0b6970f4-c6ca-4245-aabf-98fa2d4f28a8"
+
+# Production KV Namespace
+[[env.production.kv_namespaces]]
+binding = "KV_STORE"
+id = "ec3183e7b4e94442b3f99b4d2f4b083e"
+
+# Production Durable Objects (temporarily disabled for initial deployment)
+# [[env.production.durable_objects.bindings]]
+# name = "RATE_LIMITER"
+# class_name = "RateLimiter"
+# script_name = "backend-thermo-prod"
+
+# WebSocket Manager temporarily disabled
+# [[env.production.durable_objects.bindings]]
+# name = "WEBSOCKET_MANAGER"
+# class_name = "WebSocketManager"
+# script_name = "backend-thermo-prod"
+
+# Production Analytics Engine (commented until enabled in dashboard)
+# [[env.production.analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "protothrive-analytics-prod"
+
+# Performance configuration (commented for free plan)
 # [limits]
 # cpu_ms = 50
 
-# [usage_model]
-# default = "bundled"
+# Node compatibility is handled via compatibility_flags

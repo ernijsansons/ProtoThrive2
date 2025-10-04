@@ -1,0 +1,21 @@
+config:
+  target: "http://localhost:8787"
+  phases:
+    - duration: 30
+      arrivalRate: 10
+      name: "Quick test"
+
+  # Performance thresholds
+  ensure:
+    p95: 100    # 95th percentile should be under 100ms
+    p99: 200    # 99th percentile should be under 200ms
+    maxErrorRate: 0.1  # Error rate should be under 0.1%
+
+scenarios:
+  # Simple health check to validate setup
+  - name: "Health Check Only"
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200

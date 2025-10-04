@@ -17,7 +17,6 @@
     "build:analyze": "npm run analyze"
   },
   "dependencies": {
-    "@heroicons/react": "^2.0.18",
     "@tailwindcss/postcss": "^4.1.13",
     "autoprefixer": "^10.4.21",
     "clsx": "^2.0.0",
@@ -31,13 +30,6 @@
     "tailwind-merge": "^2.0.0",
     "tailwindcss": "^4.1.13",
     "zustand": "^4.4.7"
-  },
-  "optionalDependencies": {
-    "@react-three/drei": "^9.88.0",
-    "@react-three/fiber": "^8.15.0",
-    "@splinetool/react-spline": "^4.1.0",
-    "framer-motion": "^10.16.16",
-    "three": "^0.159.0"
   },
   "devDependencies": {
     "@babel/core": "^7.28.3",

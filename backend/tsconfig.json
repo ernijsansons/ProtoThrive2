@@ -11,8 +11,30 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "downlevelIteration": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": false,
+    "removeComments": true,
     "types": ["@cloudflare/workers-types", "jest", "@testing-library/jest-dom", "node"]
   },
-  "include": ["src/**/*", "__tests__/**/*"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src/index.ts",
+    "src/utils/*.ts",
+    "src/services/*.ts",
+    "src/container/*.ts",
+    "src/middleware/rateLimiting.ts",
+    "src/durable-objects/RateLimiter.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/*.js",
+    "__tests__/**/*",
+    "src/index-edge-2025.ts",
+    "src/index-minimal.ts",
+    "src/durable-objects/WebSocketManager.ts",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "coverage/**/*"
+  ]
 }

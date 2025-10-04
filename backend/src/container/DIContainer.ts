@@ -40,7 +40,7 @@ export function configureContainer(env: Env): DIContainer {
 
   // Register database service
   if (!container.has('database')) {
-    container.register('database', new DatabaseService(env));
+    container.register('database', new DatabaseService(env.DB, env.KV_STORE));
   }
 
   // Initialize JWT service

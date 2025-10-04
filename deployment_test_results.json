@@ -1,0 +1,82 @@
+{
+  "timestamp": "2025-09-28T18:48:27.056692",
+  "total_tests": 10,
+  "passed": 8,
+  "failed": 0,
+  "warnings": 2,
+  "success_rate": 80.0,
+  "avg_response_time_ms": 502.203,
+  "status": "READY",
+  "detailed_results": [
+    {
+      "timestamp": "2025-09-28T18:48:17.259299",
+      "test": "Backend Health Check",
+      "status": "PASS",
+      "details": "Version: 1.0.0",
+      "response_time_ms": 612.66
+    },
+    {
+      "timestamp": "2025-09-28T18:48:17.741532",
+      "test": "Backend Status Check",
+      "status": "PASS",
+      "details": "Environment: production",
+      "response_time_ms": 480.23
+    },
+    {
+      "timestamp": "2025-09-28T18:48:18.173869",
+      "test": "Backend Endpoint /",
+      "status": "PASS",
+      "details": "Response size: 122 bytes",
+      "response_time_ms": 432.34
+    },
+    {
+      "timestamp": "2025-09-28T18:48:18.664008",
+      "test": "Backend Endpoint /api/roadmaps",
+      "status": "PASS",
+      "details": "Response size: 70 bytes",
+      "response_time_ms": 490.14
+    },
+    {
+      "timestamp": "2025-09-28T18:48:19.161299",
+      "test": "Backend Endpoint /api/snippets",
+      "status": "PASS",
+      "details": "Response size: 70 bytes",
+      "response_time_ms": 497.29
+    },
+    {
+      "timestamp": "2025-09-28T18:48:19.627166",
+      "test": "Frontend Deployment",
+      "status": "PASS",
+      "details": "Page size: 8167 bytes",
+      "response_time_ms": 463.86
+    },
+    {
+      "timestamp": "2025-09-28T18:48:20.235709",
+      "test": "CORS Configuration",
+      "status": "PASS",
+      "details": "Headers present: ['https://876017e2.protothrive-frontend.pages.dev', 'GET,HEAD,PUT,POST,DELETE,PATCH']",
+      "response_time_ms": 606.53
+    },
+    {
+      "timestamp": "2025-09-28T18:48:20.715206",
+      "test": "Security Headers",
+      "status": "WARN",
+      "details": "No security headers found",
+      "response_time_ms": 479.5
+    },
+    {
+      "timestamp": "2025-09-28T18:48:21.189299",
+      "test": "Error Handling",
+      "status": "WARN",
+      "details": "404 returned but no JSON error",
+      "response_time_ms": 474.09
+    },
+    {
+      "timestamp": "2025-09-28T18:48:27.056692",
+      "test": "Rate Limiting Test",
+      "status": "PASS",
+      "details": "Successful requests: 10/10",
+      "response_time_ms": 485.39
+    }
+  ]
+}

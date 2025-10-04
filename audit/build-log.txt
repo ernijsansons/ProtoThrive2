@@ -1,0 +1,33 @@
+
+> protothrive-frontend@1.0.0 build
+> next build
+
+ ⚠ Specified "headers" will not automatically work with "output: export". See more info here: https://nextjs.org/docs/messages/export-no-custom-routes
+ ⚠ Specified "headers" will not automatically work with "output: export". See more info here: https://nextjs.org/docs/messages/export-no-custom-routes
+  ▲ Next.js 14.2.32
+  - Environments: .env.local
+  - Experiments (use with caution):
+    · esmExternals
+
+   Skipping linting
+   Checking validity of types ...
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Collecting page data ...
+   Generating static pages (0/3) ...
+ ✓ Generating static pages (3/3)
+   Finalizing page optimization ...
+   Collecting build traces ...
+ ⚠ rewrites, redirects, and headers are not applied when exporting your application, detected (headers). See more info here: https://nextjs.org/docs/messages/export-no-custom-routes
+
+Route (pages)                                    Size     First Load JS
+┌ ○ /                                            2.34 kB        85.1 kB
+├   /_app                                        0 B            82.7 kB
+└ ○ /404                                         194 B          82.9 kB
++ First Load JS shared by all                    86.3 kB
+  ├ chunks/react-403eadcef40b8329.js             43.5 kB
+  ├ chunks/vendors-f67df17f-e090e430ec9515bc.js  13.5 kB
+  └ other shared chunks (total)                  29.3 kB
+
+○  (Static)  prerendered as static content
+

@@ -1,0 +1,39 @@
+{
+  "name": "protothrive-backend",
+  "version": "2.0.0",
+  "description": "ProtoThrive Backend - Cloudflare Workers Edition",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "build": "npm run build:edge",
+    "build:edge": "esbuild src/index.ts --bundle --platform=neutral --target=es2020 --format=esm --outfile=dist/index.js --external:__STATIC_CONTENT_MANIFEST",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:production": "npm run build && wrangler deploy --env production",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write src/**/*.ts",
+    "migrate": "wrangler d1 migrations apply protothrive-db --local",
+    "migrate:prod": "wrangler d1 migrations apply protothrive-db --env production"
+  },
+  "dependencies": {
+    "hono": "^3.12.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "@types/node": "^20.11.5",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "esbuild": "^0.19.11",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.1",
+    "wrangler": "^3.22.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

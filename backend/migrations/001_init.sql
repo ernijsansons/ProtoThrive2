@@ -177,21 +177,9 @@ BEGIN
     UPDATE snippets SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
--- Insert default data for testing
-INSERT OR IGNORE INTO users (id, email, role, first_name, last_name) VALUES
-('uuid-thermo-1', 'test@proto.com', 'vibe_coder', 'Thermo', 'User'),
-('uuid-thermo-2', 'admin@proto.com', 'admin', 'Admin', 'User'),
-('uuid-thermo-3', 'engineer@proto.com', 'engineer', 'Test', 'Engineer');
-
-INSERT OR IGNORE INTO roadmaps (id, user_id, title, json_graph, vibe_mode, thrive_score) VALUES
-('rm-thermo-1', 'uuid-thermo-1', 'Thermonuclear Demo Roadmap',
- '{"nodes":[{"id":"n1","label":"Thermo Start","status":"gray","position":{"x":0,"y":0,"z":0}},{"id":"n2","label":"Middle","status":"gray","position":{"x":100,"y":100,"z":0}},{"id":"n3","label":"End","status":"gray","position":{"x":200,"y":200,"z":0}}],"edges":[{"from":"n1","to":"n2"},{"from":"n2","to":"n3"}]}',
- true, 0.45);
-
-INSERT OR IGNORE INTO snippets (id, category, title, code, language, is_public) VALUES
-('sn-thermo-1', 'ui', 'Thermonuclear Button', 'console.log("Thermo UI Button");', 'javascript', true),
-('sn-thermo-2', 'auth', 'Thermonuclear Auth', 'console.log("Thermo Auth");', 'typescript', true),
-('sn-thermo-3', 'deploy', 'Thermonuclear Deploy', 'console.log("Thermo Deploy");', 'bash', true);
+-- SECURITY: Default test data removed from production migration
+-- Test data should be managed separately via seed scripts for non-production environments
+-- This prevents hardcoded credentials from being deployed to production databases
 
 -- Performance optimization views
 CREATE VIEW IF NOT EXISTS roadmap_stats AS

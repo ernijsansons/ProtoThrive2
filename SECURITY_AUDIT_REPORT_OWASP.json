@@ -1,0 +1,356 @@
+{
+  "audit_timestamp": "2025-09-29T00:00:00Z",
+  "scan_type": "HYBRID",
+  "owasp_compliance": "FAIL",
+  "deployment_blocked": true,
+  "critical_findings": [
+    {
+      "vulnerability": "Hardcoded JWT Secret in Production Configuration",
+      "location": "wrangler.toml:9, backend/.dev.vars:1",
+      "owasp_category": "A02",
+      "cvss_score": 9.1,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+      "description": "JWT secret is hardcoded in configuration files and visible in repository",
+      "impact": "Complete authentication bypass, unauthorized access to all user data, privilege escalation",
+      "exploitation_scenario": "Attacker extracts JWT secret from publicly visible configuration, generates arbitrary tokens for any user including admin accounts",
+      "mandatory_mitigation": {
+        "fix_type": "Environment Variable Isolation",
+        "code_diff": "Remove hardcoded JWT_SECRET from wrangler.toml and .dev.vars. Use Cloudflare Workers environment variables or secrets management.",
+        "libraries_required": ["@cloudflare/workers-secrets"],
+        "configuration_changes": [
+          "wrangler secret put JWT_SECRET",
+          "Remove JWT_SECRET from wrangler.toml [vars] section",
+          "Delete .dev.vars file from repository"
+        ]
+      }
+    },
+    {
+      "vulnerability": "Weak Content Security Policy",
+      "location": "backend/src/utils/auth.js:123, backend/src/index-secure.js:34",
+      "owasp_category": "A05",
+      "cvss_score": 6.4,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+      "description": "CSP allows 'unsafe-inline' for scripts and styles, enabling XSS attacks",
+      "impact": "Cross-site scripting attacks, data theft, session hijacking",
+      "exploitation_scenario": "Attacker injects malicious scripts through user input that bypasses CSP due to 'unsafe-inline' directive",
+      "mandatory_mitigation": {
+        "fix_type": "Strict CSP Implementation",
+        "code_diff": "default-src 'self'; script-src 'self' 'nonce-{random}'; style-src 'self' 'nonce-{random}'; object-src 'none'",
+        "libraries_required": ["crypto.getRandomValues for nonce generation"],
+        "configuration_changes": [
+          "Implement nonce-based CSP",
+          "Remove 'unsafe-inline' directives"
+        ]
+      }
+    },
+    {
+      "vulnerability": "Missing Input Length Validation",
+      "location": "backend/src/utils/validation.ts:11-12,19-20",
+      "owasp_category": "A03",
+      "cvss_score": 6.1,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+      "description": "Array inputs (nodes, edges) lack maximum length validation, enabling DoS attacks",
+      "impact": "Denial of service through memory exhaustion, application crashes",
+      "exploitation_scenario": "Attacker sends requests with extremely large arrays causing memory exhaustion and service unavailability",
+      "mandatory_mitigation": {
+        "fix_type": "Array Length Validation",
+        "code_diff": "nodes: z.array(z.any()).max(1000).optional(), edges: z.array(z.any()).max(2000).optional()",
+        "libraries_required": ["zod (already present)"],
+        "configuration_changes": [
+          "Add maximum array length constraints",
+          "Implement request size limits"
+        ]
+      }
+    },
+    {
+      "vulnerability": "Information Disclosure in Error Messages",
+      "location": "backend/src/index.ts:163,177-178,237-241",
+      "owasp_category": "A09",
+      "cvss_score": 5.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+      "description": "Detailed error messages and stack traces exposed in development mode, sensitive information leaked",
+      "impact": "Information leakage about system internals, database structure, file paths",
+      "exploitation_scenario": "Attacker gathers intelligence about system architecture through verbose error messages to plan targeted attacks",
+      "mandatory_mitigation": {
+        "fix_type": "Error Sanitization",
+        "code_diff": "Return generic error messages in all environments, log detailed errors server-side only",
+        "libraries_required": ["Structured logging library"],
+        "configuration_changes": [
+          "Implement error code mapping",
+          "Remove stack trace exposure"
+        ]
+      }
+    },
+    {
+      "vulnerability": "Inadequate Rate Limiting Implementation",
+      "location": "backend/src/utils/auth.js:84-115, backend/src/index-secure.js:410-444",
+      "owasp_category": "A07",
+      "cvss_score": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "description": "Rate limiting uses in-memory Map without persistence, easily bypassed",
+      "impact": "Brute force attacks, resource exhaustion, DDoS attacks",
+      "exploitation_scenario": "Attacker performs distributed brute force attacks on authentication endpoints, bypassing in-memory rate limiting",
+      "mandatory_mitigation": {
+        "fix_type": "Persistent Rate Limiting",
+        "code_diff": "Implement Cloudflare Durable Objects or KV-based rate limiting with proper cleanup",
+        "libraries_required": ["@cloudflare/durable-objects"],
+        "configuration_changes": [
+          "Deploy Durable Object for rate limiting",
+          "Configure distributed rate limiting"
+        ]
+      }
+    },
+    {
+      "vulnerability": "Missing HTTPS Enforcement",
+      "location": "backend/src/index.ts:47-48, CORS configuration",
+      "owasp_category": "A02",
+      "cvss_score": 6.8,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:N/A:N",
+      "description": "CORS allows HTTP localhost origins even in non-development environments",
+      "impact": "Man-in-the-middle attacks, credential theft, session hijacking",
+      "exploitation_scenario": "Attacker intercepts unencrypted API communications when HTTP origins are allowed",
+      "mandatory_mitigation": {
+        "fix_type": "HTTPS Enforcement",
+        "code_diff": "Remove HTTP origins from production CORS configuration, add HSTS headers",
+        "libraries_required": [],
+        "configuration_changes": [
+          "Strict HTTPS-only CORS origins",
+          "Enforce HSTS with includeSubDomains"
+        ]
+      }
+    },
+    {
+      "vulnerability": "SQL Injection Risk in Dynamic Queries",
+      "location": "backend/src/utils/db.ts:203-214, backend/src/index-secure.js:345-349",
+      "owasp_category": "A03",
+      "cvss_score": 8.2,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:L",
+      "description": "Dynamic SQL query construction without proper parameterization in snippet filtering",
+      "impact": "Database compromise, data theft, privilege escalation",
+      "exploitation_scenario": "Attacker crafts malicious category parameters to inject SQL and extract sensitive data or escalate privileges",
+      "mandatory_mitigation": {
+        "fix_type": "Parameterized Queries",
+        "code_diff": "Replace dynamic query building with prepared statements and parameter binding for all database operations",
+        "libraries_required": ["D1 prepared statements (already available)"],
+        "configuration_changes": [
+          "Implement query whitelisting",
+          "Add input sanitization"
+        ]
+      }
+    },
+    {
+      "vulnerability": "Weak Password Policy",
+      "location": "backend/src/utils/validation.ts:45, backend/src/index.ts:346",
+      "owasp_category": "A07",
+      "cvss_score": 5.4,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N",
+      "description": "Password validation only checks minimum length, no complexity requirements",
+      "impact": "Account compromise through brute force, dictionary attacks",
+      "exploitation_scenario": "Attacker uses common password lists to compromise user accounts with weak passwords",
+      "mandatory_mitigation": {
+        "fix_type": "Strong Password Policy",
+        "code_diff": "z.string().min(12).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])/)",
+        "libraries_required": ["zod (already present)"],
+        "configuration_changes": [
+          "Implement password strength meter",
+          "Add breach database checking"
+        ]
+      }
+    }
+  ],
+  "secret_scan_results": {
+    "secrets_found": 2,
+    "locations": [
+      "backend/.dev.vars:1 - JWT_SECRET hardcoded",
+      "wrangler.toml:9 - JWT_SECRET in configuration"
+    ],
+    "remediation_required": true
+  },
+  "security_posture": {
+    "current_score": 25,
+    "target_score": 100,
+    "breach_probability_reduction": "75%"
+  },
+  "mandatory_implementations": [
+    "Implement Helmet.js with strict CSP configuration",
+    "Deploy proper secrets management (Cloudflare Workers Secrets)",
+    "Configure distributed rate limiting with Durable Objects",
+    "Implement parameterized queries for all database operations",
+    "Add comprehensive input validation with length limits",
+    "Deploy HTTPS-only CORS configuration",
+    "Implement structured error logging without information disclosure",
+    "Add strong password policy enforcement",
+    "Configure security headers middleware",
+    "Implement JWT token blacklisting mechanism"
+  ],
+  "owasp_top_10_coverage": {
+    "A01_broken_access_control": {
+      "status": "PARTIAL",
+      "issues": ["Multi-tenant isolation implemented but needs verification"],
+      "score": 6.5
+    },
+    "A02_cryptographic_failures": {
+      "status": "FAIL",
+      "issues": ["Hardcoded secrets", "Weak HTTPS enforcement"],
+      "score": 2.0
+    },
+    "A03_injection": {
+      "status": "FAIL",
+      "issues": ["Dynamic SQL queries", "Missing input validation"],
+      "score": 3.0
+    },
+    "A04_insecure_design": {
+      "status": "PARTIAL",
+      "issues": ["Rate limiting design flaws"],
+      "score": 5.0
+    },
+    "A05_security_misconfiguration": {
+      "status": "FAIL",
+      "issues": ["Weak CSP", "Debug mode exposure"],
+      "score": 2.5
+    },
+    "A06_vulnerable_components": {
+      "status": "PASS",
+      "issues": [],
+      "score": 8.0
+    },
+    "A07_identification_failures": {
+      "status": "FAIL",
+      "issues": ["Weak password policy", "Inadequate rate limiting"],
+      "score": 3.5
+    },
+    "A08_software_integrity_failures": {
+      "status": "PARTIAL",
+      "issues": ["Missing dependency verification"],
+      "score": 6.0
+    },
+    "A09_logging_monitoring_failures": {
+      "status": "FAIL",
+      "issues": ["Information disclosure", "Missing security monitoring"],
+      "score": 2.0
+    },
+    "A10_server_side_request_forgery": {
+      "status": "PASS",
+      "issues": [],
+      "score": 8.5
+    }
+  },
+  "compliance_requirements": {
+    "gdpr": "FAIL - Missing consent management and data retention policies",
+    "ccpa": "FAIL - No data subject rights implementation",
+    "soc2": "FAIL - Insufficient access controls and monitoring",
+    "pci_dss": "N/A - No payment card data processing detected"
+  },
+  "threat_modeling_results": {
+    "attack_surfaces": [
+      "Authentication endpoints (/api/auth/*)",
+      "Database queries (D1 interface)",
+      "JWT token validation",
+      "CORS origins validation",
+      "Input validation pipeline"
+    ],
+    "threat_actors": [
+      "External attackers (Internet-facing)",
+      "Malicious users (Authenticated)",
+      "Bot networks (Automated attacks)"
+    ],
+    "attack_scenarios": [
+      {
+        "name": "Authentication Bypass",
+        "likelihood": "HIGH",
+        "impact": "CRITICAL",
+        "steps": [
+          "Extract hardcoded JWT secret from public repository",
+          "Generate valid JWT tokens for any user account",
+          "Access all user data and administrative functions"
+        ]
+      },
+      {
+        "name": "SQL Injection Attack",
+        "likelihood": "MEDIUM",
+        "impact": "HIGH",
+        "steps": [
+          "Identify dynamic query construction in snippet filtering",
+          "Craft malicious category parameter with SQL payload",
+          "Extract sensitive data or escalate privileges"
+        ]
+      },
+      {
+        "name": "Cross-Site Scripting",
+        "likelihood": "MEDIUM",
+        "impact": "MEDIUM",
+        "steps": [
+          "Exploit weak CSP with 'unsafe-inline' directives",
+          "Inject malicious scripts through user input",
+          "Steal session tokens or perform unauthorized actions"
+        ]
+      }
+    ]
+  },
+  "remediation_priority": [
+    {
+      "priority": "CRITICAL",
+      "issue": "Hardcoded JWT Secrets",
+      "timeline": "IMMEDIATE",
+      "effort": "LOW"
+    },
+    {
+      "priority": "HIGH",
+      "issue": "SQL Injection Vulnerabilities",
+      "timeline": "24 HOURS",
+      "effort": "MEDIUM"
+    },
+    {
+      "priority": "HIGH",
+      "issue": "Weak Content Security Policy",
+      "timeline": "48 HOURS",
+      "effort": "MEDIUM"
+    },
+    {
+      "priority": "MEDIUM",
+      "issue": "Rate Limiting Implementation",
+      "timeline": "1 WEEK",
+      "effort": "HIGH"
+    },
+    {
+      "priority": "MEDIUM",
+      "issue": "Input Validation Improvements",
+      "timeline": "72 HOURS",
+      "effort": "LOW"
+    }
+  ],
+  "security_recommendations": {
+    "immediate_actions": [
+      "Remove hardcoded secrets from all configuration files",
+      "Implement Cloudflare Workers Secrets for JWT_SECRET",
+      "Deploy strict Content Security Policy without unsafe-inline",
+      "Add parameterized queries for all database operations",
+      "Implement proper error handling without information disclosure"
+    ],
+    "short_term_goals": [
+      "Deploy distributed rate limiting with Durable Objects",
+      "Add comprehensive input validation with size limits",
+      "Implement security monitoring and alerting",
+      "Add JWT token blacklisting mechanism",
+      "Configure HTTPS-only CORS policy"
+    ],
+    "long_term_strategy": [
+      "Implement comprehensive security testing pipeline",
+      "Add penetration testing to CI/CD workflow",
+      "Deploy Web Application Firewall (WAF)",
+      "Implement zero-trust architecture principles",
+      "Add advanced threat detection and response"
+    ]
+  },
+  "audit_summary": {
+    "total_vulnerabilities": 8,
+    "critical_severity": 2,
+    "high_severity": 4,
+    "medium_severity": 2,
+    "low_severity": 0,
+    "owasp_compliance_score": "25/100",
+    "security_maturity": "BASIC",
+    "deployment_recommendation": "BLOCK - Critical vulnerabilities must be remediated before production deployment",
+    "next_audit_date": "2025-10-29T00:00:00Z"
+  }
+}

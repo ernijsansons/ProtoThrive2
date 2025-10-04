@@ -1,0 +1,43 @@
+{
+  "passed": [
+    "A01: Access Control - JWT Token Validation",
+    "A01: Access Control - Role-Based Access Control",
+    "A02: Cryptography - Bcrypt Password Hashing",
+    "A02: Cryptography - JWT Secret Length (64+ chars)",
+    "A02: Cryptography - Encryption Key Configuration",
+    "A03: Injection - Parameterized Queries",
+    "A03: Injection - Zod Schema Validation",
+    "A03: Injection - SQL Injection Prevention",
+    "A04: Secure Design - Rate Limiting Configured",
+    "A04: Secure Design - Durable Objects for State",
+    "A04: Secure Design - Global Error Handler",
+    "A05: Configuration - Production Mode Configured",
+    "A05: Configuration - CORS Configuration",
+    "A05: Configuration - Security Headers Enabled",
+    "A05: Configuration - Debug Mode Disabled",
+    "A06: Components - No Known Vulnerabilities",
+    "A06: Components - Using Latest Hono Framework",
+    "A06: Components - Using Latest Jose (JWT)",
+    "A07: Authentication - JWT Expiry Configured (15 min)",
+    "A07: Authentication - Refresh Token Expiry (7 days)",
+    "A07: Authentication - Bcrypt Rounds (12+)",
+    "A07: Authentication - Account Lockout Protection",
+    "A08: Integrity - Package Lock File Exists",
+    "A08: Integrity - CI/CD Pipeline Configured",
+    "A08: Integrity - Code Signing (Wrangler)",
+    "A09: Logging - Logging Configured",
+    "A09: Logging - Analytics Engine Configured",
+    "A09: Logging - Audit Logs Table",
+    "A10: SSRF - URL Validation",
+    "A10: SSRF - Allowlist for External APIs",
+    "A10: SSRF - No Direct File Access"
+  ],
+  "failed": [
+    "[CRITICAL] A01: Access Control - Authorization Middleware"
+  ],
+  "warnings": [
+    "[WARNING] A09: Logging - Performance Monitoring Enabled"
+  ],
+  "score": 94,
+  "timestamp": "2025-10-04T18:25:01.216Z"
+}

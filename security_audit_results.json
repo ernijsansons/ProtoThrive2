@@ -1,0 +1,195 @@
+{
+  "timestamp": "2025-09-29T07:11:02.049351",
+  "total_findings": 20,
+  "vulnerability_counts": {
+    "critical": 0,
+    "high": 1,
+    "medium": 2,
+    "low": 0,
+    "info": 0
+  },
+  "security_score": 69,
+  "status": "POOR",
+  "detailed_results": [
+    {
+      "timestamp": "2025-09-29T07:10:28.397210",
+      "category": "Transport Security",
+      "test": "HTTPS Enforcement",
+      "severity": "low",
+      "status": "PASS",
+      "details": "All traffic served over HTTPS",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:28.397210",
+      "category": "Transport Security",
+      "test": "TLS Version",
+      "severity": "medium",
+      "status": "PASS",
+      "details": "Modern TLS version in use",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:28.804738",
+      "category": "Security Headers",
+      "test": "Strict-Transport-Security Header",
+      "severity": "medium",
+      "status": "PASS",
+      "details": "Value: max-age=31536000; includeSubDomains",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:28.804738",
+      "category": "Security Headers",
+      "test": "X-Content-Type-Options Header",
+      "severity": "medium",
+      "status": "PASS",
+      "details": "Value: nosniff",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:28.804738",
+      "category": "Security Headers",
+      "test": "X-Frame-Options Header",
+      "severity": "medium",
+      "status": "PASS",
+      "details": "Value: DENY",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:28.804738",
+      "category": "Security Headers",
+      "test": "X-XSS-Protection Header",
+      "severity": "medium",
+      "status": "PASS",
+      "details": "Value: 1; mode=block",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:28.804738",
+      "category": "Security Headers",
+      "test": "Content-Security-Policy Header",
+      "severity": "high",
+      "status": "PASS",
+      "details": "Value: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:28.804738",
+      "category": "Security Headers",
+      "test": "Referrer-Policy Header",
+      "severity": "low",
+      "status": "PASS",
+      "details": "Value: strict-origin-when-cross-origin",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:28.804738",
+      "category": "Security Headers",
+      "test": "Permissions-Policy Header",
+      "severity": "low",
+      "status": "PASS",
+      "details": "Value: camera=(), microphone=(), geolocation=()",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:29.228200",
+      "category": "CORS Security",
+      "test": "CORS Origin Control",
+      "severity": "low",
+      "status": "PASS",
+      "details": "Specific origin allowed: https://876017e2.protothrive-frontend.pages.dev",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:29.664960",
+      "category": "CORS Security",
+      "test": "Malicious Origin Test",
+      "severity": "low",
+      "status": "PASS",
+      "details": "Malicious origin rejected",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:32.766841",
+      "category": "Input Validation",
+      "test": "SQL Injection",
+      "severity": "critical",
+      "status": "PASS",
+      "details": "No SQL injection vulnerabilities detected",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:34.952214",
+      "category": "Input Validation",
+      "test": "XSS Protection",
+      "severity": "high",
+      "status": "PASS",
+      "details": "No XSS vulnerabilities detected",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:35.894764",
+      "category": "Authentication",
+      "test": "Auth Behavior",
+      "severity": "info",
+      "status": "INFO",
+      "details": "Unexpected response: 404",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:10:36.907725",
+      "category": "Authentication",
+      "test": "Invalid Token Handling",
+      "severity": "high",
+      "status": "VULNERABLE",
+      "details": "Invalid tokens not properly handled",
+      "recommendation": "Implement proper token validation"
+    },
+    {
+      "timestamp": "2025-09-29T07:10:59.271173",
+      "category": "Rate Limiting",
+      "test": "Rate Limit Implementation",
+      "severity": "medium",
+      "status": "VULNERABLE",
+      "details": "No rate limiting detected",
+      "recommendation": "Implement rate limiting to prevent abuse"
+    },
+    {
+      "timestamp": "2025-09-29T07:11:00.203273",
+      "category": "Information Disclosure",
+      "test": "Error Message Handling",
+      "severity": "low",
+      "status": "PASS",
+      "details": "Error messages appear sanitized",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:11:00.203273",
+      "category": "Information Disclosure",
+      "test": "Server Header",
+      "severity": "low",
+      "status": "PASS",
+      "details": "Server header properly configured",
+      "recommendation": ""
+    },
+    {
+      "timestamp": "2025-09-29T07:11:02.047218",
+      "category": "Frontend Security",
+      "test": "Content Security Policy",
+      "severity": "medium",
+      "status": "VULNERABLE",
+      "details": "No CSP header found",
+      "recommendation": "Implement Content Security Policy"
+    },
+    {
+      "timestamp": "2025-09-29T07:11:02.047218",
+      "category": "Frontend Security",
+      "test": "Mixed Content",
+      "severity": "medium",
+      "status": "PASS",
+      "details": "No mixed content detected",
+      "recommendation": ""
+    }
+  ]
+}

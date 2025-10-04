@@ -22,6 +22,8 @@
     "thermo-check": "echo 'Thermonuclear Status Check: ProtoThrive MVP Ready'"
   },
   "devDependencies": {
+    "@playwright/test": "1.55.1",
+    "artillery": "2.0.26",
     "concurrently": "^8.2.0"
   },
   "repository": {

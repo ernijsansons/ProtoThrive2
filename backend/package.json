@@ -3,16 +3,25 @@
   "version": "1.0.0",
   "main": "src/index.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "build": "tsc && echo 'Build completed successfully'",
+    "build:dev": "tsc --watch",
+    "build:analyze": "node esbuild.config.js && echo 'Bundle analysis complete'",
+    "dev": "wrangler dev --port 8787",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:staging": "npm run build && wrangler deploy --env staging",
+    "deploy:production": "npm run build && wrangler deploy --env production",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:integration": "jest __tests__/integration --runInBand",
+    "test:unit": "jest __tests__/unit",
+    "test:all": "jest --coverage --runInBand",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "validate": "npm run lint && npm run test && echo 'Thermonuclear Backend Validation: All Tests Passed - 0 Errors'",
-    "start": "wrangler dev"
+    "start": "wrangler dev --port 8787",
+    "db:migrate": "wrangler d1 execute protothrive-db --file=migrations/003_update_schema.sql",
+    "db:migrate:remote": "wrangler d1 execute protothrive-db --remote --file=migrations/003_update_schema.sql"
   },
   "dependencies": {
     "hono": "^4.2.0",
@@ -21,10 +30,13 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",
+    "@types/jest": "30.0.0",
     "@types/node": "24.5.2",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
     "eslint": "^8.50.0",
+    "jest": "30.2.0",
+    "ts-jest": "29.4.4",
     "typescript": "^5.0.0",
     "wrangler": "^4.40.2"
   }
