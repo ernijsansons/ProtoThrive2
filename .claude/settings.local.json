@@ -124,7 +124,9 @@
       "Bash(if exist .wrangler rmdir /s /q .wrangler)",
       "Bash(npx:*)",
       "Bash(xargs du:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(git commit:*)",
+      "Bash(unset:*)"
     ],
     "defaultMode": "acceptEdits"
   }

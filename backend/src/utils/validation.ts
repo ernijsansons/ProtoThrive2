@@ -78,7 +78,7 @@ export function validateRoadmapBody(data: unknown): ValidationResult<z.infer<typ
     return { success: true, data: result };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const firstError = error.errors[0];
+      const firstError = error.issues[0];
       return {
         success: false,
         error: new ValidationError(
@@ -101,7 +101,7 @@ export function validateUpdateRoadmapBody(data: unknown): ValidationResult<z.inf
     return { success: true, data: result };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const firstError = error.errors[0];
+      const firstError = error.issues[0];
       return {
         success: false,
         error: new ValidationError(
@@ -124,7 +124,7 @@ export function validateSnippetBody(data: unknown): ValidationResult<z.infer<typ
     return { success: true, data: result };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const firstError = error.errors[0];
+      const firstError = error.issues[0];
       return {
         success: false,
         error: new ValidationError(
@@ -147,7 +147,7 @@ export function validateQueryParams(data: unknown, schema: z.ZodSchema): Validat
     return { success: true, data: result };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const firstError = error.errors[0];
+      const firstError = error.issues[0];
       return {
         success: false,
         error: new ValidationError(
@@ -170,7 +170,7 @@ export function validateLoginBody(data: unknown): ValidationResult<z.infer<typeo
     return { success: true, data: result };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const firstError = error.errors[0];
+      const firstError = error.issues[0];
       return {
         success: false,
         error: new ValidationError(
@@ -193,7 +193,7 @@ export function validateRegisterBody(data: unknown): ValidationResult<z.infer<ty
     return { success: true, data: result };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const firstError = error.errors[0];
+      const firstError = error.issues[0];
       return {
         success: false,
         error: new ValidationError(

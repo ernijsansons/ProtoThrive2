@@ -91,7 +91,7 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* Feature Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20">
+            <div id="features" className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20">
               <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-blue-500 transition-colors">
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-4">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,7 +138,7 @@ const LandingPage: React.FC = () => {
         </section>
 
         {/* Stats Section */}
-        <section className="py-16 border-t border-gray-700">
+        <section id="about" className="py-16 border-t border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               <div>
