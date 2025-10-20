@@ -1,0 +1,67 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - navigation [ref=e5]:
+        - generic [ref=e7]:
+          - heading "ProtoThrive" [level=1] [ref=e8]
+          - generic [ref=e9]: LIVE
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - heading "AI-First Visual Prototyping" [level=1] [ref=e13]:
+          - text: AI-First Visual
+          - generic [ref=e14]: Prototyping
+        - paragraph [ref=e15]: Accelerate development cycles by 60% with our intelligent visual roadmap platform and multi-agent AI system. Transform ideas into production-ready applications.
+        - generic [ref=e16]:
+          - link "Start Building Free" [ref=e17] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Sign In" [ref=e18] [cursor=pointer]:
+            - /url: /login
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - img [ref=e22]
+          - heading "14 AI Agents" [level=3] [ref=e24]
+          - paragraph [ref=e25]: Specialized agents for planning, coding, testing, security, and deployment
+        - generic [ref=e26]:
+          - img [ref=e28]
+          - heading "Visual Builder" [level=3] [ref=e30]
+          - paragraph [ref=e31]: Intuitive 2D/3D canvas with React Flow for rapid prototyping
+        - generic [ref=e32]:
+          - img [ref=e34]
+          - heading "60% Faster" [level=3] [ref=e36]
+          - paragraph [ref=e37]: Accelerate development with AI automation and smart templates
+    - generic [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e42]: 275+
+        - generic [ref=e43]: Edge Locations
+      - generic [ref=e44]:
+        - generic [ref=e45]: 99.99%
+        - generic [ref=e46]: Uptime SLA
+      - generic [ref=e47]:
+        - generic [ref=e48]: <10ms
+        - generic [ref=e49]: Global Latency
+      - generic [ref=e50]:
+        - generic [ref=e51]: 98%
+        - generic [ref=e52]: Code Coverage
+    - generic [ref=e54]:
+      - heading "Ready to Transform Your Development?" [level=2] [ref=e55]
+      - paragraph [ref=e56]: Join thousands of teams building faster with ProtoThrive
+      - link "Get Started for Free" [ref=e57] [cursor=pointer]:
+        - /url: /dashboard
+      - paragraph [ref=e58]: No credit card required
+    - contentinfo [ref=e59]:
+      - generic [ref=e61]:
+        - generic [ref=e62]: © 2025 ProtoThrive. All rights reserved.
+        - generic [ref=e63]:
+          - link "Privacy" [ref=e64] [cursor=pointer]:
+            - /url: /privacy
+          - link "Terms" [ref=e65] [cursor=pointer]:
+            - /url: /terms
+          - link "GitHub" [ref=e66] [cursor=pointer]:
+            - /url: https://github.com
+          - link "Documentation" [ref=e67] [cursor=pointer]:
+            - /url: /docs
+  - alert [ref=e68]
+```

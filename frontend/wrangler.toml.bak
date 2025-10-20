@@ -1,0 +1,4 @@
+# Ref: CLAUDE.md - Cloudflare Pages Configuration
+name = "protothrive-frontend"
+compatibility_date = "2024-08-23"
+pages_build_output_dir = "out"

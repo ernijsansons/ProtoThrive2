@@ -6,11 +6,11 @@ import { defineConfig, devices } from '@playwright/test';
  */
 
 // Use environment variable or default URLs
-const baseURL = process.env.BASE_URL || 'http://localhost:3000';
-const apiURL = process.env.API_URL || 'http://localhost:8787';
+const baseURL = process.env.BASE_URL || 'https://876017e2.protothrive-frontend.pages.dev';
+const apiURL = process.env.API_URL || 'https://protothrive-backend.ernijs-ansons.workers.dev';
 
 export default defineConfig({
-  testDir: './tests/e2e',
+  testDir: './e2e',
 
   // Maximum time one test can run
   timeout: 30 * 1000,

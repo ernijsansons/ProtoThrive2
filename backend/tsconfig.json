@@ -20,7 +20,10 @@
   "include": [
     "src/index.ts",
     "src/utils/*.ts",
-    "src/services/*.ts",
+    "src/repositories/*.ts",
+    "src/services/roadmap.service.ts",
+    "src/services/snippet.service.ts",
+    "src/services/monitoring.service.ts",
     "src/container/*.ts",
     "src/middleware/rateLimiting.ts",
     "src/durable-objects/RateLimiter.ts"

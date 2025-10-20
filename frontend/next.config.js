@@ -3,11 +3,22 @@
 const nextConfig = {
   output: 'export',
   trailingSlash: true,
+
+  // Phase 5: Performance Optimization
+  reactStrictMode: true,
+  swcMinify: true,
+
+  // Production compiler optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+
   images: {
     unoptimized: true
   },
   experimental: {
-    esmExternals: false
+    esmExternals: false,
+    optimizeFonts: true,
   },
   eslint: {
     ignoreDuringBuilds: true,

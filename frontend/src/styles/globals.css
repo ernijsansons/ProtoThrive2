@@ -47,6 +47,11 @@
   --gradient-green: linear-gradient(135deg, var(--neon-green-primary) 0%, var(--neon-green-secondary) 100%);
   --gradient-dark: linear-gradient(135deg, var(--dark-primary) 0%, var(--dark-secondary) 100%);
   --gradient-neon-mix: linear-gradient(135deg, var(--neon-blue-primary) 0%, var(--neon-green-primary) 100%);
+
+  /* Auth Pages Premium Gradient - Multiple Options */
+  --gradient-auth-premium: linear-gradient(135deg, #2563eb 0%, #9333ea 50%, #2563eb 100%);
+  --gradient-auth-premium-alt: linear-gradient(135deg, #1e40af 0%, #7c3aed 25%, #ec4899 50%, #7c3aed 75%, #1e40af 100%);
+  --gradient-auth-premium-smooth: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 25%, #a855f7 50%, #8b5cf6 75%, #3b82f6 100%);
 }
 
 /* Base Styles */
@@ -60,6 +65,7 @@ html {
   scroll-behavior: smooth;
 }
 
+/* COMMENTED OUT: Dark theme body conflicting with auth pages gradient backgrounds
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
@@ -70,6 +76,7 @@ body {
   line-height: 1.6;
   overflow-x: hidden;
 }
+*/
 
 /* Neon Text Animations */
 @keyframes neonGlow {
@@ -308,7 +315,7 @@ body {
   border: 1px solid rgba(0, 210, 255, 0.3);
   backdrop-filter: blur(10px);
   border-radius: 12px;
-  padding: 24px;
+  padding: 16px;
   transition: all 0.3s ease;
 }
 
@@ -389,14 +396,14 @@ h6 { font-size: 1rem; }
   h1 { font-size: 2.5rem; }
   h2 { font-size: 2rem; }
   h3 { font-size: 1.5rem; }
-  
+
   .btn-elite {
     padding: 10px 20px;
     font-size: 0.9rem;
   }
-  
+
   .card-elite {
-    padding: 16px;
+    padding: 12px;
   }
 }
 
@@ -404,14 +411,14 @@ h6 { font-size: 1rem; }
   h1 { font-size: 2rem; }
   h2 { font-size: 1.75rem; }
   h3 { font-size: 1.25rem; }
-  
+
   .btn-elite {
     padding: 8px 16px;
     font-size: 0.8rem;
   }
-  
+
   .card-elite {
-    padding: 12px;
+    padding: 10px;
   }
 }
 
@@ -485,3 +492,276 @@ h6 { font-size: 1rem; }
   transform: rotate(2deg) scale(0.95);
   box-shadow: 0 10px 30px rgba(0, 210, 255, 0.3);
 }
+
+/* Auth Pages Premium Gradient - Custom Utility Classes */
+@layer utilities {
+  .bg-auth-gradient {
+    background: var(--gradient-auth-premium);
+    background-size: 400% 400%;
+    animation: gradientShift 8s ease-in-out infinite;
+  }
+
+  .bg-auth-gradient-alt {
+    background: var(--gradient-auth-premium-alt);
+    background-size: 400% 400%;
+    animation: gradientShift 6s ease-in-out infinite;
+  }
+
+  .bg-auth-gradient-smooth {
+    background: var(--gradient-auth-premium-smooth);
+    background-size: 400% 400%;
+    animation: gradientShift 10s ease-in-out infinite;
+  }
+
+  /* Static gradient options (no animation) */
+  .bg-auth-gradient-static {
+    background: var(--gradient-auth-premium);
+  }
+
+  .bg-auth-gradient-static-alt {
+    background: var(--gradient-auth-premium-alt);
+  }
+
+  .bg-auth-gradient-static-smooth {
+    background: var(--gradient-auth-premium-smooth);
+  }
+
+  /* Explicit gradient color stop classes for Tailwind 4 compatibility */
+  .from-blue-600 {
+    --tw-gradient-from: #2563eb var(--tw-gradient-from-position);
+    --tw-gradient-to: rgb(37 99 235 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+
+  .via-purple-600 {
+    --tw-gradient-to: rgb(147 51 234 / 0)  var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), #9333ea var(--tw-gradient-via-position), var(--tw-gradient-to);
+  }
+
+  .to-blue-600 {
+    --tw-gradient-to: #2563eb var(--tw-gradient-to-position);
+  }
+
+  .to-purple-600 {
+    --tw-gradient-to: #9333ea var(--tw-gradient-to-position);
+  }
+}
+
+/* ============================================
+   PHASE 3: ACCESSIBILITY - WCAG 2.1 AA COMPLIANCE
+   ============================================ */
+
+/* Focus Indicators - Enhanced for WCAG 2.1 AA */
+*:focus {
+  outline: 2px solid #3b82f6; /* Blue-500 */
+  outline-offset: 2px;
+}
+
+/* Remove outline for mouse users (only show for keyboard navigation) */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Show outline for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* High contrast focus for dark backgrounds */
+.dark *:focus-visible,
+[data-theme="dark"] *:focus-visible {
+  outline-color: #60a5fa; /* Blue-400 */
+}
+
+/* Screen Reader Only Utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Make visible when focused (for skip links) */
+.sr-only:focus,
+.sr-only:active {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Ensure sufficient focus ring visibility on buttons */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Enhanced focus for interactive elements with background */
+.btn:focus-visible,
+.button:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 3px;
+}
+
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Keep essential animations but reduce intensity */
+  .animate-spin {
+    animation-duration: 1s !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  *:focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
+
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    border-width: 2px;
+  }
+}
+
+/* Skip link styling */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #3b82f6;
+  color: white;
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 0 0 8px 0;
+  z-index: 100;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Ensure text has sufficient contrast - WCAG AA requirement */
+.text-low-contrast {
+  color: #6b7280; /* Gray-500 - meets WCAG AA on white background */
+}
+
+/* Error and success states with icons for accessibility */
+.error-message {
+  color: #dc2626; /* Red-600 */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.success-message {
+  color: #16a34a; /* Green-600 */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Ensure interactive elements are large enough (44x44 minimum) */
+button,
+a.button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Touch target sizing for mobile */
+@media (max-width: 768px) {
+  button,
+  a.button,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Prevent zoom on iOS when focusing inputs - Phase 4 Mobile UX */
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* iOS won't zoom if font-size >= 16px */
+  }
+
+  /* Navigation links with proper touch targets */
+  nav a {
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 16px;
+  }
+}
+
+/* Accessible form labels */
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+/* Required field indicator */
+.required::after {
+  content: " *";
+  color: #dc2626;
+  font-weight: bold;
+}
+
+/* Visually hidden but accessible */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* Keyboard-only focus (not mouse) */
+.focus-keyboard:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.focus-keyboard:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* ============================================
+   END ACCESSIBILITY STYLES
+   ============================================ */

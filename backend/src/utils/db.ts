@@ -8,6 +8,7 @@ import { getRoadmapCacheManager, getUserCacheManager, RoadmapCacheManager, UserC
 export interface Env {
   DB: D1Database;
   KV_STORE: KVNamespace;
+  JWT_SECRET?: string;
 }
 
 // Database binding validation

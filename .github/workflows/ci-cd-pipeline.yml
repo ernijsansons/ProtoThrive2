@@ -1,0 +1,476 @@
+name: ProtoThrive CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, dev, staging]
+  pull_request:
+    branches: [main, dev]
+  schedule:
+    # Run security scans daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  NODE_VERSION: '20.x'
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  # Job 1: Linting and Code Quality
+  lint:
+    name: Lint & Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+          cd ../frontend && npm ci
+
+      - name: Run ESLint (Backend)
+        run: cd backend && npm run lint
+        continue-on-error: false
+
+      - name: Run ESLint (Frontend)
+        run: cd frontend && npm run lint
+        continue-on-error: false
+
+      - name: Run Prettier check
+        run: npm run format:check
+
+      - name: TypeScript type checking (Backend)
+        run: cd backend && npm run typecheck
+
+      - name: TypeScript type checking (Frontend)
+        run: cd frontend && npm run typecheck
+
+  # Job 2: Unit Tests with Coverage
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+
+      - name: Run unit tests with coverage
+        run: cd backend && npm test -- --coverage --testPathPatterns="__tests__/unit"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/coverage/lcov.info
+          flags: unittests
+          name: codecov-backend-unit
+          fail_ci_if_error: true
+
+      - name: Check coverage thresholds (95%)
+        run: |
+          cd backend
+          npm test -- --coverage --coverageThreshold='{"global":{"branches":95,"functions":95,"lines":95,"statements":95}}'
+
+      - name: Upload coverage artifact for SonarCloud
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: backend/coverage/
+          retention-days: 1
+
+  # Job 2.5: SonarCloud Code Quality Analysis
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: test-unit
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports
+          path: backend/coverage/
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: backend
+          args: >
+            -Dsonar.organization=protothrive
+            -Dsonar.projectKey=protothrive_backend
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.coverage.exclusions=**/__tests__/**
+            -Dsonar.qualitygate.wait=true
+
+      - name: Quality Gate Check
+        run: |
+          echo "Checking SonarCloud Quality Gate status..."
+          # The quality gate status is checked by sonarcloud-github-action
+          # If it fails, the workflow will fail here
+
+  # Job 3: Integration Tests
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      # Mock D1 database with SQLite
+      sqlite:
+        image: keinos/sqlite3:latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+
+      - name: Setup test database
+        run: |
+          cd backend
+          npm run db:migrate:up
+
+      - name: Run integration tests
+        run: cd backend && npm test -- --testPathPatterns="__tests__/integration"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: backend/test-results/
+
+  # Job 4: Security Tests
+  test-security:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+
+      - name: Run security penetration tests
+        run: cd backend && npm test -- --testPathPatterns="__tests__/security"
+
+      - name: Security test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-test-results
+          path: backend/test-results/
+
+  # Job 5: E2E Tests with Playwright
+  test-e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-integration]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+          cd ../frontend && npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: backend/playwright-report/
+
+  # Job 6: Build Validation
+  build:
+    name: Build & Validate
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+          cd ../frontend && npm ci
+
+      - name: Build backend
+        run: cd backend && npm run build
+
+      - name: Build frontend
+        run: cd frontend && npm run build
+
+      - name: Validate build artifacts
+        run: |
+          ls -lah backend/dist/
+          ls -lah frontend/.next/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            backend/dist/
+            frontend/.next/
+
+  # Job 7: Dependency Audit
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Run npm audit (Backend)
+        run: cd backend && npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Run npm audit (Frontend)
+        run: cd frontend && npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Check for outdated dependencies
+        run: |
+          cd backend && npm outdated || true
+          cd ../frontend && npm outdated || true
+
+  # Job 8: Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-integration, test-security, build]
+    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+    environment:
+      name: staging
+      url: https://staging.protothrive.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Deploy backend to Cloudflare Workers (Staging)
+        run: |
+          cd backend
+          wrangler deploy --env staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy frontend to Cloudflare Pages (Staging)
+        run: |
+          cd frontend
+          npm run build
+          wrangler pages deploy .next --project-name protothrive-frontend --branch staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Run smoke tests on staging
+        run: |
+          npm run test:smoke -- --env staging
+
+  # Job 9: Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-integration, test-security, test-e2e, build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://protothrive.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Database migration (Production)
+        run: |
+          cd backend
+          npm run db:migrate:up -- --env production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy backend to Cloudflare Workers (Production)
+        run: |
+          cd backend
+          wrangler deploy --env production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy frontend to Cloudflare Pages (Production)
+        run: |
+          cd frontend
+          npm run build
+          wrangler pages deploy .next --project-name protothrive-frontend --branch main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Run smoke tests on production
+        run: |
+          npm run test:smoke -- --env production
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "Production deployment successful!"
+          # Add Slack/Discord notification here
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed, initiating rollback..."
+          wrangler rollback
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+  # Job 10: Performance Testing
+  performance:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/dev'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Artillery
+        run: npm install -g artillery
+
+      - name: Run load tests
+        run: |
+          cd backend/load-tests
+          artillery run artillery.yml --output report.json
+        env:
+          API_URL: https://staging-api.protothrive.com
+
+      - name: Generate performance report
+        run: |
+          artillery report backend/load-tests/report.json
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report
+          path: backend/load-tests/report.json
+
+  # Job 11: Notification
+  notify:
+    name: Notify Status
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: always()
+
+    steps:
+      - name: Send success notification
+        if: ${{ needs.deploy-production.result == 'success' }}
+        run: |
+          echo "✅ Production deployment successful"
+          # Add notification webhook here
+
+      - name: Send failure notification
+        if: ${{ needs.deploy-production.result == 'failure' }}
+        run: |
+          echo "❌ Production deployment failed"
+          # Add notification webhook here

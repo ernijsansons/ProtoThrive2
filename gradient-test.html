@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Gradient Test</title>
+  <link rel="stylesheet" href="https://05f3a2a1.protothrive-live.pages.dev/_next/static/css/b2836766f5730ef1.css">
+</head>
+<body>
+  <h1>Testing Gradient Classes</h1>
+
+  <div style="margin: 20px;">
+    <h2>Test 1: Direct Inline Style (Should Work)</h2>
+    <div style="min-height: 200px; background: linear-gradient(135deg, #2563eb 0%, #9333ea 50%, #2563eb 100%); padding: 20px;">
+      <div style="background: white; border-radius: 24px; padding: 40px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+        <h3 style="color: #111;">This should have blue-purple gradient background</h3>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin: 20px;">
+    <h2>Test 2: Tailwind Classes (May Not Work)</h2>
+    <div class="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-blue-600 flex items-center justify-center p-6">
+      <div class="w-full max-w-md">
+        <div class="bg-white rounded-3xl shadow-2xl p-12">
+          <h3 class="text-gray-900">This should have blue-purple gradient background</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin: 20px;">
+    <h2>Test 3: Checking CSS Variables</h2>
+    <div style="background: var(--gradient-auth-premium); min-height: 200px; padding: 20px;">
+      <p style="color: white;">Testing CSS variable --gradient-auth-premium</p>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+
+> protothrive-frontend@1.0.0 build
+> next build
+
+ ⚠ Specified "headers" will not automatically work with "output: export". See more info here: https://nextjs.org/docs/messages/export-no-custom-routes
+ ⚠ Specified "headers" will not automatically work with "output: export". See more info here: https://nextjs.org/docs/messages/export-no-custom-routes
+  ▲ Next.js 14.2.32
+  - Environments: .env.local
+  - Experiments (use with caution):
+    · esmExternals
+
+   Skipping linting
+   Checking validity of types ...
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Collecting page data ...
+   Generating static pages (0/15) ...
+   Generating static pages (3/15) 
+   Generating static pages (7/15) 
+   Generating static pages (11/15) 
+ ✓ Generating static pages (15/15)
+   Finalizing page optimization ...
+   Collecting build traces ...
+ ⚠ rewrites, redirects, and headers are not applied when exporting your application, detected (headers). See more info here: https://nextjs.org/docs/messages/export-no-custom-routes
+
+Route (pages)                                    Size     First Load JS
+┌ ○ /                                            6.3 kB          150 kB
+├ ○ /404                                         208 B           144 kB
+├ ○ /beta-terms                                  1.98 kB         145 kB
+├ ○ /dashboard                                   3.78 kB         148 kB
+├ ○ /demo                                        2.87 kB         147 kB
+├ ○ /docs                                        3.12 kB         146 kB
+├ ○ /forgot-password                             2.03 kB         145 kB
+├ ○ /login                                       3.02 kB         147 kB
+├ ○ /pricing                                     4.33 kB         148 kB
+├ ○ /privacy                                     3.53 kB         148 kB
+├ ○ /register                                    3.75 kB         148 kB
+├ ○ /roadmap/[id]                                3.21 kB         148 kB
+├ ○ /roadmap/new                                 2.82 kB         146 kB
+└ ○ /terms                                       4.7 kB          149 kB
++ First Load JS shared by all                    143 kB
+  ├ chunks/react-403eadcef40b8329.js             43.5 kB
+  ├ chunks/vendors-2898f16f-2f574ad4e1246de3.js  13.9 kB
+  ├ chunks/vendors-8cbd2506-e87a609d600857c8.js  11.4 kB
+  ├ chunks/vendors-ad6a2f20-bf0f128b88b02c56.js  18.4 kB
+  ├ chunks/vendors-c1682f41-6ff0083d4f343a85.js  25.5 kB
+  └ other shared chunks (total)                  30.6 kB
+
+○  (Static)  prerendered as static content
+

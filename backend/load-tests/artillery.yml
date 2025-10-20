@@ -1,0 +1,245 @@
+config:
+  target: "{{ $processEnvironment.API_URL || 'http://localhost:8787' }}"
+  phases:
+    # Warm-up phase: Gradually increase load
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up phase"
+
+    # Ramp-up phase: Build to target load
+    - duration: 300
+      arrivalRate: 10
+      rampTo: 100
+      name: "Ramp-up to 100 req/sec"
+
+    # Sustained load: Maintain high load
+    - duration: 600
+      arrivalRate: 100
+      name: "Sustained load - 100 req/sec"
+
+    # Spike test: Sudden traffic surge
+    - duration: 120
+      arrivalRate: 500
+      name: "Spike test - 500 req/sec"
+
+    # Cool-down phase
+    - duration: 60
+      arrivalRate: 10
+      name: "Cool-down"
+
+  # Performance targets (SLA)
+  ensure:
+    maxErrorRate: 1              # Less than 1% errors
+    p95: 500                     # 95th percentile < 500ms
+    p99: 1000                    # 99th percentile < 1000ms
+
+  # HTTP settings
+  http:
+    timeout: 10
+    pool: 50                     # Connection pool size
+
+  # Plugins
+  plugins:
+    expect: {}
+    metrics-by-endpoint: {}
+
+  # Payload generation
+  payload:
+    path: "./payloads.csv"
+    fields:
+      - email
+      - password
+      - roadmapTitle
+      - snippetCode
+    order: sequence
+    skipHeader: true
+
+  # Environment variables
+  variables:
+    apiVersion: "v1"
+    contentType: "application/json"
+
+scenarios:
+  # Scenario 1: User Authentication Flow
+  - name: "Authentication Flow"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.refreshToken"
+              as: "refreshToken"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: token
+
+      - think: 2
+
+      - get:
+          url: "/api/user/profile"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: user
+
+      - think: 1
+
+      - post:
+          url: "/api/auth/refresh"
+          json:
+            refreshToken: "{{ refreshToken }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: token
+
+  # Scenario 2: Roadmap CRUD Operations
+  - name: "Roadmap Management"
+    weight: 40
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      - think: 1
+
+      - get:
+          url: "/api/roadmaps"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+            X-CSRF-Token: "{{ $randomString() }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+
+      - think: 2
+
+      - post:
+          url: "/api/roadmaps"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+            X-CSRF-Token: "{{ $randomString() }}"
+          json:
+            title: "Load Test Roadmap {{ $randomNumber(1, 10000) }}"
+            description: "Generated during load testing"
+            nodes:
+              - id: "node-1"
+                type: "feature"
+                data:
+                  label: "Feature 1"
+            edges: []
+            status: "active"
+          capture:
+            - json: "$.id"
+              as: "roadmapId"
+          expect:
+            - statusCode: 201
+            - hasProperty: id
+
+      - think: 3
+
+      - get:
+          url: "/api/roadmaps/{{ roadmapId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: title
+
+      - think: 2
+
+      - put:
+          url: "/api/roadmaps/{{ roadmapId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+            X-CSRF-Token: "{{ $randomString() }}"
+          json:
+            title: "Updated Roadmap {{ $randomNumber(1, 10000) }}"
+            description: "Updated during load test"
+          expect:
+            - statusCode: 200
+
+      - think: 1
+
+      - post:
+          url: "/api/roadmaps/{{ roadmapId }}/thrive-score"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: thriveScore
+
+  # Scenario 3: Code Snippet Operations
+  - name: "Snippet Management"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      - think: 1
+
+      - get:
+          url: "/api/snippets"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          qs:
+            page: 1
+            limit: 20
+            language: "typescript"
+          expect:
+            - statusCode: 200
+            - contentType: json
+
+      - think: 2
+
+      - post:
+          url: "/api/snippets"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+            X-CSRF-Token: "{{ $randomString() }}"
+          json:
+            title: "Load Test Snippet {{ $randomNumber(1, 10000) }}"
+            code: "{{ snippetCode }}"
+            language: "typescript"
+            category: "react"
+            tags: ["test", "load", "performance"]
+          expect:
+            - statusCode: 201
+
+  # Scenario 4: Health Check & Monitoring
+  - name: "Health Checks"
+    weight: 10
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+            - hasProperty: status
+            - equals:
+                - "{{ status }}"
+                - "healthy"
+
+      - get:
+          url: "/api/status"
+          expect:
+            - statusCode: 200
+            - hasProperty: uptime
+            - hasProperty: database
+            - hasProperty: cache

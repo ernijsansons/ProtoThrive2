@@ -15,6 +15,7 @@ workers_dev = true
 [vars]
 ENVIRONMENT = "development"
 SERVICE_NAME = "protothrive-backend"
+# JWT_SECRET set via wrangler secret put JWT_SECRET
 
 # D1 Database binding
 [[d1_databases]]
@@ -28,11 +29,11 @@ binding = "KV_STORE"
 id = "ec3183e7b4e94442b3f99b4d2f4b083e"
 preview_id = "ec3183e7b4e94442b3f99b4d2f4b083e"
 
-# Durable Object bindings
-[[durable_objects.bindings]]
-name = "RATE_LIMITER"
-class_name = "RateLimiter"
-script_name = "backend-thermo"
+# Durable Object bindings (temporarily disabled for deployment)
+# [[durable_objects.bindings]]
+# name = "RATE_LIMITER"
+# class_name = "RateLimiter"
+# script_name = "backend-thermo"
 
 # Build configuration
 [build]

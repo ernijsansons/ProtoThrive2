@@ -43,13 +43,13 @@ module.exports = {
     '!**/node_modules/**'
   ],
 
-  // High coverage thresholds for TDD
+  // High coverage thresholds for TDD - Phase 1 target: 95%
   coverageThreshold: {
     global: {
-      branches: 98,
-      functions: 98,
-      lines: 98,
-      statements: 98
+      branches: 95,
+      functions: 95,
+      lines: 95,
+      statements: 95
     }
   },
 

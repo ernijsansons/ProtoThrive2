@@ -67,7 +67,6 @@ import {
   initializeJWTService,
   createAuthMiddleware,
   createRateLimitMiddleware,
-  createSecurityHeadersMiddleware,
   getJWTService,
   validatePasswordComplexity,
   csrfProtection,
@@ -78,6 +77,10 @@ import { RateLimiter } from './durable-objects/RateLimiter';
 import { configureContainer } from './container/DIContainer';
 import { UserService } from './services/UserService';
 import { getDatabaseService, getUserService } from './utils/serviceContainer';
+import { createSecurityHeadersMiddleware as securityHeaders } from './middleware/security-headers';
+import { requireAuth, optionalAuth, requireRole, requireOwnership } from './middleware/auth.middleware';
+// TODO: Re-enable when auth.service dependencies are resolved
+// import authRouter from './routes/auth.routes';
 // import { IRoadmapService } from './services/RoadmapService'; // TODO: Use in controller endpoints
 
 // Thermonuclear Types and Interfaces
@@ -108,75 +111,49 @@ interface ContextVariables {
 // Initialize Hono app with enterprise middleware
 const app = new Hono<{ Bindings: Env; Variables: ContextVariables }>();
 
-// CORS Configuration - Dynamic based on environment
-app.use('*', async (c, next) => {
-  const environment = c.env?.NODE_ENV || c.env?.ENVIRONMENT || 'development';
-  const origin = c.req.header('Origin') || '';
+// CORS Configuration - Phase 0: Enhanced with production deployment URLs
+app.use('*', cors({
+  origin: (origin) => {
+    const allowedOrigins = [
+      'https://876017e2.protothrive-frontend.pages.dev',
+      'https://protothrive-frontend.pages.dev',
+      'https://protothrive.com',
+      'https://app.protothrive.com',
+      'http://localhost:3000', // Development only
+    ];
 
-  const allowedOrigins = [
-    'https://protothrive.com',
-    'https://app.protothrive.com',
-    'https://api.protothrive.com'
-  ];
+    // In production, strict origin checking
+    const environment = process.env.NODE_ENV || 'development';
+    if (environment === 'production') {
+      return allowedOrigins.slice(0, 3).includes(origin) ? origin : allowedOrigins[0];
+    }
 
-  // Only allow localhost in development/staging
-  if (environment !== 'production') {
-    allowedOrigins.push('http://localhost:3000', 'http://localhost:3001');
-  }
+    // Development: allow localhost
+    return origin || allowedOrigins[0];
+  },
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+  exposeHeaders: ['X-Request-ID', 'X-RateLimit-Remaining'],
+  maxAge: 86400, // 24 hours
+  credentials: true,
+}));
 
-  const corsHeaders: Record<string, string> = {
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-    'Access-Control-Expose-Headers': 'X-Total-Count, X-Rate-Limit-Remaining, X-Rate-Limit-Reset',
-    'Access-Control-Max-Age': '86400'
-  };
-
-  if (allowedOrigins.includes(origin)) {
-    corsHeaders['Access-Control-Allow-Origin'] = origin;
-    corsHeaders['Access-Control-Allow-Credentials'] = 'true';
-  } else if (environment !== 'production') {
-    // Allow any origin in development
-    corsHeaders['Access-Control-Allow-Origin'] = '*';
-  }
-
-  // Handle preflight requests
-  if (c.req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders
-    });
-  }
-
-  // Add CORS headers to response
-  await next();
-  Object.entries(corsHeaders).forEach(([key, value]) => {
-    c.res.headers.set(key, value);
-  });
-});
-
-// Security headers middleware - production-grade security
-app.use('*', async (c, next) => {
-  await next();
-
-  // Apply comprehensive security headers
-  const securityHeaders: Record<string, string> = {
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'DENY',
-    'X-XSS-Protection': '1; mode=block',
-    'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Permissions-Policy': 'geolocation=(), camera=(), microphone=()'
-  };
-
-  // Only add HSTS header in production
-  const environment = c.env?.NODE_ENV || c.env?.ENVIRONMENT || 'development';
-  if (environment === 'production') {
-    securityHeaders['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload';
-  }
-
-  Object.entries(securityHeaders).forEach(([key, value]) => {
-    c.res.headers.set(key, value);
-  });
-});
+// Phase 0: Apply comprehensive security headers middleware
+app.use('*', securityHeaders({
+  frameOptions: 'DENY',
+  hstsMaxAge: 31536000, // 1 year
+  hstsIncludeSubdomains: true,
+  hstsPreload: true,
+  cspDirectives: {
+    'default-src': "'self'",
+    'script-src': "'self' 'unsafe-inline' 'unsafe-eval'", // Required for Next.js
+    'style-src': "'self' 'unsafe-inline'", // Required for styled components
+    'img-src': "'self' data: https:",
+    'font-src': "'self' data:",
+    'connect-src': "'self' https://protothrive-backend.ernijs-ansons.workers.dev",
+    'frame-ancestors': "'none'",
+  },
+}));
 
 // SECURITY FIX: Enable rate limiting middleware with memory leak prevention
 app.use('*', createRateLimitMiddleware(100, 60000)); // 100 requests per minute
@@ -232,7 +209,7 @@ app.use('*', async (c, next) => {
   // Initialize dependency injection container
   if (!container) {
     const environment = c.env?.NODE_ENV || c.env?.ENVIRONMENT || 'development';
-    container = configureContainer({ DB: c.env.DB, KV_STORE: c.env.KV_STORE });
+    container = configureContainer({ DB: c.env.DB, KV_STORE: c.env.KV_STORE, JWT_SECRET: c.env.JWT_SECRET });
     console.log(`DI Container initialized for ${environment} environment`);
   }
 
@@ -249,8 +226,10 @@ app.use('*', async (c, next) => {
     }, 500);
   }
 
+  console.log(`[DEBUG] JWT_SECRET length: ${jwtSecret.length}, environment: ${environment}`);
+
   if (environment === 'production' && jwtSecret.length < 64) {
-    console.error('JWT_SECRET is too short for production');
+    console.error(`JWT_SECRET is too short for production: ${jwtSecret.length} chars`);
     return c.json({
       error: 'Security configuration error',
       code: 'SECURITY-500',
@@ -260,19 +239,30 @@ app.use('*', async (c, next) => {
 
   try {
     // Initialize JWT service for ALL requests - no authentication bypass
+    console.log('[DEBUG] Initializing JWT service...');
     initializeJWTService(jwtSecret);
+    console.log('[DEBUG] JWT service initialized successfully');
 
-    // SECURITY: Initialize request signing (if signing key is provided)
-    const signingKey = c.env.REQUEST_SIGNING_KEY || jwtSecret;
-    if (!requestSigning['signingKey']) {
-      await requestSigning.initialize(signingKey);
+    // SECURITY: Initialize request signing (if signing key is provided) - Optional feature
+    try {
+      const signingKey = c.env.REQUEST_SIGNING_KEY || jwtSecret;
+      if (!requestSigning['signingKey']) {
+        console.log('[DEBUG] Initializing request signing...');
+        await requestSigning.initialize(signingKey);
+        console.log('[DEBUG] Request signing initialized');
+      }
+    } catch (signingError) {
+      console.warn('Request signing initialization failed (non-critical):', signingError);
+      // Request signing is optional - don't fail the whole request
     }
   } catch (error) {
     console.error('JWT initialization error:', error);
+    console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return c.json({
       error: 'Security initialization failed',
       code: 'SECURITY-500',
-      message: 'Could not initialize security services'
+      message: 'Could not initialize security services',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, 500);
   }
 
@@ -432,6 +422,11 @@ app.onError((err, c) => {
     ...(environment === 'development' && { stack: err.stack })
   }, statusCode as any);
 });
+
+// Phase 2: Mount dedicated authentication routes with advanced features
+// These routes include: rate limiting, validation middleware, MFA support, password breach checking
+// TODO: Re-enable when auth.service dependencies are resolved
+// app.route('/api/auth', authRouter);
 
 // Health check endpoint with comprehensive diagnostics (Edge-2025 pattern)
 app.get('/health', async (c) => {
@@ -1034,6 +1029,25 @@ app.post('/api/snippets', getAuthMiddleware(), csrfProtection.createMiddleware()
   }
 });
 
+// Root endpoint - API welcome message
+app.get('/', (c) => {
+  return c.json({
+    message: '🚀 Welcome to ProtoThrive API',
+    version: '3.0.0',
+    status: 'operational',
+    documentation: '/api/status',
+    endpoints: {
+      public: ['/health', '/api/status', '/api/auth/register', '/api/auth/login'],
+      protected: ['/api/roadmaps', '/api/snippets', '/api/user/profile']
+    },
+    links: {
+      health: '/health',
+      status: '/api/status',
+      docs: 'https://docs.protothrive.com'
+    }
+  });
+});
+
 // Catch-all for unmatched routes
 app.all('*', (c) => {
   return c.json({
@@ -1041,6 +1055,7 @@ app.all('*', (c) => {
     code: 'NOT-FOUND-404',
     message: `The endpoint ${c.req.method} ${c.req.path} was not found`,
     available_endpoints: [
+      'GET /',
       'GET /health',
       'GET /api/status',
       'POST /api/auth/register',

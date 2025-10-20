@@ -1,0 +1,11 @@
+email,password,roadmapTitle,snippetCode
+user1@example.com,SecurePass123!,Project Alpha,function Component() { return <div>Hello</div>; }
+user2@example.com,SecurePass123!,Project Beta,const api = async () => fetch('/api/data');
+user3@example.com,SecurePass123!,Project Gamma,export default function Home() { return <h1>Home</h1>; }
+user4@example.com,SecurePass123!,Project Delta,import { useState } from 'react'; const [count, setCount] = useState(0);
+user5@example.com,SecurePass123!,Project Epsilon,interface User { id: string; email: string; }
+user6@example.com,SecurePass123!,Project Zeta,type Props = { children: React.ReactNode };
+user7@example.com,SecurePass123!,Project Eta,const handleClick = () => console.log('Clicked');
+user8@example.com,SecurePass123!,Project Theta,async function fetchUser(id: string) { return await api.get(id); }
+user9@example.com,SecurePass123!,Project Iota,export const config = { api: process.env.API_URL };
+user10@example.com,SecurePass123!,Project Kappa,const router = Router(); router.get('/users', getUsers);

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProtoThrive Gradient Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            /* Auth Pages Premium Gradient - Multiple Options */
+            --gradient-auth-premium: linear-gradient(135deg, #2563eb 0%, #9333ea 50%, #2563eb 100%);
+            --gradient-auth-premium-alt: linear-gradient(135deg, #1e40af 0%, #7c3aed 25%, #ec4899 50%, #7c3aed 75%, #1e40af 100%);
+            --gradient-auth-premium-smooth: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 25%, #a855f7 50%, #8b5cf6 75%, #3b82f6 100%);
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .bg-auth-gradient {
+            background: var(--gradient-auth-premium);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease-in-out infinite;
+        }
+
+        .bg-auth-gradient-alt {
+            background: var(--gradient-auth-premium-alt);
+            background-size: 400% 400%;
+            animation: gradientShift 6s ease-in-out infinite;
+        }
+
+        .bg-auth-gradient-smooth {
+            background: var(--gradient-auth-premium-smooth);
+            background-size: 400% 400%;
+            animation: gradientShift 10s ease-in-out infinite;
+        }
+
+        .bg-auth-gradient-static {
+            background: var(--gradient-auth-premium);
+        }
+
+        .bg-auth-gradient-static-alt {
+            background: var(--gradient-auth-premium-alt);
+        }
+
+        .bg-auth-gradient-static-smooth {
+            background: var(--gradient-auth-premium-smooth);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">ProtoThrive Gradient Options</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Original Gradient -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Original (Static)</h3>
+                <div class="h-32 bg-auth-gradient-static rounded-lg mb-4"></div>
+                <p class="text-sm text-gray-600">Class: <code class="bg-gray-100 px-2 py-1 rounded">bg-auth-gradient-static</code></p>
+            </div>
+
+            <!-- Original Animated -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Original (Animated)</h3>
+                <div class="h-32 bg-auth-gradient rounded-lg mb-4"></div>
+                <p class="text-sm text-gray-600">Class: <code class="bg-gray-100 px-2 py-1 rounded">bg-auth-gradient</code></p>
+            </div>
+
+            <!-- Alternative Static -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Alternative (Static)</h3>
+                <div class="h-32 bg-auth-gradient-static-alt rounded-lg mb-4"></div>
+                <p class="text-sm text-gray-600">Class: <code class="bg-gray-100 px-2 py-1 rounded">bg-auth-gradient-static-alt</code></p>
+            </div>
+
+            <!-- Alternative Animated -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Alternative (Animated)</h3>
+                <div class="h-32 bg-auth-gradient-alt rounded-lg mb-4"></div>
+                <p class="text-sm text-gray-600">Class: <code class="bg-gray-100 px-2 py-1 rounded">bg-auth-gradient-alt</code></p>
+            </div>
+
+            <!-- Smooth Static -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Smooth (Static)</h3>
+                <div class="h-32 bg-auth-gradient-static-smooth rounded-lg mb-4"></div>
+                <p class="text-sm text-gray-600">Class: <code class="bg-gray-100 px-2 py-1 rounded">bg-auth-gradient-static-smooth</code></p>
+            </div>
+
+            <!-- Smooth Animated -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Smooth (Animated) - CURRENT</h3>
+                <div class="h-32 bg-auth-gradient-smooth rounded-lg mb-4"></div>
+                <p class="text-sm text-gray-600">Class: <code class="bg-gray-100 px-2 py-1 rounded">bg-auth-gradient-smooth</code></p>
+            </div>
+        </div>
+
+        <!-- Full Page Preview -->
+        <div class="mt-12">
+            <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">Full Page Preview (Smooth Animated)</h2>
+            <div class="h-96 bg-auth-gradient-smooth rounded-lg relative overflow-hidden">
+                <div class="absolute inset-0 bg-black/10"></div>
+                <div class="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/5"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Login Form Preview</h3>
+                        <p class="text-gray-600">This is how your auth pages will look</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-blue-800 mb-3">How to Use:</h3>
+            <ol class="list-decimal list-inside space-y-2 text-blue-700">
+                <li>Choose your preferred gradient from the options above</li>
+                <li>Update the class in your login.tsx and register.tsx files</li>
+                <li>For static gradients, use: <code class="bg-blue-100 px-2 py-1 rounded">bg-auth-gradient-static-smooth</code></li>
+                <li>For animated gradients, use: <code class="bg-blue-100 px-2 py-1 rounded">bg-auth-gradient-smooth</code></li>
+                <li>Deploy and test on your live site</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>
+
