@@ -1,0 +1,248 @@
+/* Landing Page Specific Styles */
+
+/* Landing page container with light theme */
+.landingContainer {
+  background: linear-gradient(to bottom, #f9fafb, #ffffff, #f9fafb);
+  color: #111827;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  /* Prevent any layout issues */
+  box-sizing: border-box;
+  font-size: 16px;
+  line-height: 1.5;
+  /* Ensure content is scrollable */
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Ensure proper text rendering */
+.heroTitle {
+  font-size: clamp(2rem, 5vw, 3.75rem);
+  line-height: 1.2;
+  font-weight: 700;
+  color: #111827;
+  text-align: center;
+}
+
+/* Ensure all icons are properly sized - Global override */
+.landingContainer svg {
+  max-width: 1.25rem !important;
+  max-height: 1.25rem !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+/* Specific icon sizing for different contexts */
+.landingContainer .hero-icons svg {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+.landingContainer .feature-icons svg {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+}
+
+.landingContainer .small-icons svg {
+  width: 1rem !important;
+  height: 1rem !important;
+}
+
+/* Prevent text overflow and ensure readability */
+.landingContainer :global(*) {
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+/* Responsive typography fixes */
+@media (max-width: 640px) {
+  .landingContainer h1 {
+    font-size: 2rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .landingContainer h2 {
+    font-size: 1.75rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .landingContainer svg {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .heroTitle {
+    text-align: left;
+  }
+}
+
+.heroGradient {
+  background: linear-gradient(135deg, #3b82f6, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+
+/* Fix container widths */
+.container {
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 2rem;
+  }
+}
+
+/* Navigation fixes */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #e5e7eb;
+  z-index: 50;
+}
+
+/* Section padding */
+.section {
+  padding: 4rem 0;
+}
+
+@media (min-width: 1024px) {
+  .section {
+    padding: 5rem 0;
+  }
+}
+
+/* Fix grid layouts */
+.featureGrid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(1, 1fr);
+}
+
+@media (min-width: 640px) {
+  .featureGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .featureGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+}
+
+/* Card styles */
+.card {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border: 1px solid #f3f4f6;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px);
+}
+
+/* Button styles */
+.primaryButton {
+  background: linear-gradient(135deg, #3b82f6, #a855f7);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 1.125rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.primaryButton:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.secondaryButton {
+  background: transparent;
+  color: #374151;
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 1.125rem;
+  border: 2px solid #d1d5db;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.secondaryButton:hover {
+  border-color: #9ca3af;
+  transform: scale(1.05);
+}
+
+/* Fix mobile responsiveness */
+@media (max-width: 640px) {
+  .heroTitle {
+    font-size: 2rem;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* Ensure visibility for landing container */
+.landingContainer :global(*) {
+  visibility: visible !important;
+}
+
+/* Ensure landing page elements inherit light theme */
+.landingContainer :global(*) {
+  color: inherit;
+}
+
+/* Make sure text is always visible on light background */
+.landingContainer h1,
+.landingContainer h2,
+.landingContainer h3,
+.landingContainer h4,
+.landingContainer h5,
+.landingContainer h6,
+.landingContainer p,
+.landingContainer span,
+.landingContainer div {
+  color: #111827;
+}
+
+/* Override any dark theme text for landing page */
+.landingContainer .text-white {
+  color: #111827 !important;
+}
