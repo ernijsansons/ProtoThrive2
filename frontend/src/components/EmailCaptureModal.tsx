@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { XMarkIcon, EnvelopeIcon, CheckCircleIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 interface EmailCaptureModalProps {
@@ -164,9 +165,9 @@ const EmailCaptureModal: React.FC<EmailCaptureModalProps> = ({ isOpen, onClose, 
 
               <p className="text-xs text-gray-500 text-center">
                 By signing up, you agree to our{' '}
-                <a href="/terms" className="text-blue-600 hover:underline">Terms</a>
+                <Link href="/terms" className="text-blue-600 hover:underline">Terms</Link>
                 {' '}and{' '}
-                <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a>
+                <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>
               </p>
             </form>
           </>
@@ -180,7 +181,7 @@ const EmailCaptureModal: React.FC<EmailCaptureModalProps> = ({ isOpen, onClose, 
               You're on the list! 🎉
             </h3>
             <p className="text-gray-600 mb-4">
-              We'll send you an invite soon. Check your email!
+              We&apos;ll send you an invite soon. Check your email!
             </p>
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
               <CheckCircleIcon className="w-4 h-4" />

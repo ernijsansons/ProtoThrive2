@@ -423,10 +423,11 @@ app.onError((err, c) => {
   }, statusCode as any);
 });
 
-// Phase 2: Mount dedicated authentication routes with advanced features
-// These routes include: rate limiting, validation middleware, MFA support, password breach checking
-// TODO: Re-enable when auth.service dependencies are resolved
-// app.route('/api/auth', authRouter);
+// Import OAuth routes
+import oauth from './routes/oauth.routes';
+
+// Phase 2: Mount dedicated authentication routes with OAuth support
+app.route('/api/auth', oauth);
 
 // Health check endpoint with comprehensive diagnostics (Edge-2025 pattern)
 app.get('/health', async (c) => {

@@ -1,4 +1,5 @@
 import type { AppProps } from 'next/app';
+import '../styles/design-system.css';
 import '../styles/globals.css';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
